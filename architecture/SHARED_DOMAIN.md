@@ -1,0 +1,74 @@
+# Shared domain core
+
+Authoritative for the internals of `@app/shared` — the package every other module depends on and that
+depends on nothing above it. This is where the product's rules live.
+
+## The one hard rule
+
+`@app/shared` is **framework-free and DOM-free.** No Lit, no browser globals, no `window`, no
+Capacitor, no Fastify. The server may import it; it must never import the UI. Everything the domain
+needs from a host arrives through a [port](PORTS_AND_ADAPTERS.md). This is what lets the same rules run
+in a browser, in an Android WebView, on the server, and in a plain unit test with no environment at
+all.
+
+## What lives here
+
+| Concern | Responsibility |
+| --- | --- |
+| **Domain model** | The product's entities and their invariants. Validity is checked at construction, not deferred to runtime. |
+| **Engine** | An explicit state machine that walks the domain flow and owns branching decisions. |
+| **Services** | Application logic that coordinates the model, the engine, and ports for a use case. |
+| **Ports** | The interfaces to every host capability. See [ports & adapters](PORTS_AND_ADAPTERS.md). |
+| **DI container + tokens** | How implementations are wired at startup. See [dependency injection](DEPENDENCY_INJECTION.md). |
+| **Store** | The observable application state the UI subscribes to. See [state management](STATE_MANAGEMENT.md). |
+| **i18n** | The typed multi-locale message catalog and the locale service. See [i18n](../practices/I18N.md). |
+
+## The engine is a state machine, not a bag of flags
+
+Model domain flow as explicit states and transitions. The engine walks **states** — a state is one
+beat of the flow — and a transition is the only way to move between them. Branching is a first-class
+concept: a choice that is deterministic transitions immediately; a choice whose outcome is uncertain
+first creates a *pending* decision, and only an explicit resolution step samples the randomness
+source.
+
+Two properties fall out of this and are required:
+
+- **Validity at construction.** The domain model validates its own graph when built — unreachable
+  states, dead ends, and dangling asset references fail *then*, not on the unlucky play that reaches
+  them. A malformed definition cannot become a running session.
+- **Determinism under injection.** Randomness, time, and delayed work are ports (a randomness source,
+  a scheduler). A test injects a fixed source and a manual clock and asserts the exact resulting
+  state. Every branch, including both sides of a randomized outcome, is reproducible. See
+  [testing](../practices/TESTING.md).
+
+*Reference implementation:* in A Cup of Mystery the engine walks scene-*states* (several beats can
+share one scene), a direct choice transitions at once, and a dice choice creates a pending roll that
+only a `roll()` step resolves through an injected `DiceRoller`.
+
+## Services coordinate; they do not leak
+
+A service owns one use case and receives every collaborator through its constructor. It reads and
+advances the engine, persists through a repository port, and issues effects through the relevant
+ports. It exposes intent-level methods to the UI and holds no reference to any host API.
+
+### The mediator for coordinated effects
+
+When entering a state should cause *several* timed effects (sound, light, animation) in concert, that
+choreography lives in **one** mediator service — not spread across components or the engine. Content
+*declares* what a state should do; the mediator compares the previous state with the new one, issues
+each cue through the ports (with any delay expressed through the scheduler port so it is testable),
+and cancels every unfired cue on the next transition. Keeping it in the core means the whole timeline
+is verified without a real audio context or real waiting.
+
+*Reference implementation:* Mystery's `SceneAudioDirector` decides whether a scene's ambience bed
+carries over or restarts, schedules each state's start/stop/effect cues through a `Scheduler` port,
+and cancels pending cues on transition — so the UI's audio adapter only has to play, loop, and fade
+what it is told.
+
+## What does *not* live here
+
+- Rendering, layout, DOM, or any component — that is [the shared UI](../components/SHARED_UI.md).
+- Any concrete host API (storage backend, HTTP framework, audio engine) — those are adapters in the
+  owning client or server.
+- Product **assets** (audio, images). The core references them through generated, typed paths; the
+  bytes are build assets. See [assets & content](../practices/ASSETS_AND_CONTENT.md).

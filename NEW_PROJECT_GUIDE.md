@@ -1,0 +1,94 @@
+# New project guide
+
+How to go from an empty repository to a running vertical slice on this stack. Follow it in order. Each
+step links to the document that is authoritative for it; read that document, do not improvise past it.
+
+This guide is deliberately about **sequence and decisions**, not code. The
+[development principles](principles/DEVELOPMENT_PRINCIPLES.md) apply from step one.
+
+## Before you scaffold: the decisions to make
+
+A capable agent can build every module below. What it cannot invent is the product. Settle these
+first, because they shape the domain, the ports, and the contracts:
+
+1. **The product and its domain.** What are the entities, and what is the flow the
+   [engine](architecture/SHARED_DOMAIN.md) walks as a state machine?
+2. **Locales.** The default locale and every other, in full parity ([i18n](practices/I18N.md)).
+3. **Which ports the domain needs.** Storage is a given; which others — audio, a physical device, a
+   clock/scheduler, randomness ([ports & adapters](architecture/PORTS_AND_ADAPTERS.md))?
+4. **Whether there is a physical device**, and if so, its **semantic contract** — the modes and
+   parameters, meaning only, no frames ([contracts](architecture/CONTRACTS.md)).
+5. **Which existing project this one draws most from**, for its
+   [cross-project sync ledger](reuse/CROSS_PROJECT_SYNC.md).
+6. **The package scope** (e.g. `@yourproject/*`).
+
+## Build order
+
+Build inside-out: the core first, then the UI, then the hosts. Each layer is testable before the next
+exists.
+
+1. **Monorepo skeleton.** npm workspaces, the shared strict `tsconfig.base.json`, one ESLint + one
+   Prettier config, the shared bundler-config factory, and the root `check` script. See
+   [monorepo](components/MONOREPO.md). Also install the agent workflow: the single-source rulebook,
+   `CLAUDE.md` / `AGENTS.md` pointers, and the branch-guard hook
+   ([AI agent workflow](practices/AI_AGENT_WORKFLOW.md)).
+
+2. **The domain core (`@app/shared`).** In dependency order:
+   - the **ports** the domain needs, each with a safe no-op / in-memory default;
+   - the **DI container**, typed **tokens**, and `registerCoreServices()`
+     ([dependency injection](architecture/DEPENDENCY_INJECTION.md));
+   - the **observer store** and `AppState` ([state management](architecture/STATE_MANAGEMENT.md));
+   - the **domain model** with construction-time validation, and the **engine** state machine
+     ([shared domain](architecture/SHARED_DOMAIN.md));
+   - the **services** (and any mediator for coordinated effects);
+   - the **i18n** catalog and locale service ([i18n](practices/I18N.md)).
+   Write the deterministic unit tests **with** each rule ([testing](practices/TESTING.md)). The core
+   should be fully green before any UI exists.
+
+3. **The shared UI (`@app/ui`).** The component set, the [shared bootstrap](components/SHARED_UI.md)
+   seam that takes an adapter set, and the bounded startup readiness gate. Components subscribe to the
+   store and delegate; all text comes from the catalog. Obey the
+   [UI performance](practices/UI_PERFORMANCE.md) budget from the first animated surface.
+
+4. **The web client (`@app/web`).** Vite config from the shared factory, the browser adapters
+   (IndexedDB storage), one bootstrap call ([web client](components/WEB_CLIENT.md)). This is the first
+   place the whole stack runs end-to-end.
+
+5. **Content and assets.** Define the content schema, the one layout definition every asset path
+   derives from, and generate placeholder assets from the contract so loading and timing paths run
+   before real media exists ([assets & content](practices/ASSETS_AND_CONTENT.md)).
+
+6. **The Android client (`@app/mobile`).** Capacitor project, native adapters (Preferences storage),
+   the same bootstrap call ([Android client](components/ANDROID_CLIENT.md)). No screen is rewritten.
+
+7. **The server (`@app/server`).** Fastify, thin routes → controller → service → repository, importing
+   the shared contracts; a health endpoint, content/catalog endpoints, and — if there is a device —
+   the in-memory semantic twin ([server](components/SERVER.md)).
+
+8. **Firmware (`firmware/`)**, if there is a device. ESP-IDF / C++17, an allocation-free engine that
+   renders the [semantic contract](architecture/CONTRACTS.md) locally with a physical safety ceiling
+   ([firmware](components/FIRMWARE.md)).
+
+9. **Acceptance.** Playwright over the shared UI in every locale and both text directions; isolate any
+   real-GPU measurement into a run that rejects software rendering ([testing](practices/TESTING.md)).
+
+## The vertical slice as the milestone
+
+Aim first for a **thin end-to-end slice**, not a complete product: the smallest real flow that
+exercises the engine, the store, one persisted port, the shared UI on web, and — if applicable — the
+device twin. A running slice proves the architecture; breadth comes after.
+
+*Reference:* A Cup of Mystery's first slice was two opening choices, a deterministic dice gate, two
+endings, persistence, a device mock, bilingual RTL, and a firmware engine — the whole stack end to
+end, one narrow story wide.
+
+## When the slice runs
+
+Set up the [cross-project sync ledger](reuse/CROSS_PROJECT_SYNC.md): audit the baseline of the project
+this one drew from, and record in the adoption ledger what was reused from the stack. From here the new
+project participates in the same bidirectional exchange as its siblings.
+
+## Definition of done applies throughout
+
+Every step obeys the [working agreement](principles/WORKING_AGREEMENT.md): branch first, deterministic
+tests with each rule, contracts updated in their source first, honest reporting, and the owner merges.
