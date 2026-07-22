@@ -45,6 +45,30 @@ budgets, and stop whenever it is not visible or motion has been reduced.
     **consciously set** bundle budget that acts as a review guardrail. Crossing it triggers a new
     bundle inspection; it is never silenced. See [monorepo](../components/MONOREPO.md).
 
+## Reusable rendering-architecture techniques
+
+Beyond the performance budget, these design techniques keep a rich or 3D renderer **reusable and
+accessible** across projects — they are what let one renderer serve more than one product.
+
+- **Decouple the renderer from the domain.** A renderer takes a typed *settings* object (image URL,
+  colour palette, supported effects, intensity) rather than a domain entity, and validates its effect
+  inputs. Any product that can produce those settings can reuse the renderer unchanged.
+- **Share one implementation for related visuals, and one module for a heavy dependency.** Cutting
+  several 3D objects from one shared material — and importing a heavy 3D library through one shared
+  module — lets the bundler hoist that library into a **single chunk** every renderer imports, rather
+  than duplicating it. This is [DRY](../principles/DEVELOPMENT_PRINCIPLES.md) meeting the chunk budget.
+- **Keep HTML controls real over a 3D scene.** Where an interactive control sits on a decorative 3D
+  scene, keep the accessible HTML element (localized label, keyboard focus, screen-reader name) and
+  let pointer events fall through to the canvas, which raycasts the scene beneath. Selection is then
+  identical whether or not the scene rendered, and accessibility never depends on the renderer.
+- **Render domain text into a texture, not an overlay.** A label that belongs *inside* the scene (a
+  title down a 3D spine) is painted into a canvas texture from the localized domain text, rather than
+  floated as an HTML card over the canvas where it could never sit correctly in the 3D space.
+
+*Reference implementation:* Mystery's crystal-orb and library-bookcase renderers share one wood
+material and one hoisted 3D-engine chunk, take typed settings rather than scene objects, project HTML
+controls onto a raycast 3D bookcase, and paint book titles into spine textures from localized text.
+
 ## Acceptance method
 
 - Test at real mobile widths (e.g. ~393 px and ~320 px) in **every supported locale** and both text

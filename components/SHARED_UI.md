@@ -49,7 +49,7 @@ bootstrap({ storage: new PreferencesStorage(), platform: nativePlatformInfo /* â
 ```
 
 This is the tangible payoff of ports & DI: a client is its adapter set plus one bootstrap call. It is
-a recurring backport candidate between projects.
+a recurring candidate to propose upstream to the blueprint.
 
 ## Startup readiness gate
 

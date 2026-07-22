@@ -62,8 +62,13 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   product direction unprompted.
 - **Branch-guard hook** — the `PreToolUse` hook that denies edits while on `main`. See
   [AI agent workflow](practices/AI_AGENT_WORKFLOW.md).
-- **Sync ledger** — the per-sibling record of what a project adopted and what it offers back. See
+- **Blueprint** — this repository; the canonical, hub source of the stack's rules, architecture, and
+  patterns that every project conforms to.
+- **Blueprint-sync ledger** — a project's `docs/BLUEPRINT_SYNC.md`: the blueprint commit it conforms
+  to (conformance baseline) plus its improvements proposed upstream. See
   [cross-project sync](reuse/CROSS_PROJECT_SYNC.md).
-- **Adoption ledger / backport ledger** — the inbound and outbound halves of a sync ledger.
+- **Conformance baseline** — the blueprint revision a project has reconciled with; a stale one is
+  visible drift, not silent drift.
+- **Upstream proposal** — a reusable improvement made in a project and offered to the blueprint.
 - **PRECISE YET CONCISE** — the house style: state exactly what is true, once, and no more. See
   [development principles](principles/DEVELOPMENT_PRINCIPLES.md) §0.

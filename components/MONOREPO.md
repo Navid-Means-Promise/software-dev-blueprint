@@ -29,7 +29,7 @@ a change to the core is visible to every consumer immediately.
   firmware/               ESP-IDF / C++17 (outside the npm workspace)
   e2e/                    @app/e2e — Playwright acceptance
   tooling/                shared build config + content generators
-  docs/                   contracts, architecture notes, roadmap, cross-project ledger
+  docs/                   contracts, architecture notes, roadmap, blueprint-sync ledger
 ```
 
 `workspaces` covers `packages/*`, `apps/*`, and `e2e`. Firmware is a separate C++/CMake build and is
@@ -47,8 +47,8 @@ DRY applied to configuration.
 - **ESLint + Prettier** — one config each at the root. No `any`, no unchecked casts (principles §4).
 - **Shared bundler-config factory** — a `tooling/` function returns the base client bundler config
   (build target, output layout, chunk budget); each client calls it and overrides only its
-  differences. This keeps build behavior identical across clients and is a prime backport candidate
-  between projects.
+  differences. This keeps build behavior identical across clients and is a prime candidate to propose
+  upstream to the blueprint.
 - **Build/chunk budgets** — a single declared budget threshold that the bundler warns against. A
   deliberately split large chunk (e.g. a 3D engine shared by two renderers) has its budget set
   consciously as a review guardrail, not silenced. See [UI performance](../practices/UI_PERFORMANCE.md).

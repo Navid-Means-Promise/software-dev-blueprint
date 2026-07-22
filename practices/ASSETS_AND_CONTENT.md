@@ -38,7 +38,7 @@ Where a decorative surface can be produced in code (gradients, a procedural text
 instead of a fetched bitmap, prefer the code-native version: it adds no network request, carries no
 license, and — if it obeys [UI performance](UI_PERFORMANCE.md) — nothing perpetually animates. A
 themed, rich screen with zero image requests is a recurring
-[backport candidate](../reuse/CROSS_PROJECT_SYNC.md).
+[candidate to propose upstream to the blueprint](../reuse/CROSS_PROJECT_SYNC.md).
 
 ## The readiness gate is bounded
 

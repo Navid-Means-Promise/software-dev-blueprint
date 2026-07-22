@@ -18,9 +18,11 @@ first, because they shape the domain, the ports, and the contracts:
    clock/scheduler, randomness ([ports & adapters](architecture/PORTS_AND_ADAPTERS.md))?
 4. **Whether there is a physical device**, and if so, its **semantic contract** — the modes and
    parameters, meaning only, no frames ([contracts](architecture/CONTRACTS.md)).
-5. **Which existing project this one draws most from**, for its
-   [cross-project sync ledger](reuse/CROSS_PROJECT_SYNC.md).
-6. **The package scope** (e.g. `@yourproject/*`).
+5. **The package scope** (e.g. `@yourproject/*`).
+
+The project conforms to **this blueprint** as its single source of stack rules and architecture, and
+records that relationship in a [blueprint-sync ledger](reuse/CROSS_PROJECT_SYNC.md) — it does not pair
+off against another project.
 
 ## Build order
 
@@ -84,9 +86,10 @@ end, one narrow story wide.
 
 ## When the slice runs
 
-Set up the [cross-project sync ledger](reuse/CROSS_PROJECT_SYNC.md): audit the baseline of the project
-this one drew from, and record in the adoption ledger what was reused from the stack. From here the new
-project participates in the same bidirectional exchange as its siblings.
+Set up the project's [blueprint-sync ledger](reuse/CROSS_PROJECT_SYNC.md): create `docs/BLUEPRINT_SYNC.md`
+recording the blueprint commit this project was built from as its conformance baseline. From here the
+new project participates in the same hub exchange as every other project — conforming to the blueprint
+and proposing its own reusable improvements upstream.
 
 ## Definition of done applies throughout
 

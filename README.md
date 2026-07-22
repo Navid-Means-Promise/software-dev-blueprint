@@ -62,7 +62,7 @@ Proven in two shipped projects: **24Gems** and **A Cup of Mystery**. These docs 
 - [practices/AI_AGENT_WORKFLOW.md](practices/AI_AGENT_WORKFLOW.md) — rulebook, branch-guard hook, summaries
 
 **Reuse** — building more projects on the stack
-- [reuse/CROSS_PROJECT_SYNC.md](reuse/CROSS_PROJECT_SYNC.md) — the adoption/backport ledger mechanism
+- [reuse/CROSS_PROJECT_SYNC.md](reuse/CROSS_PROJECT_SYNC.md) — the blueprint-as-hub sync mechanism (conform + propose upstream)
 
 **Reference**
 - [NEW_PROJECT_GUIDE.md](NEW_PROJECT_GUIDE.md) — empty repo → running vertical slice

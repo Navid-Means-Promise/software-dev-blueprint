@@ -37,7 +37,10 @@ is a signal to extract, not to copy.
 
 - **Code:** the second time a behavior appears, it becomes a reusable module that *owns* that
   concern, and both callers depend on it. Platform bootstraps, build configuration, and error
-  handling differ only in the values they inject — never in duplicated logic.
+  handling differ only in the values they inject — never in duplicated logic. A concrete recurring
+  example: a single thrown-value normalizer turns any caught `unknown` into a typed message, so the
+  `instanceof Error` check is written once in the shared core rather than at every catch site in the
+  UI and the server.
 - **Contracts:** a wire, storage, or content shape is defined **once** and consumed from that one
   place by every client, the server, and firmware. See [contracts](../architecture/CONTRACTS.md).
 - **User-facing strings:** every string outside content lives once in the typed message catalog,

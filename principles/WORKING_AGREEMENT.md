@@ -62,7 +62,7 @@ A task is landable when:
   [testing](../practices/TESTING.md).
 - Animations obey the [UI performance](../practices/UI_PERFORMANCE.md) budget, including reduced
   motion.
-- Any cross-project adoption or reusable backport candidate is recorded in the same change. See
+- Any improvement worth proposing upstream to the blueprint is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
 - The repository-wide check passes; UI changes also pass the browser acceptance flow.
 - The merge into `main` waits for the owner's explicit confirmation.

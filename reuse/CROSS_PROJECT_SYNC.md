@@ -1,91 +1,100 @@
-# Cross-project reuse and sync
+# Cross-project sync
 
-Authoritative for how sibling projects on this stack **deliberately** exchange improvements without
-silently coupling. This is the mechanism that turns "we have a stack" into "each project makes the
-stack better." It generalizes the ledger both existing projects already keep between them.
+Authoritative for how projects on this stack stay aligned with the shared source of truth — **this
+blueprint** — and how improvements flow back into it. This is the mechanism that turns "we have a
+stack" into "every project keeps the stack current, and the stack keeps every project consistent."
 
-## The problem it solves
+## The model: a hub, not pairs
 
-Projects on this stack share architecture, patterns, workflow, and design concepts, but they are
-**different products**. Uncontrolled copying couples them (a change in one silently assumes something
-about the other); no sharing at all wastes every improvement. The answer is a **recorded, deliberate
-exchange**: reuse is intentional, classified, and written down in the same change that creates it.
+**This blueprint repository is the canonical source** of the stack's rules, architecture, patterns,
+and reusable concepts. Every project **conforms to the blueprint** and exchanges improvements *with
+the blueprint* — not directly with its siblings.
 
-The governing rule ([development principles](../principles/DEVELOPMENT_PRINCIPLES.md)): **an
-unrecorded reusable improvement is an incomplete change.** Recording is not paperwork after the fact;
-it is part of the definition of done.
+```text
+                        ┌───────────────────────────┐
+                        │      dev-stack-blueprint   │   ← canonical source
+                        │  rules · architecture ·    │
+                        │  patterns · reusable ideas │
+                        └───▲───────▲───────▲────────┘
+             conform +      │       │       │      conform +
+             propose  ──────┘       │       └──────  propose
+                        ┌───────────┴───────────┐
+                     project A   project B   project C …
+```
 
-## The sync ledger
+This replaces the older pairwise model, in which two projects kept a bidirectional ledger against
+each other. Pairwise sync does not scale past two projects and lets rules drift into N different
+"latest" versions. With a hub, there is exactly one place the stack's truth lives, and each project's
+only sync relationship is with that hub.
 
-Each project keeps one **sync ledger** per sibling relationship, in its `docs/`. The ledger has four
-parts.
+The governing rule ([development principles](../principles/DEVELOPMENT_PRINCIPLES.md) §0/§1) still
+holds: **an unrecorded reusable improvement is an incomplete change.** Recording is part of the
+definition of done — only now it is recorded against the blueprint.
 
-### 1. Audited baseline
+## The blueprint-sync ledger
 
-The exact upstream revision this project has reviewed: sibling repo path, branch, commit hash, audit
-date, and worktree cleanliness. A sync always compares the sibling's *current* revision against this
-baseline, so "what is new upstream" is a precise question, not a guess.
+Each project keeps **one** lightweight ledger, `docs/BLUEPRINT_SYNC.md`, with two parts.
 
-### 2. Adoption ledger (inbound: sibling → this project)
+### 1. Conformance baseline (blueprint → project)
 
-Every element taken **from** the sibling, with its **reuse level** and how it was realized here:
+The exact blueprint revision this project has reconciled with: the blueprint repo path, the commit
+hash, and the date conformed. When the blueprint advances, the project reviews the blueprint's diff
+since this baseline, applies whatever changed **through its own domain boundaries**, and moves the
+baseline forward. "What is new in the stack" is therefore a precise question — the diff since the
+recorded commit — not a guess.
 
-| Reuse level | Meaning |
-| --- | --- |
-| Direct policy reuse | The same rule/config adopted verbatim |
-| Adapted | The same idea, re-expressed for this product's domain |
-| Concept | Only the approach was borrowed; the implementation is new |
-| Reimplemented | Rebuilt here, often improved, from the sibling's idea |
+A project does not silently fall behind: a blueprint change that a project has not reconciled with is
+visible as a stale baseline, not as invisible drift.
 
-Each row names the element, its reuse level, this project's implementation, and a note on what
-differs. Adaptation is expected — never copy a sibling's domain assumption wholesale into this one.
+### 2. Upstream proposals (project → blueprint)
 
-### 3. Backport ledger (outbound: this project → sibling)
-
-Improvements made **here** that may help the sibling. These are **candidates, not automatic edits** to
-the other repository. Each has a status:
+Improvements made **in the project** that belong in the stack — a new reusable pattern, a sharper
+rule, a better shared utility. Each is a **candidate**, recorded here in the same change that creates
+it, and carried to the blueprint through the blueprint's own [working
+agreement](../principles/WORKING_AGREEMENT.md). Status per candidate:
 
 | Status | Meaning |
 | --- | --- |
-| Proposed | A reusable improvement identified here, offered to the sibling |
-| Ported | The sibling adopted it — record the sibling's commit hash |
-| Rejected | Considered and declined, with the reason |
-| Not applicable | The sibling's domain makes it irrelevant |
+| Proposed | A reusable improvement identified here, offered to the blueprint |
+| Merged | The blueprint adopted it — record the blueprint commit hash |
+| Rejected | Considered for the stack and declined, with the reason |
+| Project-specific | Deliberately kept local; not a stack concern |
 
-Each row carries the date added, the candidate, why it may help the sibling, and the source location
-here. A "Proposed" backlog is healthy — it is the stack's improvement pipeline made visible.
+A healthy "Proposed" list is the stack's improvement pipeline made visible.
 
-### 4. Recurring sync checklist
+## What conforming means (and does not)
 
-The repeatable procedure for a deliberate sync:
+- **Conform to the rules and architecture, adapt to the domain.** A project applies the blueprint's
+  principles, boundaries, and patterns; it does *not* copy another project's product assumptions. The
+  blueprint is deliberately neutral so that conforming never imports someone else's domain.
+- **Reconcile, do not overwrite.** Porting a blueprint change means re-expressing it through the
+  project's own domain seams, exactly as porting a pattern always has.
+- **The blueprint is edited through its own workflow.** A project proposes; the blueprint's owner
+  merges. Do not edit the blueprint from a project session unless the owner asks explicitly.
 
-1. Read the sibling's current `README`, architecture, contributing, roadmap, and performance docs —
-   **documentation before diff**.
-2. Compare the sibling's revision against the audited baseline and inspect the relevant diffs.
-3. Classify each change: shared architecture, reusable implementation, product-specific, or not
-   applicable.
-4. Port through **this** project's own domain boundaries — never copy a sibling's domain assumption
-   into a different product.
-5. Update the baseline, both ledgers, and the summary, then run the acceptance
-   [`check`](../components/MONOREPO.md).
+## The recurring sync procedure
 
-## Boundaries
-
-- The ledger is updated **in the same change** that adopts an upstream element or creates a reusable
-  one. Unrecorded reuse is an incomplete change.
-- Do **not** edit a sibling project from this one unless the owner asks explicitly. A backport is a
-  proposal until the owner directs it and the sibling's own workflow lands it.
-- Reuse is classified and adapted, never blindly copied; a sibling's domain assumption stays in the
-  sibling.
-
-*Reference implementation:* A Cup of Mystery keeps `docs/24GEMS_SYNC.md` — an audited baseline against
-`personal-growth-android-app`, an adoption ledger (monorepo shape, one shared UI, strict-TS policy,
-ports/adapters, DI+observer, i18n, Fastify shape, firmware organization, Playwright, commit
-convention), and a backport ledger of improvements made in Mystery that are offered back to 24Gems.
+1. Read the blueprint's current normative core and any area document your work touches — **docs before
+   diff**.
+2. Compare the blueprint's revision against the project's recorded baseline; inspect the relevant
+   diffs.
+3. Classify each blueprint change: applies to this project, or project-irrelevant. Apply the relevant
+   ones through the project's domain boundaries.
+4. In the same pass, record any improvement made **here** as an upstream proposal.
+5. Update the baseline and the proposals, then run the acceptance [`check`](../components/MONOREPO.md).
 
 ## For a brand-new project
 
-When starting a new project from this blueprint, create its sync ledger against whichever existing
-project it draws most from. Its first adoption ledger records what it took from the stack; from then
-on it participates in the same bidirectional exchange as everyone else. See the
-[new project guide](../NEW_PROJECT_GUIDE.md).
+Creating a project from this blueprint: read the [new project guide](../NEW_PROJECT_GUIDE.md), scaffold
+against the blueprint, then create `docs/BLUEPRINT_SYNC.md` with the blueprint commit it was built
+from as the conformance baseline. From then on it participates in the same hub exchange as every other
+project.
+
+## Migrating from a pairwise ledger
+
+A project that previously kept a sibling-to-sibling ledger (e.g. an early `*_SYNC.md` against another
+product) retires it once its reusable contents are represented in the blueprint: verify each still-
+relevant candidate exists in the blueprint (add it there first if not), then replace the old ledger
+with a `docs/BLUEPRINT_SYNC.md` whose baseline is the blueprint commit that absorbed them. Historical
+provenance ("this idea originated in project X") may stay as a factual note; the *live* sync
+relationship is now only with the blueprint.

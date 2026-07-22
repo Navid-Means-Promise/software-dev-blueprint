@@ -22,6 +22,7 @@ all.
 | **DI container + tokens** | How implementations are wired at startup. See [dependency injection](DEPENDENCY_INJECTION.md). |
 | **Store** | The observable application state the UI subscribes to. See [state management](STATE_MANAGEMENT.md). |
 | **i18n** | The typed multi-locale message catalog and the locale service. See [i18n](../practices/I18N.md). |
+| **Shared utilities** | Cross-cutting helpers that belong to no single feature — e.g. a thrown-value normalizer that turns any caught `unknown` into a typed message, used by both the UI and the server. |
 
 ## The engine is a state machine, not a bag of flags
 
