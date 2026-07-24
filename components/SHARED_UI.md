@@ -25,6 +25,8 @@ port directly, and stores no business state locally. This keeps every rule in th
 keeps the UI a thin, replaceable projection of state.
 
 User-facing text comes from the typed [i18n](../practices/I18N.md) catalog — never an inline literal.
+Components consume shared semantic [typography](../practices/TYPOGRAPHY.md) tokens rather than
+choosing families independently.
 
 ## The shared bootstrap seam
 

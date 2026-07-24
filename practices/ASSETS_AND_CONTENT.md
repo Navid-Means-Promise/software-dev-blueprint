@@ -52,7 +52,8 @@ one defines a bounded startup bundle and prefetches later parts after the first 
 Every sourced or generated asset is **local** (never hotlinked), and its origin is recorded: the tool
 or source, the prompt or search terms, license expectations, any edits, and review status. This
 provenance lives in a project `docs/` pipeline file so an asset's right-to-use and reproducibility stay
-clear later.
+clear later. Font-specific formats, licensing, and delivery rules live in
+[typography](TYPOGRAPHY.md).
 
 ## Rules
 

@@ -19,7 +19,7 @@ is authoritative in its own area and assumes you have.
 | The pure domain core | [`architecture/SHARED_DOMAIN.md`](architecture/SHARED_DOMAIN.md) |
 | Ports & adapters, DI, store, contracts | the rest of [`architecture/`](architecture/) |
 | Clients, server, firmware, monorepo | the [`components/`](components/) set |
-| i18n, performance, testing, assets, agent workflow | the [`practices/`](practices/) set |
+| i18n, typography, performance, testing, assets, agent workflow | the [`practices/`](practices/) set |
 | Building more projects on the stack | [`reuse/CROSS_PROJECT_SYNC.md`](reuse/CROSS_PROJECT_SYNC.md) |
 | Bootstrapping a new project | [`NEW_PROJECT_GUIDE.md`](NEW_PROJECT_GUIDE.md) |
 

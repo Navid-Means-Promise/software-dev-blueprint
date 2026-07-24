@@ -14,11 +14,13 @@ first, because they shape the domain, the ports, and the contracts:
 1. **The product and its domain.** What are the entities, and what is the flow the
    [engine](architecture/SHARED_DOMAIN.md) walks as a state machine?
 2. **Locales.** The default locale and every other, in full parity ([i18n](practices/I18N.md)).
-3. **Which ports the domain needs.** Storage is a given; which others — audio, a physical device, a
+3. **Typography.** The interface and display faces for each locale, plus the supported local font
+   formats and compatibility target ([typography](practices/TYPOGRAPHY.md)).
+4. **Which ports the domain needs.** Storage is a given; which others — audio, a physical device, a
    clock/scheduler, randomness ([ports & adapters](architecture/PORTS_AND_ADAPTERS.md))?
-4. **Whether there is a physical device**, and if so, its **semantic contract** — the modes and
+5. **Whether there is a physical device**, and if so, its **semantic contract** — the modes and
    parameters, meaning only, no frames ([contracts](architecture/CONTRACTS.md)).
-5. **The package scope** (e.g. `@yourproject/*`).
+6. **The package scope** (e.g. `@yourproject/*`).
 
 The project conforms to **this blueprint** as its single source of stack rules and architecture, and
 records that relationship in a [blueprint-sync ledger](reuse/CROSS_PROJECT_SYNC.md) — it does not pair
@@ -49,7 +51,8 @@ exists.
 
 3. **The shared UI (`@app/ui`).** The component set, the [shared bootstrap](components/SHARED_UI.md)
    seam that takes an adapter set, and the bounded startup readiness gate. Components subscribe to the
-   store and delegate; all text comes from the catalog. Obey the
+   store and delegate; all text comes from the catalog and shared
+   [typography](practices/TYPOGRAPHY.md) roles. Obey the
    [UI performance](practices/UI_PERFORMANCE.md) budget from the first animated surface.
 
 4. **The web client (`@app/web`).** Vite config from the shared factory, the browser adapters

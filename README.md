@@ -56,6 +56,8 @@ Proven in two shipped projects: **24Gems** and **A Cup of Mystery**. These docs 
 
 **Practices** — cross-cutting concerns
 - [practices/I18N.md](practices/I18N.md) — default-language-first parity, RTL/LTR
+- [practices/TYPOGRAPHY.md](practices/TYPOGRAPHY.md) — language-aware font roles, local delivery,
+  responsive fitting
 - [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — compositor + GPU-canvas budgets
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
