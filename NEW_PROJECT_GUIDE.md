@@ -50,9 +50,9 @@ exists.
    should be fully green before any UI exists.
 
 3. **The shared UI (`@app/ui`).** The component set, the [shared bootstrap](components/SHARED_UI.md)
-   seam that takes an adapter set, and the bounded startup readiness gate. Components subscribe to the
-   store and delegate; all text comes from the catalog and shared
-   [typography](practices/TYPOGRAPHY.md) roles. Obey the
+   seam that takes an adapter set, and the bounded startup readiness gate. Choose and record the
+   component-wiring option, render store state, and delegate user intent; all text comes from the
+   catalog and shared [typography](practices/TYPOGRAPHY.md) roles. Obey the
    [UI performance](practices/UI_PERFORMANCE.md) budget from the first animated surface.
 
 4. **The web client (`@app/web`).** Vite config from the shared factory, the browser adapters

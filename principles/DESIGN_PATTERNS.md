@@ -43,9 +43,9 @@ reproducible under an injected source of randomness.
 intent (what to play, what to light, with what timing); the mediator translates that into ordered
 port calls and owns their cancellation. Nothing else needs to know the choreography.
 
-**Observer** propagates state. A small store holds application state and notifies subscribers on
-change; components subscribe and re-render. No reactive-framework machinery, no manual wiring of
-every consumer.
+**Observer** propagates state. A small store holds application state and notifies its UI subscribers
+on change; the UI re-renders from the new snapshot. No reactive-framework machinery, no manual wiring
+of every consumer.
 
 **Repository** keeps persistence domain-shaped and swappable. The domain talks to a repository
 interface; each platform provides the adapter (one backing store on web, another on Android) without

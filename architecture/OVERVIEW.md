@@ -64,8 +64,8 @@ this direction is an architecture bug regardless of whether it compiles.
   [ports & adapters](PORTS_AND_ADAPTERS.md).
 - Adapters live in the client/server that own the host API, and are registered at startup through the
   [DI container](DEPENDENCY_INJECTION.md).
-- The UI subscribes to the [observer store](STATE_MANAGEMENT.md) and delegates every decision to the
-  domain; it holds no business rules.
+- The UI renders state from the [observer store](STATE_MANAGEMENT.md) and delegates every decision to
+  the domain; UI code holds no business rules.
 - Shared **contracts** — wire, storage, content — are defined once and consumed everywhere. See
   [contracts](CONTRACTS.md).
 

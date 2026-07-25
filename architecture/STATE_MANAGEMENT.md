@@ -20,14 +20,16 @@ the domain model and publish the derived view state the UI consumes.
 Service advances the engine ──▶ writes next AppState into the Store
                                         │  (Observer notifies)
                                         ▼
-              UI components read the snapshot and render
-              User acts ──▶ component calls a service method ──▶ (loop)
+                         UI reads the snapshot and renders
+                  User acts ──▶ UI delegates intent to a service ──▶ (loop)
 ```
 
-Components **render and delegate**. A component reads state and produces markup; on user action it
-calls an intent-level service method. It never decides a domain rule, never mutates the store
-directly with business logic, never talks to a port. This is [development principles](../principles/DEVELOPMENT_PRINCIPLES.md)
-§2 made concrete at the UI edge.
+The UI **renders and delegates**. It reads state and produces markup; on user action it calls an
+intent-level service method. It never decides a domain rule, never mutates the store directly with
+business logic, and never talks to a port. How a project distributes that connection across its
+component tree is a documented [project decision](../components/SHARED_UI.md#component-wiring-is-a-project-decision).
+This is [development principles](../principles/DEVELOPMENT_PRINCIPLES.md) §2 made concrete at the UI
+edge.
 
 ## Why an observer store rather than a framework
 
@@ -36,8 +38,9 @@ directly with business logic, never talks to a port. This is [development princi
   management.
 - **Determinism.** State transitions are ordinary function calls on ordinary data, asserted in a unit
   test without a DOM. See [testing](../practices/TESTING.md).
-- **One propagation mechanism.** Every consumer updates the same way. There is no second path for
-  "just this one component" — that would violate DRY (principles §1).
+- **One propagation mechanism.** Every stateful UI surface derives application state from the same
+  store. Passing its current snapshot into a passive presentation component is ordinary rendering,
+  not another source of state.
 
 ## Boundaries
 
