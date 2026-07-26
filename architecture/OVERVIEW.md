@@ -56,7 +56,7 @@ this direction is an architecture bug regardless of whether it compiles.
 | `tooling` | — | Shared build config (bundler factory, budgets) and content generators |
 | `docs` | — | Per-project contracts, architecture notes, and roadmaps |
 
-`@app` is the neutral placeholder scope; a real project picks its own (`@mystery/*`, `@gems/*`, …).
+`@app` is the neutral placeholder scope; a real project substitutes its own package scope.
 
 ## How the boundaries are enforced
 
@@ -72,5 +72,7 @@ this direction is an architecture bug regardless of whether it compiles.
 ## Where each layer's detail lives
 
 - Domain core internals: [shared domain](SHARED_DOMAIN.md)
+- Assistant orchestration, durable user context, domain tools, and speech:
+  [AI subsystem](AI_SUBSYSTEM.md)
 - The clients, server, and firmware as concrete hosts: the [components](../components/) set
 - Cross-cutting concerns (i18n, performance, testing, assets): the [practices](../practices/) set

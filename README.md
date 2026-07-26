@@ -18,8 +18,8 @@ visual code exists once, platform code is a thin edge, and a physical device is 
 Everything lives in an npm-workspaces monorepo with a shared strict toolchain, deterministic testing,
 and an owner-directed / agent-executed workflow.
 
-Proven in two shipped projects: **24Gems** and **A Cup of Mystery**. These docs are neutral (they use
-`@app/*` as a placeholder scope) and cite those two as reference implementations.
+These documents use `@app/*` as a placeholder scope; each implementing project supplies its own
+domain vocabulary and package scope.
 
 ## How to use this repository
 
@@ -45,6 +45,8 @@ Proven in two shipped projects: **24Gems** and **A Cup of Mystery**. These docs 
 - [architecture/DEPENDENCY_INJECTION.md](architecture/DEPENDENCY_INJECTION.md) — container, tokens, lifetimes
 - [architecture/STATE_MANAGEMENT.md](architecture/STATE_MANAGEMENT.md) — the observer store
 - [architecture/CONTRACTS.md](architecture/CONTRACTS.md) — single-source contracts, semantic device model
+- [architecture/AI_SUBSYSTEM.md](architecture/AI_SUBSYSTEM.md) — assistant orchestration, durable
+  application context, typed domain tools, proposals, Undo/Redo, and speech adapters
 
 **Components** — the concrete modules
 - [components/MONOREPO.md](components/MONOREPO.md) — workspaces, toolchain, budgets, `check`

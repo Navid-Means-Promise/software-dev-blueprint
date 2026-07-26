@@ -17,6 +17,7 @@ is authoritative in its own area and assumes you have.
 | Pattern vocabulary | [`principles/DESIGN_PATTERNS.md`](principles/DESIGN_PATTERNS.md) |
 | Module boundaries + dependency direction | [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md) |
 | The pure domain core | [`architecture/SHARED_DOMAIN.md`](architecture/SHARED_DOMAIN.md) |
+| AI subsystem, durable context, domain tools, and speech | [`architecture/AI_SUBSYSTEM.md`](architecture/AI_SUBSYSTEM.md) |
 | Ports & adapters, DI, store, contracts | the rest of [`architecture/`](architecture/) |
 | Clients, server, firmware, monorepo | the [`components/`](components/) set |
 | i18n, typography, performance, testing, assets, agent workflow | the [`practices/`](practices/) set |

@@ -54,9 +54,9 @@ Steps 2–4 are identical across clients; only step 1 — the adapter *set* — 
 the *entire* platform-specific surface of an interactive client. Collapsing steps 2–4 into one shared
 call is exactly the [shared bootstrap](../components/SHARED_UI.md).
 
-*Reference implementations:* Mystery and 24Gems both inject a `StoragePort` (IndexedDB on web,
-Preferences on Android), a `PlatformInfo`, an audio port, and — in Mystery — a device light port,
-then mount the same UI. Nothing else about the two clients differs.
+For example, a project may inject a `StoragePort` backed by IndexedDB on web and native storage on
+Android, plus independent platform-information, audio, and device-capability ports, before mounting
+the same UI. Nothing else about the two client compositions needs to differ.
 
 ## Why this matters
 

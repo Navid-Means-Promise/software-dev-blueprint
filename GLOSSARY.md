@@ -28,6 +28,14 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   locally; never streamed frames.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
   the firmware does, for use without hardware.
+- **Assistant context record** — application-owned durable context supplied to an assistant or other
+  domain service; each product gives the record and its closed categories domain-specific names. See
+  [AI subsystem](architecture/AI_SUBSYSTEM.md).
+- **Domain change proposal** — a non-mutating, item-reviewable diff against a domain revision; only
+  its explicitly accepted subset may be revalidated and applied.
+- **User Action History** — the persistent sequence of reversible domain mutations initiated through
+  the UI or assistant, represented as validated forward and compensating commands rather than storage
+  snapshots.
 
 ## Modules
 
