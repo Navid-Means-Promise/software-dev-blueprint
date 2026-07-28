@@ -11,6 +11,8 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   [shared domain](architecture/SHARED_DOMAIN.md).
 - **Port** — a narrow interface in the domain core for one host capability. See
   [ports & adapters](architecture/PORTS_AND_ADAPTERS.md).
+- **Provider** — the preferred interface suffix for a port that supplies an interchangeable
+  capability; the port is the architectural role, while the provider is its code-level contract.
 - **Adapter** — a concrete implementation of a port, living in the client or server that owns the host
   API.
 - **Repository** — a port whose interface is expressed in domain terms; the domain-shaped face of

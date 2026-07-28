@@ -18,11 +18,11 @@ places where a snippet is clearer than prose:
 
 ```ts
 // A token is branded with the type it resolves to.
-const STORAGE = createToken<StoragePort>('StoragePort');
+const STORAGE = createToken<StorageProvider>('StorageProvider');
 const SCHEDULER = createToken<Scheduler>('Scheduler');
 
-container.registerSingleton(STORAGE, () => new IndexedDbStorage());
-const storage = container.resolve(STORAGE); // typed as StoragePort
+container.registerSingleton(STORAGE, () => new IndexedDbStorageAdapter());
+const storage = container.resolve(STORAGE); // typed as StorageProvider
 ```
 
 Tokens live in one module so the set of injectable capabilities is enumerable in one place.

@@ -12,6 +12,26 @@ startup through the [DI container](DEPENDENCY_INJECTION.md).
 
 The rule of thumb: **if it differs by host, or it is non-deterministic, it is a port.**
 
+## Naming the interface and implementation
+
+`Port` names the interface's architectural role; it is not an interface suffix. Name the interface
+for what it supplies: use `…Provider` for an interchangeable capability provider,
+`…Repository` for domain-shaped persistence, or a more specific role noun when one is clearer.
+Reserve `…Adapter` for a concrete technology integration:
+
+```ts
+interface ContextRetrievalProvider {
+  retrieve(query: ContextRetrievalQuery): Promise<readonly ContextRecord[]>;
+}
+
+class OramaContextRetrievalAdapter implements ContextRetrievalProvider {
+  // Maps the provider contract to Orama.
+}
+```
+
+Do not name the provider-neutral interface `…Adapter`; that hides which side of the boundary it
+occupies and makes the concrete adapter appear to implement another adapter.
+
 ## The typical port catalog
 
 Every project defines the ports its domain actually needs; this is the recurring set the stack has
@@ -54,7 +74,7 @@ Steps 2–4 are identical across clients; only step 1 — the adapter *set* — 
 the *entire* platform-specific surface of an interactive client. Collapsing steps 2–4 into one shared
 call is exactly the [shared bootstrap](../components/SHARED_UI.md).
 
-For example, a project may inject a `StoragePort` backed by IndexedDB on web and native storage on
+For example, a project may inject a `StorageProvider` backed by IndexedDB on web and native storage on
 Android, plus independent platform-information, audio, and device-capability ports, before mounting
 the same UI. Nothing else about the two client compositions needs to differ.
 

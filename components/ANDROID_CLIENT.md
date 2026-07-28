@@ -25,9 +25,9 @@ seam is the adapter, never the screen.
 
 ## Storage adapter
 
-The Android `StoragePort` adapter is backed by Capacitor **Preferences** and maps the same
-domain-shaped repository interface the web client maps onto IndexedDB. Two adapters, one interface,
-one domain that knows neither. See [ports & adapters](../architecture/PORTS_AND_ADAPTERS.md).
+The Android `PreferencesStorageAdapter` implements `StorageProvider` and maps the same domain-shaped
+repository interface the web client maps onto IndexedDB. Two adapters, one interface, one domain that
+knows neither. See [ports & adapters](../architecture/PORTS_AND_ADAPTERS.md).
 
 ## Build flow
 

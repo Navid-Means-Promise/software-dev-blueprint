@@ -19,9 +19,9 @@ That is the whole client. A screen, a rule, or a piece of state that lives here 
 
 ## Storage adapter
 
-The web `StoragePort` adapter is backed by IndexedDB and maps the domain-shaped repository interface
-onto it. The domain never learns it is IndexedDB — swapping to another browser store would touch only
-this adapter. See [ports & adapters](../architecture/PORTS_AND_ADAPTERS.md).
+The web `IndexedDbStorageAdapter` implements `StorageProvider` and maps the domain-shaped repository
+interface onto IndexedDB. The domain never learns which store it uses — swapping stores would touch
+only this adapter. See [ports & adapters](../architecture/PORTS_AND_ADAPTERS.md).
 
 ## Optional device link
 

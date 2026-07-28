@@ -12,14 +12,14 @@ The shared domain validates and executes typed requests through the same service
 
 ```text
 Shared assistant conversation UI
-  ├─ AudioCapturePort
-  │    └─ SpeechToTextPort
+  ├─ AudioCaptureProvider
+  │    └─ SpeechToTextProvider
   │         └─ reviewed text transcript
   └─ typed or reviewed text transcript
        └─ AssistantOrchestrationService
             ├─ relevant product-specific domain-state data
             ├─ relevant records from AssistantContextRepository
-            └─ AssistantModelPort
+            └─ AssistantModelProvider
                  └─ typed, schema-validated domain-tool requests
                       ├─ AssistantContextService
                       ├─ product-specific application services
@@ -27,11 +27,12 @@ Shared assistant conversation UI
                       └─ UserActionHistoryService
 
 Assistant response text
-  └─ TextToSpeechPort
+  └─ TextToSpeechProvider
        └─ platform or remote speech-synthesis adapter
 ```
 
-`AudioCapturePort`, `SpeechToTextPort`, `AssistantModelPort`, and `TextToSpeechPort` are independent.
+`AudioCaptureProvider`, `SpeechToTextProvider`, `AssistantModelProvider`, and
+`TextToSpeechProvider` are independent.
 A project may replace speech recognition, the assistant model, and speech synthesis separately.
 Direct audio-to-audio model sessions are an additional adapter path; they must still deliver a
 reviewable transcript and typed tool requests to the same orchestration and domain services.
@@ -198,19 +199,19 @@ cross-device ordering, and compaction are explicit product policies.
 
 The first implementation should normally be text-centered:
 
-1. `AudioCapturePort` records a push-to-talk utterance.
-2. `SpeechToTextPort` produces a transcript and confidence/alternative data.
+1. `AudioCaptureProvider` records a push-to-talk utterance.
+2. `SpeechToTextProvider` produces a transcript and confidence/alternative data.
 3. The user can correct the transcript before a consequential or ambiguous operation.
 4. `AssistantOrchestrationService` processes typed and spoken text identically.
-5. `TextToSpeechPort` optionally speaks the final response.
+5. `TextToSpeechProvider` optionally speaks the final response.
 
 This separation preserves provider choice, permits independent language-quality testing, and avoids
 retaining raw audio. Raw recordings are deleted after transcription by default.
 
-Prefer a platform speech-synthesis adapter for the first `TextToSpeechPort` implementation when its
-required locales pass device testing; it avoids a remote dependency and per-request service cost.
+Prefer a platform speech-synthesis adapter for the first `TextToSpeechProvider` implementation when
+its required locales pass device testing; it avoids a remote dependency and per-request service cost.
 A remote speech-synthesis adapter remains replaceable and may be selected for consistent voice
-identity or missing locale quality. `TextToSpeechPort` exposes capability/voice availability and
+identity or missing locale quality. `TextToSpeechProvider` exposes capability/voice availability and
 completion/interruption results so an unavailable voice degrades to visible text rather than startup
 failure.
 
