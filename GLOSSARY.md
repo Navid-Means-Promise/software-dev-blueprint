@@ -31,8 +31,15 @@ name, everywhere.** A second name for a thing that already has one is a bug.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
   the firmware does, for use without hardware.
 - **Assistant context record** — application-owned durable context supplied to an assistant or other
-  domain service; each product gives the record and its closed categories domain-specific names. See
+  domain service; each product defines its product-specific contract and lifecycle. See
   [AI subsystem](architecture/AI_SUBSYSTEM.md).
+- **Context retrieval origin** — why and when assistant context retrieval started: automatically
+  from the new user message, predictively from a previous model response, or through an in-call model
+  tool request. It is metadata, not the retrieval query. See
+  [experimental assistant context retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
+- **Explicit context retrieval** — a schema-validated, application-specific typed query against an
+  authoritative repository or ledger, distinct from lexical, vector, or hybrid relevance search.
+  See [experimental assistant context retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
 - **Domain change proposal** — a non-mutating, item-reviewable diff against a domain revision; only
   its explicitly accepted subset may be revalidated and applied.
 - **User Action History** — the persistent sequence of reversible domain mutations initiated through

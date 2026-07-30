@@ -20,17 +20,19 @@ for what it supplies: use `…Provider` for an interchangeable capability provid
 Reserve `…Adapter` for a concrete technology integration:
 
 ```ts
-interface ContextRetrievalProvider {
-  retrieve(query: ContextRetrievalQuery): Promise<readonly ContextRecord[]>;
+interface ClipboardProvider {
+  writeText(value: string): Promise<void>;
 }
 
-class OramaContextRetrievalAdapter implements ContextRetrievalProvider {
-  // Maps the provider contract to Orama.
+class BrowserClipboardAdapter implements ClipboardProvider {
+  // Maps the provider contract to the browser Clipboard API.
 }
 ```
 
 Do not name the provider-neutral interface `…Adapter`; that hides which side of the boundary it
 occupies and makes the concrete adapter appear to implement another adapter.
+The optional [assistant context-retrieval design](AI_CONTEXT_RETRIEVAL.md) provides a fuller example
+in which an Orama adapter implements narrow indexing and retrieval provider contracts.
 
 ## The typical port catalog
 

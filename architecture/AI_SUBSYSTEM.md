@@ -1,8 +1,9 @@
 # AI subsystem architecture
 
-Authoritative for assistant orchestration, application-owned durable context, model-requested domain
-actions, and speech input/output. Every domain entity, remembered-context category, tool name, and
-proposal item remains in the implementing project's documentation.
+Authoritative for assistant orchestration, application-owned durable context, context-retrieval
+choice, model-requested domain actions, and speech input/output. Every domain entity,
+remembered-context category, tool name, and proposal item remains in the implementing project's
+documentation.
 
 ## Boundary and dependency direction
 
@@ -46,10 +47,11 @@ An assistant may need durable user-supplied context beyond the current conversat
 application data: a domain-shaped repository stores it, the user can inspect and control it, and the
 application selects the minimum relevant records for each request.
 
-The blueprint does not prescribe a domain name, a category list, or a claim of objective truth for
-these records. Each product defines one closed domain vocabulary in its own repository and
-documentation. The reusable requirement is that durable context has one product-owned source instead
-of parallel stores for different context categories.
+The blueprint does not prescribe a domain name, category list, structured assertion vocabulary, or
+claim of objective truth for these records. Each product defines its durable-context contract and
+lifecycle in its own repository and documentation. Each remembered datum has one declared
+product-owned authoritative record instead of duplicate category-specific memory stores. Context
+assembly may still read several authoritative product sources with different responsibilities.
 
 The application repository, not provider conversation state, is the source for future decisions.
 Preserve the user's source text alongside the normalized interpretation so a correction never
@@ -128,7 +130,7 @@ as needing clarification. The assistant asks one focused question before taking 
 depends on the unresolved meaning. Declining an optional follow-up action never discards the saved
 context.
 
-### Retrieval
+### Retrieval choice
 
 For a requested domain operation, select durable context records that:
 
@@ -137,10 +139,17 @@ For a requested domain operation, select durable context records that:
 3. overlap the requested time range when the record is temporally scoped; and
 4. are relevant to the requested operation.
 
-Start with structured filtering over lifecycle, validity, applicability, product-defined category,
-and explicit domain references. Do not introduce embedding or vector retrieval until measured corpus
-size or retrieval quality demonstrates that structured selection is insufficient. Send the model
-only the selected minimum context, never the complete archive by default.
+For a bounded domain corpus, start with structured filtering over lifecycle, validity, applicability,
+product-defined category, and explicit domain references. Do not add embedding or vector retrieval
+without a measured conversational-recall requirement. Send the model only selected context, never an
+unbounded archive by default.
+
+A project that needs application-owned relevance retrieval across raw messages, processed context,
+and application-specific data may explicitly adopt the
+[experimental assistant context-retrieval design](AI_CONTEXT_RETRIEVAL.md). That design is optional,
+not the default stack requirement. A project may instead choose a ready-made agent/context solution
+after documenting where authoritative application data, privacy controls, and provider replacement
+boundaries remain.
 
 ## Typed domain tools and execution policy
 
@@ -251,8 +260,8 @@ the history.
 ## Module ownership and tests
 
 - `@app/shared` owns the domain-shaped assistant-context types/services/repository ports, assistant
-  orchestration, tool policies, proposal rules, User Action History, and all four provider/host
-  ports.
+  orchestration, the adopted context-retrieval contracts when applicable, tool policies, proposal
+  rules, User Action History, and all four provider/host ports.
 - `@app/ui` owns the shared conversation, transcript-review, context-receipt, proposal-review, and
   Undo/Redo presentation.
 - `apps/web` and `apps/mobile` own audio-capture and platform speech-synthesis adapters.
