@@ -21,7 +21,7 @@ Shared assistant conversation UI
             ├─ relevant product-specific domain-state data
             ├─ relevant records from MemoryRepository
             └─ AssistantModelProvider
-                 └─ typed, schema-validated domain-tool requests
+                 └─ typed, application-validated domain-tool requests
                       ├─ MemoryManagementService
                       ├─ product-specific application services
                       └─ DomainChangeProposalService
@@ -94,6 +94,36 @@ and provider replacement boundaries remain.
 Model output is untrusted boundary input even when the provider guarantees syntactically valid JSON.
 Decode it into a closed union of named domain-tool requests, validate semantic values, authorize the
 operation, and execute only through application services.
+
+### Model-output representation
+
+Comprehensive application validation is mandatory. Provider-enforced structured output is an
+optional decoding aid, never the trust boundary: the application still parses the response, decodes
+only declared variants and fields, validates semantic and cross-record invariants, authorizes every
+effect, and rejects invalid output with a bounded retry policy.
+
+Choose the smallest provider-facing representation that remains clear to the model:
+
+- use function calls for independently invocable reads and actions, exposing only the definitions
+  relevant to the current stage when the provider supports that flow;
+- use a compact prompt contract when one response must combine conversation text, hidden hints, and
+  several optional typed requests; or
+- use provider-enforced JSON Schema only while its supported subset, nesting, serialized size, and
+  measured token cost remain acceptable.
+
+A prompt contract may use a semi-flat TypeScript-like notation: name every object and union, and
+make each complex field reference another named definition instead of repeating an inline nested
+structure. Tell the model to return one JSON value with no undeclared fields; a provider's JSON MIME
+mode may reinforce syntax without supplying a response schema. The notation guides generation but
+is not executable validation.
+
+The application contract and decoder remain authoritative. Do not let a handwritten prompt become
+a competing source of truth: generate its model-facing representation from shared contract metadata
+when practical; otherwise colocate it with the adapter and enforce structural parity in tests.
+Measure the UTF-8 bytes and observed input tokens of the complete static request configuration, set a
+regression budget, and split the interaction or relevant tool set when growth is no longer justified.
+Audit the exact instructions, raw provider response, validation failure, bounded retry, model version,
+latency, and reported token usage under the application's sensitive-log retention policy.
 
 Mutation tools express the desired resulting state rather than a toggle and target the exact
 revision the model was supplied: delivery retries must converge on the same state instead of
@@ -197,4 +227,8 @@ Domain tests use fixed clock, model, speech, repositories, and delivery test dou
 product-required temporal overlap, ambiguity preservation, save-before-follow-up ordering,
 memory/domain ownership boundaries, exact-revision tool authorization, duplicate-delivery
 convergence, stale-index rejection, partial proposal application, and revision conflicts without a
-DOM, network, microphone, speaker, or real time.
+DOM, network, microphone, speaker, or real time. Provider-adapter tests additionally prove the chosen
+output representation is actually sent, malformed or undeclared output cannot cross the decoder,
+retry count is bounded, and the static prompt/schema/tool definitions stay within their declared
+size budget. Keep a provider-backed smoke test outside the deterministic suite for detecting remote
+API compatibility changes.
