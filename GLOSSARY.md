@@ -30,21 +30,27 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   locally; never streamed frames.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
   the firmware does, for use without hardware.
-- **Assistant context record** — application-owned durable context supplied to an assistant or other
-  domain service; each product defines its product-specific contract and lifecycle. See
-  [AI subsystem](architecture/AI_SUBSYSTEM.md).
+- **Memory record** — the current application interpretation of the smallest coherent piece of
+  durable conversational knowledge that can be corrected, expired, or deleted independently. It
+  references its evidence instead of duplicating the source message and does not copy authoritative
+  state owned by another application domain. See [AI subsystem](architecture/AI_SUBSYSTEM.md).
+- **Memory-selection index** — a disposable, revision-bound projection that helps select memory
+  records by time, semantic relevance, or application-defined selectors. A hit is only a reference;
+  context assembly reloads the matching current memory record before use. See
+  [experimental assistant context memory and retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
+- **Authoritative application context source** — an application service or repository that owns
+  domain state and exposes typed retrieval without transferring that authority to assistant memory
+  or a search index. See
+  [experimental assistant context memory and retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
 - **Context retrieval origin** — why and when assistant context retrieval started: automatically
   from the new user message, predictively from a previous model response, or through an in-call model
   tool request. It is metadata, not the retrieval query. See
-  [experimental assistant context retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
+  [experimental assistant context memory and retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
 - **Explicit context retrieval** — a schema-validated, application-specific typed query against an
-  authoritative repository or ledger, distinct from lexical, vector, or hybrid relevance search.
-  See [experimental assistant context retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
+  authoritative application source, distinct from lexical, vector, or hybrid relevance search.
+  See [experimental assistant context memory and retrieval](architecture/AI_CONTEXT_RETRIEVAL.md).
 - **Domain change proposal** — a non-mutating, item-reviewable diff against a domain revision; only
   its explicitly accepted subset may be revalidated and applied.
-- **User Action History** — the persistent sequence of reversible domain mutations initiated through
-  the UI or assistant, represented as validated forward and compensating commands rather than storage
-  snapshots.
 
 ## Modules
 

@@ -46,9 +46,9 @@ domain vocabulary and package scope.
 - [architecture/STATE_MANAGEMENT.md](architecture/STATE_MANAGEMENT.md) — the observer store
 - [architecture/CONTRACTS.md](architecture/CONTRACTS.md) — single-source contracts, semantic device model
 - [architecture/AI_SUBSYSTEM.md](architecture/AI_SUBSYSTEM.md) — assistant orchestration, durable
-  application context, typed domain tools, proposals, Undo/Redo, and speech adapters
+  application context, typed domain tools, proposals, and speech adapters
 - [architecture/AI_CONTEXT_RETRIEVAL.md](architecture/AI_CONTEXT_RETRIEVAL.md) — optional,
-  experimental application-owned AI-chat context retrieval
+  experimental application-owned AI-chat context memory and retrieval
 
 **Components** — the concrete modules
 - [components/MONOREPO.md](components/MONOREPO.md) — workspaces, toolchain, budgets, `check`
