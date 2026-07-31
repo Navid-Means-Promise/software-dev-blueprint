@@ -17,15 +17,14 @@ Shared assistant conversation UI
   │    └─ SpeechToTextProvider
   │         └─ reviewed text transcript
   └─ typed or reviewed text transcript
-       └─ AssistantOrchestrationService
+       └─ AssistantTurnOrchestrator
             ├─ relevant product-specific domain-state data
-            ├─ relevant records from AssistantContextRepository
+            ├─ relevant records from MemoryRepository
             └─ AssistantModelProvider
                  └─ typed, schema-validated domain-tool requests
-                      ├─ AssistantContextService
+                      ├─ MemoryManagementService
                       ├─ product-specific application services
-                      ├─ DomainChangeProposalService
-                      └─ UserActionHistoryService
+                      └─ DomainChangeProposalService
 
 Assistant response text
   └─ TextToSpeechProvider
@@ -44,112 +43,51 @@ to a real-time provider only with a short-lived, narrowly scoped credential issu
 ## Application-owned durable context
 
 An assistant may need durable user-supplied context beyond the current conversation. That context is
-application data: a domain-shaped repository stores it, the user can inspect and control it, and the
+application data: a current-state repository stores it, the user can inspect and control it, and the
 application selects the minimum relevant records for each request.
 
-The blueprint does not prescribe a domain name, category list, structured assertion vocabulary, or
-claim of objective truth for these records. Each product defines its durable-context contract and
-lifecycle in its own repository and documentation. Each remembered datum has one declared
-product-owned authoritative record instead of duplicate category-specific memory stores. Context
-assembly may still read several authoritative product sources with different responsibilities.
+The blueprint does not prescribe a product-specific memory name, semantic category list, structured
+assertion vocabulary, or claim of objective truth. When a project adopts general natural-language
+assistant memory, use one canonical `MemoryRecord` collection. One record contains the
+smallest coherent information that can be corrected, expired, or deleted independently. A correction
+updates the same stable ID and revision; forgetting deletes the current record. The original raw
+message remains separately available as evidence through an evidence-message reference, so canonical
+memory does not duplicate the message in a `sourceText` field.
 
-The application repository, not provider conversation state, is the source for future decisions.
-Preserve the user's source text alongside the normalized interpretation so a correction never
-depends on reconstructing what the user originally said. A correction appends a replacement linked
-to the superseded record; a retraction archives the record instead of erasing its provenance.
-Permanent deletion remains a separate privacy operation.
+Assistant memory is not a universal replacement for application state. Route a sufficiently exact,
+authorized domain mutation to the application service that owns that state, including related notes
+or descriptions its contract supports. Do not save a duplicate memory record for the same
+proposition. An uncertain intent may remain memory until it can satisfy the domain command contract;
+successful promotion removes the now-redundant memory. Other durable user knowledge belongs in
+memory unless another application domain already owns it. Casual conversation remains raw messages.
+Promotion is one coordinated operation: commit the authoritative mutation before deleting memory,
+and use a shared transaction or idempotent recovery when the stores cannot commit atomically.
 
-### Temporal meaning
+Applications may derive revision-bound time scopes, semantic cues, embeddings, and product-specific
+selection indexes from current memory. These are disposable lookup projections, not additional
+sources of truth. Every hit reloads the canonical record and must match its exact revision. Relative
+time is resolved with the injected clock and user time zone; date and clock-time precision remain
+independent. See the complete optional pattern in
+[experimental assistant context memory and retrieval](AI_CONTEXT_RETRIEVAL.md).
 
-When durable context can change relevance over time, validity and applicability are different:
-
-- **Validity range** bounds when the record may affect domain decisions. Either bound may be absent
-  for an open-ended record; the upper bound is exclusive.
-- **Temporal applicability** describes when inside that validity range the record applies. It may
-  cover the complete range, arbitrary exact intervals on arbitrary dates, recurring local-time
-  windows, or a union of exact and recurring rules.
-
-The contract must express the distinction explicitly:
-
-```ts
-type ContextWeekday =
-  | 'monday'
-  | 'tuesday'
-  | 'wednesday'
-  | 'thursday'
-  | 'friday'
-  | 'saturday'
-  | 'sunday';
-
-interface AssistantContextValidity {
-  /** RFC 3339 instant; absent means no lower validity bound. */
-  readonly validFrom?: string;
-  /** RFC 3339 instant; absent means no upper validity bound. */
-  readonly validUntilExclusive?: string;
-  /** IANA time-zone identifier used to resolve every local calendar/time value. */
-  readonly timeZone: string;
-  readonly sourceTemporalExpression?: string;
-  /** RFC 3339 instant; present when a relative source expression was resolved. */
-  readonly temporalExpressionResolvedAt?: string;
-  readonly applicability:
-    | { readonly kind: 'continuous' }
-    | {
-        readonly kind: 'rules';
-        readonly anyOf: readonly (
-          | {
-              readonly kind: 'exact-interval';
-              /** RFC 3339 instant. */
-              readonly startsAt: string;
-              /** RFC 3339 instant. */
-              readonly endsAtExclusive: string;
-            }
-          | {
-              readonly kind: 'recurring-local-time-window';
-              readonly weekdays: readonly ContextWeekday[];
-              /** Local 24-hour time in HH:mm:ss format. */
-              readonly startsAtLocalTime: string;
-              /** Local 24-hour time in HH:mm:ss format. */
-              readonly endsAtLocalTime: string;
-              /** Zero for the same local day; one for a window that crosses midnight. */
-              readonly endDayOffset: 0 | 1;
-            }
-        )[];
-      };
-}
-```
-
-An exact interval is never converted into a recurrence merely because it mentions a day or time.
-`rules.anyOf` is non-empty and means that the context record applies when any rule matches; the outer
-validity range still bounds every rule.
-Relative language such as "this week" is resolved when recorded using the injected clock, the user's
-time zone, and the product's week-boundary rule. Store both the original expression and its absolute
-resolution.
-
-If a useful field remains ambiguous, save the source assertion first and mark the normalized record
-as needing clarification. The assistant asks one focused question before taking any action that
-depends on the unresolved meaning. Declining an optional follow-up action never discards the saved
-context.
+Canonical memory is the mutation commit point. Failure to maintain a disposable index after that
+commit is a deferred-repair result, not failure of the accepted memory write. Exact retry identities
+must converge without creating another canonical record or revision.
 
 ### Retrieval choice
 
-For a requested domain operation, select durable context records that:
+For a requested domain operation, select only current, unexpired, authorized records that match the
+requested domain and time scopes and are relevant to the operation. For a bounded corpus, start with
+deterministic filtering and explicit domain references. Add lexical, embedding, vector, or hybrid
+retrieval only for a measured conversational-recall requirement. Send the model selected canonical
+content, never an unbounded archive or raw index entries by default.
 
-1. are not retracted or superseded;
-2. match the requested domain scope;
-3. overlap the requested time range when the record is temporally scoped; and
-4. are relevant to the requested operation.
-
-For a bounded domain corpus, start with structured filtering over lifecycle, validity, applicability,
-product-defined category, and explicit domain references. Do not add embedding or vector retrieval
-without a measured conversational-recall requirement. Send the model only selected context, never an
-unbounded archive by default.
-
-A project that needs application-owned relevance retrieval across raw messages, processed context,
-and application-specific data may explicitly adopt the
-[experimental assistant context-retrieval design](AI_CONTEXT_RETRIEVAL.md). That design is optional,
-not the default stack requirement. A project may instead choose a ready-made agent/context solution
-after documenting where authoritative application data, privacy controls, and provider replacement
-boundaries remain.
+A project that needs application-owned memory and relevance retrieval across raw messages, other
+processed conversational sources, and application-specific data may explicitly adopt the
+[experimental assistant context-memory-and-retrieval design](AI_CONTEXT_RETRIEVAL.md). That design
+is optional, not the default stack requirement. A project may instead choose a ready-made
+agent/context solution after documenting where authoritative application data, privacy controls,
+and provider replacement boundaries remain.
 
 ## Typed domain tools and execution policy
 
@@ -157,17 +95,18 @@ Model output is untrusted boundary input even when the provider guarantees synta
 Decode it into a closed union of named domain-tool requests, validate semantic values, authorize the
 operation, and execute only through application services.
 
-Every mutation carries an idempotency key. Mutation tools express the desired resulting state rather
-than a toggle: delivery retries must converge on the same state instead of reversing a successful
-action.
+Mutation tools express the desired resulting state rather than a toggle and target the exact
+revision the model was supplied: delivery retries must converge on the same state instead of
+reversing a successful action. The application may derive an idempotency identity from its trusted
+turn/request envelope; it never relies on a model-supplied claim that a request is explicit or unique.
 
 Classify tools by effect:
 
 | Effect class | Execution policy |
 | --- | --- |
 | Read-only query | Execute after validation. |
-| Explicit, reversible user request | Execute once, record it in User Action History, and expose Undo. |
-| Durable-context recording | Save before the assistant asks about optional follow-up action; expose Edit and Undo. |
+| Explicit, unambiguous user request | Execute the validated desired-state mutation and show a truthful receipt. A later conversational request may edit or delete it. |
+| Durable-memory recording | Save current memory before asking about optional follow-up action; show a create/update/delete receipt. |
 | Multi-part or interpretive domain change | Create a proposal; do not mutate domain state. |
 | Destructive, irreversible, or externally visible action | Require explicit confirmation immediately before execution. |
 
@@ -190,20 +129,6 @@ The visual treatment is product-specific, but clarity is not: color alone never 
 conflict, or removal; the user can identify the affected entity and time; and confirmation remains
 reachable without losing the review position.
 
-## User Action History, Undo, and Redo
-
-Record **domain mutations initiated through the UI or assistant**, not presentation interactions such
-as opening a tab. Each `UserActionHistoryEntry` identifies the actor, idempotency key, timestamp,
-forward command, compensating command, affected entity revisions, and current applied/undone state.
-
-Undo and redo execute compensating or forward commands through the current application service; they
-do not restore an unchecked storage snapshot. Revalidation detects a later edit or sync conflict
-instead of silently overwriting it. A multi-item accepted proposal is one atomic history entry whose
-compensating command reverses exactly the accepted subset.
-
-The history may back an immediate Undo notification and a persistent History screen. Retention,
-cross-device ordering, and compaction are explicit product policies.
-
 ## Speech input and speech output
 
 The first implementation should normally be text-centered:
@@ -211,7 +136,7 @@ The first implementation should normally be text-centered:
 1. `AudioCaptureProvider` records a push-to-talk utterance.
 2. `SpeechToTextProvider` produces a transcript and confidence/alternative data.
 3. The user can correct the transcript before a consequential or ambiguous operation.
-4. `AssistantOrchestrationService` processes typed and spoken text identically.
+4. `AssistantTurnOrchestrator` processes typed and spoken text identically.
 5. `TextToSpeechProvider` optionally speaks the final response.
 
 This separation preserves provider choice, permits independent language-quality testing, and avoids
@@ -226,17 +151,17 @@ failure.
 
 ## Persistence, privacy, and provider state
 
-Durable assistant context, transcripts, and action history can contain sensitive personal
-information. A production design provides user-visible inspect/edit/retract/delete/export controls, encrypts
-sensitive durable storage using platform-appropriate facilities, authenticates every server request,
-and records the minimum diagnostic content. Raw audio is not retained by default.
+Durable assistant memory and transcripts can contain sensitive personal information. A production
+design provides user-visible inspect/edit/delete/export controls, encrypts sensitive durable storage
+using platform-appropriate facilities, authenticates every server request, and records the minimum
+diagnostic content. Raw audio is not retained by default.
 
 Do not use a model provider's conversation identifier as durable product memory. Store short-term
 conversation state under product control, send only the turns or summary required for the current
 request, and allow a provider adapter to operate statelessly.
 
 A simple key/value adapter may prove a domain contract during an early vertical slice, but it is not
-an implicit approval for unbounded context, transcript, or action-history storage. Choose a durable
+an implicit approval for unbounded memory or transcript storage. Choose a durable
 adapter before size, query, encryption, synchronization, or retention requirements exceed the
 documented limits.
 
@@ -259,16 +184,17 @@ the history.
 
 ## Module ownership and tests
 
-- `@app/shared` owns the domain-shaped assistant-context types/services/repository ports, assistant
-  orchestration, the adopted context-retrieval contracts when applicable, tool policies, proposal
-  rules, User Action History, and all four provider/host ports.
+- `@app/shared` owns memory and application-domain types/services/repository ports, assistant turn
+  orchestration, adopted context-retrieval contracts, tool policies, proposal rules, and all four
+  provider/host ports.
 - `@app/ui` owns the shared conversation, transcript-review, context-receipt, proposal-review, and
-  Undo/Redo presentation.
+  mutation-receipt presentation.
 - `apps/web` and `apps/mobile` own audio-capture and platform speech-synthesis adapters.
 - `apps/server` owns assistant-model, remote speech-recognition, remote speech-synthesis, credential,
   rate-limit, and provider-transport adapters.
 
-Domain tests use fixed clock, model, speech, repositories, and idempotency test doubles. They prove
-any product-required temporal overlap, ambiguity preservation, save-before-follow-up ordering, tool
-authorization, duplicate-delivery convergence, partial proposal application, revision conflicts, and
-Undo/Redo compensation without a DOM, network, microphone, speaker, or real time.
+Domain tests use fixed clock, model, speech, repositories, and delivery test doubles. They prove
+product-required temporal overlap, ambiguity preservation, save-before-follow-up ordering,
+memory/domain ownership boundaries, exact-revision tool authorization, duplicate-delivery
+convergence, stale-index rejection, partial proposal application, and revision conflicts without a
+DOM, network, microphone, speaker, or real time.

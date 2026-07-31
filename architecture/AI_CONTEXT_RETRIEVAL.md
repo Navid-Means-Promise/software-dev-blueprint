@@ -1,9 +1,9 @@
-# Experimental assistant context retrieval
+# Experimental assistant context memory and retrieval
 
 > **Status: optional and experimental.** This is an intentionally innovative design candidate for
-> application-owned AI-chat context retrieval, not a mandatory stack rule. A project may adopt it,
-> adapt it after recording the differences, or instead use a ready-made agent/context solution that
-> owns context handling behind the project's application boundary.
+> application-owned AI-chat context memory and retrieval, not a mandatory stack rule. A project may
+> adopt it, adapt it after recording the differences, or instead use a ready-made agent/context
+> solution that owns context handling behind the project's application boundary.
 
 This guide applies only when a project explicitly chooses this design. The general
 [AI subsystem rules](AI_SUBSYSTEM.md)—the model is untrusted, application data remains
@@ -19,7 +19,7 @@ questions:
 | --- | --- | --- |
 | **Origin** | Why and when did retrieval start? | automatic predictive, model-directed predictive, model-directed in-call |
 | **Method** | How is data selected? | relevance search or application-specific explicit retrieval |
-| **Source** | Where does authoritative data come from? | raw messages, processed context, or product-specific repositories and ledgers |
+| **Source** | Where does authoritative data come from? | raw messages, assistant memory, other processed conversational data, or application-specific authoritative sources |
 
 An origin carries audit and policy metadata. A query describes what to retrieve. A source owns the
 current records. Keeping them separate prevents query fields from being duplicated inside trigger
@@ -38,25 +38,177 @@ The source catalog is product-defined and extensible. It normally begins with:
 - **Raw conversation messages.** These preserve what was said and provide evidence and conversational
   recall. A user message is evidence of the user's statement; an assistant message is not evidence
   that its content is true.
-- **Processed context records.** These may include user-confirmed memories, model-inferred memories,
-  or conversation summaries derived from raw messages. They retain provenance back to the source
-  messages, an explicit authority level, lifecycle state, and revision.
-- **Application-specific repositories and ledgers.** These remain authoritative for their own domain
-  data and expose typed, explicit retrieval operations such as lookup by identifier or a bounded
-  date range. The context subsystem never replaces those repositories with copies.
+- **Assistant memory records.** These hold the current application interpretation of durable
+  user-specific knowledge that is not authoritative state of another application domain. They retain
+  evidence references, revision, expiry when applicable, and an explicit delivery policy.
+- **Other processed conversational sources.** Conversation summaries or another measured projection
+  may be separate sources when their meaning and lifecycle differ from assistant memory.
+- **Application-specific authoritative sources.** These retain ownership of their domain data and
+  expose typed, explicit retrieval operations such as lookup by identifier or bounded range. The
+  context subsystem never replaces them with assistant-memory copies merely to make them searchable.
 
-If processed memory is stored as natural language, do not add subject/predicate/object fields merely
+If assistant memory is stored as natural language, do not add subject/predicate/object fields merely
 in anticipation of a future query mechanism. Store a standalone canonical statement containing the
-smallest coherent information that can be corrected, expired, superseded, retracted, or deleted
-independently. Closely coupled details with the same provenance and lifecycle may share one record;
-unrelated facts that can change independently do not. Adopt structured assertions later only when a
-measured use case needs structured querying.
+smallest coherent information that can be corrected, expired, or deleted independently. Closely
+coupled details with the same evidence and lifecycle may share one record; information that can
+change independently does not. Adopt structured assertions later only when a measured use case needs
+structured querying.
 
-Raw messages, processed records, and application state are not competing copies of one truth: they
-have different meanings. Raw messages are evidence, processed records are the application's current
-interpretation, and domain repositories are authoritative domain state. Search indexes, embeddings,
-summaries used only for acceleration, and predictive caches are derived projections rather than new
-sources of truth.
+Raw messages, assistant memory, and application state are not competing copies of one truth: they
+have different meanings. Raw messages are evidence, memory records are the application's current
+interpretation of durable conversational knowledge, and application services own authoritative
+domain state. Search indexes, embeddings, selection hints, and predictive caches are derived
+projections rather than new sources of truth.
+
+### Route information to its authoritative owner
+
+Do not store the same proposition in assistant memory and an application-specific source.
+
+- A user request that is sufficiently exact and authorized to create or modify domain state belongs
+  only to the application service that owns that state. Preserve useful explanatory text in that
+  domain record when its contract provides notes or description fields.
+- An uncertain intent that cannot yet satisfy the domain command contract may remain a current
+  assistant-memory record when it is durable enough to remember. Clarification can later promote it
+  to authoritative domain state; successful promotion deletes the redundant memory record.
+- Other durable user knowledge belongs in assistant memory unless another application domain already
+  owns it.
+- Casual conversation remains in raw conversation history only.
+
+The exact boundary is product-defined. The invariant is universal: a convenient retrieval copy does
+not become a second authoritative record.
+
+### Define current-truth precedence over raw evidence
+
+Raw messages are evidence of what was said, not perpetual competing truth. A current memory record
+or application-authoritative record must override conflicting older raw wording and assistant reply
+history. Assistant-history is useful for conversational continuity; it cannot prove that a user fact
+or application state is true.
+
+A product may mark a raw message as represented by current authoritative state and exclude it from
+automatic semantic search while retaining it for chronological conversation or explicit provenance.
+That marker is current retrieval metadata, not memory-version history. Message-level suppression is
+simple but can hide an unextracted proposition from a multi-fact message; products requiring stronger
+recall or deletion semantics should use proposition/span-level provenance. Deleting assistant memory
+does not automatically mean transcript or audit erasure—retention and permanent-forget behavior must
+be specified separately and described honestly.
+
+### Current-state assistant memory
+
+Assistant memory is normally a current-state collection, not an append-only chain. A correction
+replaces the canonical meaning under the same stable identifier and increments its revision. A user
+request to forget a memory deletes it. A separate audit log may be justified by compliance or sync,
+but it is not the canonical memory model and must not be required merely to imitate a ledger.
+
+```ts
+interface MemoryRecord {
+  readonly memoryRecordId: string;
+  readonly revision: number;
+  /** Complete current meaning; not a duplicate of the source message text. */
+  readonly content: string;
+  readonly evidenceMessageIds: readonly string[];
+  readonly deliveryMode: 'retrieval' | 'always-proactive';
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly expiresAt?: string;
+}
+
+type MemoryMutationCandidate =
+  | {
+      readonly operation: 'create';
+      readonly content: string;
+      readonly deliveryMode: MemoryRecord['deliveryMode'];
+      readonly expiresAt?: string;
+    }
+  | {
+      readonly operation: 'update';
+      readonly target: {
+        readonly memoryRecordId: string;
+        readonly expectedRevision: number;
+      };
+      readonly content: string;
+      readonly deliveryMode: MemoryRecord['deliveryMode'];
+      readonly expiresAt?: string;
+    }
+  | {
+      readonly operation: 'delete';
+      readonly target: {
+        readonly memoryRecordId: string;
+        readonly expectedRevision: number;
+      };
+    };
+```
+
+The raw message already preserves exact wording. `evidenceMessageIds` is a bounded set supporting
+the **current meaning** without a second `sourceText` field. Application code, not the model, owns
+identifiers, revisions, timestamps, optimistic-concurrency checks, physical deletion, and whether a
+correction replaces or merges current supporting evidence. Evidence must never grow into an
+unbounded correction history; a latest-only reference is often the clearest current-state policy.
+Lifecycle expiry and subject-matter time scope are separate. A current temporary constraint or
+one-off future intention should normally expire at its applicability boundary, while a durable
+historical fact may retain a finite past scope without being expired from memory.
+
+### Derived memory-selection indexes
+
+A general natural-language memory record plus application-specific derived indexes can support a
+large share of an assistant's data-selection needs. Those indexes are often where assistants for
+different application domains meaningfully differ: each product derives the selectors that make its
+own memories cheap and reliable to find.
+
+```ts
+interface MemoryIndexProjection<TIndexEntry> {
+  readonly memoryRecordId: string;
+  /** The projection is usable only for this exact canonical revision. */
+  readonly memoryRevision: number;
+  readonly entries: readonly TIndexEntry[];
+}
+
+interface MemoryIndexProvider<TIndexEntry, TQuery> {
+  replaceProjection(
+    projection: MemoryIndexProjection<TIndexEntry>,
+  ): Promise<void>;
+
+  removeProjection(memoryRecordId: string): Promise<void>;
+
+  findReferences(
+    accessScope: ContextAccessScope,
+    query: TQuery,
+    limits: ContextRetrievalLimits,
+  ): Promise<ContextRetrievalResult<ContextRecordReference<'memory-record'>>>;
+}
+```
+
+Common projections include:
+
+- **Time-scope entries:** zero, one, or several exact/open intervals or recurring local windows for
+  bounded range lookup. Date precision and clock-time precision remain independent.
+- **Semantic cues:** words or phrases related to a memory but absent from its canonical text, used to
+  improve lexical, semantic, or hybrid recall without bloating prompt content.
+- **Application-domain indexes:** identifiers, scopes, or selectors chosen by the product because
+  they support measured retrieval needs.
+
+Projection entries may be derived deterministically, requested from a model as separately validated
+index candidates, or produced by another adapter. In every case, trusted application code assigns
+the record reference and revision and validates the closed product-specific index schema; the model
+does not choose authority, access scope, ownership, or physical index fields.
+
+Index entries deliberately duplicate selection information. They are disposable and are never sent
+to the model as authoritative canonical claims. A hit returns a record reference; prompt assembly
+reloads the current memory, verifies that the projection revision still matches, and rechecks access
+and expiry. Lookup-only aliases/cues stay out of prompt context. A product may additionally deliver
+revision-matched temporal scope/precision as explicitly derived metadata when reasoning must preserve
+known ambiguity; it must not silently promote that projection into canonical truth. An index may be
+rebuilt from current records or stored separately for speed. A search library's private physical
+schema stays behind its adapter.
+Canonical memory is the commit point. If a disposable projection write fails after that commit, the
+mutation result reports index maintenance as deferred and preserves enough trusted repair input for
+an exact retry or rebuild; it does not report the accepted canonical write as failed and invite a
+duplicate memory.
+
+This pattern is powerful, but not restrictive. An application may—and often should—keep other
+authoritative sources when their data has stronger invariants, transactional behavior, or definitive
+typed retrieval. Those sources may publish disposable search projections while retaining explicit
+retrieval through their owning services. Choosing assistant memory, another authoritative source, or
+both for distinct responsibilities is an application-design decision.
 
 ### Searchable application data
 
@@ -313,7 +465,7 @@ class OramaContextRetrievalAdapter<TSourceId extends string>
 ```
 
 Search returns references. Product-owned `ContextSourceProvider` implementations reload current
-records, validate their revision, lifecycle, validity, and access, and render them as clearly
+records, validate their revision, lifecycle, expiry, and access, and render them as clearly
 delimited prompt data. An application-specific `ExplicitContextRetrievalProvider` returns the same
 resolved item and completion shapes. This lets every origin share authorization, deduplication,
 budgeting, partial-result signaling, and audit behavior without forcing domain repositories behind a
@@ -345,7 +497,7 @@ For each new user turn, `AssistantContextAssemblyService`:
 3. runs automatic predictive relevance retrieval from only the new message while excluding the
    message itself as a result;
 4. executes every unexpired predictive instruction accepted from the previous model response;
-5. resolves current authoritative records and removes only inaccessible, invalid, stale, retracted,
+5. resolves current authoritative records and removes only inaccessible, invalid, expired, stale,
    or identity-duplicate references;
 6. applies declared per-origin and total hard budgets, marking any partial result;
 7. sends the assembled context and new message to `AssistantModelProvider`;
@@ -363,8 +515,8 @@ and labeled rather than silently merged into a fabricated fact.
   information through results or scores.
 - Treat retrieved content as untrusted quoted data, never as system instructions. Retrieval does not
   weaken prompt-injection defenses or tool authorization.
-- Propagate source deletion, permanent deletion, supersession, retraction, and access changes to
-  search projections and predictive caches. A stale hit is skipped and scheduled for reindexing.
+- Propagate source updates, expiry, deletion, and access changes to search projections and predictive
+  caches. A stale or revision-mismatched hit is skipped and scheduled for reindexing.
 - Decide explicitly whether searchable text or embeddings may leave the application's trust
   boundary. Remote embedding creates a data disclosure that requires the same review as sending
   prompt content to a model provider.
@@ -385,7 +537,11 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
   relevance against the next message;
 - invalid or unauthorized explicit queries never reach a repository;
 - access partitioning prevents cross-owner and cross-tenant retrieval;
-- stale revisions, deletion, retraction, and supersession cannot resurrect old context;
+- stale memory-index revisions, source updates, expiry, and deletion cannot resurrect old context;
+- semantic cues can retrieve a memory without being presented as canonical memory content;
+- application-specific index hits always rehydrate their owning current record;
+- exact domain commands are not duplicated into assistant memory, while uncertain intent cannot be
+  written prematurely into an authoritative application source;
 - duplicate references converge without dropping distinct conflicting records;
 - partial failures and hard-budget truncation are visible to the model;
 - retrieved prompt injection cannot alter tool authority or system rules; and
