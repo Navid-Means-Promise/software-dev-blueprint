@@ -1,7 +1,7 @@
 # Development principles
 
 The single normative source for **how** work is done on this stack. Every other document in this
-repository is authoritative for one *area* (architecture, a client, a practice) and points back here
+repository is authoritative for one _area_ (architecture, a client, a practice) and points back here
 for the rules. When something here and something there seem to conflict, this file wins.
 
 These principles are binding on **every** change, however small — a one-line fix obeys them as fully
@@ -20,7 +20,7 @@ The house style, and the lens for every rule below. Say exactly what is true, an
   does not already carry.
 - Applied to **code:** the shortest expression that is still obvious. Not code golf — clarity is the
   target, brevity is what clarity usually costs once the design is right.
-- Applied to **docs and comments:** explain the *why* the code cannot say itself. Never narrate what
+- Applied to **docs and comments:** explain the _why_ the code cannot say itself. Never narrate what
   the code already states. A comment that repeats its line is deleted, not maintained.
 - Applied to **this repository:** describe intent and constraints in prose; drop into a code or
   contract block only where the thing is genuinely tricky or non-obvious. A precise description lets
@@ -35,7 +35,7 @@ Everything that follows is PRECISE YET CONCISE made specific.
 A second occurrence of anything — behavior, a wire shape, a user-facing string, a documented fact —
 is a signal to extract, not to copy.
 
-- **Code:** the second time a behavior appears, it becomes a reusable module that *owns* that
+- **Code:** the second time a behavior appears, it becomes a reusable module that _owns_ that
   concern, and both callers depend on it. Platform bootstraps, build configuration, and error
   handling differ only in the values they inject — never in duplicated logic. A concrete recurring
   example: a single thrown-value normalizer turns any caught `unknown` into a typed message, so the
@@ -46,7 +46,7 @@ is a signal to extract, not to copy.
 - **User-facing strings:** every string outside content lives once in the typed message catalog,
   with each supported locale in parity. No inline literals in components. See [i18n](../practices/I18N.md).
 - **Facts:** one fact, one document. This is why the normative rules live only here and every entry
-  point *links* rather than restating.
+  point _links_ rather than restating.
 
 DRY is not "avoid typing twice." It is "there is exactly one place the truth about X can change."
 
@@ -83,7 +83,7 @@ Design so that every rule can be proven without a DOM, a network, or real time.
   outcomes. See [testing](../practices/TESTING.md).
 - A domain unit test constructs the class with test doubles and asserts behavior. If a rule cannot be
   tested that way, the design has a hidden dependency to lift into a port.
-- Effects that are *timed* (audio cues, animations, retries) issue their timing through a scheduler
+- Effects that are _timed_ (audio cues, animations, retries) issue their timing through a scheduler
   port, so `delayMs` is asserted against a manual clock instead of waited out.
 
 ---
@@ -120,7 +120,29 @@ are acceptance criteria. The full budget and its verification method are in
 
 ---
 
-## 7. Definition of done
+## 7. Trust boundaries are not MVP compromises
+
+For any networked product that stores user data, identity and authority exist before the first
+externally usable slice. Feature scope may be reduced; the trust boundary may not.
+
+- Every request resolves an authenticated principal on the server. Authorization and owner/tenant
+  scope are enforced inside every read, search, ranking, and write path before data is returned or
+  changed.
+- Untrusted clients call bounded application use cases. They never choose ownership, server time,
+  authorization scope, raw storage keys/queries, or whether a proposed effect is valid. The server
+  validates the complete request and executes authoritative domain rules.
+- Canonical mutations define transaction, concurrency, retry/idempotency, and failure behavior.
+  Provider credentials stay server-side; public endpoints have resource/rate bounds; sensitive logs
+  and durable data have explicit access, retention, and deletion policies.
+- A single-user, unauthenticated, client-authoritative, generic-storage, or process-local harness is
+  test/development infrastructure—not a deployable MVP and never an undocumented fallback.
+
+Security can mature in depth, but authentication, authorization, tenant isolation, server-side
+validation, and a safe canonical write path are architectural foundations.
+
+---
+
+## 8. Definition of done
 
 A change is done when all of the following are true — see [working agreement](WORKING_AGREEMENT.md)
 for the workflow that enforces them:
@@ -128,7 +150,7 @@ for the workflow that enforces them:
 - It was developed on its own branch, created **before** the first edit.
 - The narrowest relevant tests pass while iterating, and the repository-wide check passes for a
   broad change. UI changes additionally pass the browser acceptance flow in every supported locale.
-- Any contract it touched was updated in the single source *before* the code that depends on it.
+- Any contract it touched was updated in the single source _before_ the code that depends on it.
 - Any cross-project reuse it introduced or adopted is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
 - The result — including failures and skipped steps — is reported honestly, and `main` is not
@@ -139,5 +161,5 @@ for the workflow that enforces them:
 ## How an agent should use this file
 
 Read it before the first edit of every task. It is short by design. The area documents assume you
-have; they describe *where* things go and *how* they are shaped, and rely on this file for *why* and
-*whether*.
+have; they describe _where_ things go and _how_ they are shaped, and rely on this file for _why_ and
+_whether_.

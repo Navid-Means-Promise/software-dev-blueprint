@@ -13,60 +13,66 @@ all.
 
 ## What lives here
 
-| Concern | Responsibility |
-| --- | --- |
-| **Domain model** | The product's entities and their invariants. Validity is checked at construction, not deferred to runtime. |
-| **Engine** | An explicit state machine that walks the domain flow and owns branching decisions. |
-| **Services** | Application logic that coordinates the model, the engine, and ports for a use case. |
-| **Ports** | The interfaces to every host capability. See [ports & adapters](PORTS_AND_ADAPTERS.md). |
-| **DI container + tokens** | How implementations are wired at startup. See [dependency injection](DEPENDENCY_INJECTION.md). |
-| **Store** | The observable application state the UI subscribes to. See [state management](STATE_MANAGEMENT.md). |
-| **i18n** | The typed multi-locale message catalog and the locale service. See [i18n](../practices/I18N.md). |
-| **Shared utilities** | Cross-cutting helpers that belong to no single feature — e.g. a thrown-value normalizer that turns any caught `unknown` into a typed message, used by both the UI and the server. |
+| Concern                   | Responsibility                                                                                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Domain model**          | The product's entities and their invariants. Validity is checked at construction, not deferred to runtime.                                                                        |
+| **Engine**                | An explicit state machine that walks the domain flow and owns branching decisions.                                                                                                |
+| **Services**              | Application logic that coordinates the model, the engine, and ports for a use case.                                                                                               |
+| **Ports**                 | The interfaces to every host capability. See [ports & adapters](PORTS_AND_ADAPTERS.md).                                                                                           |
+| **DI container + tokens** | How implementations are wired at startup. See [dependency injection](DEPENDENCY_INJECTION.md).                                                                                    |
+| **Store**                 | The observable application state the UI subscribes to. See [state management](STATE_MANAGEMENT.md).                                                                               |
+| **i18n**                  | The typed multi-locale message catalog and the locale service. See [i18n](../practices/I18N.md).                                                                                  |
+| **Shared utilities**      | Cross-cutting helpers that belong to no single feature — e.g. a thrown-value normalizer that turns any caught `unknown` into a typed message, used by both the UI and the server. |
 
 ## The engine is a state machine, not a bag of flags
 
 Model domain flow as explicit states and transitions. The engine walks **states** — a state is one
 beat of the flow — and a transition is the only way to move between them. Branching is a first-class
 concept: a choice that is deterministic transitions immediately; a choice whose outcome is uncertain
-first creates a *pending* decision, and only an explicit resolution step samples the randomness
+first creates a _pending_ decision, and only an explicit resolution step samples the randomness
 source.
 
 Two properties fall out of this and are required:
 
 - **Validity at construction.** The domain model validates its own graph when built — unreachable
-  states, dead ends, and dangling asset references fail *then*, not on the unlucky play that reaches
+  states, dead ends, and dangling asset references fail _then_, not on the unlucky play that reaches
   them. A malformed definition cannot become a running session.
 - **Determinism under injection.** Randomness, time, and delayed work are ports (a randomness source,
   a scheduler). A test injects a fixed source and a manual clock and asserts the exact resulting
   state. Every branch, including both sides of a randomized outcome, is reproducible. See
   [testing](../practices/TESTING.md).
 
-*Reference implementation:* in A Cup of Mystery the engine walks scene-*states* (several beats can
+_Reference implementation:_ in A Cup of Mystery the engine walks scene-_states_ (several beats can
 share one scene), a direct choice transitions at once, and a dice choice creates a pending roll that
 only a `roll()` step resolves through an injected `DiceRoller`.
 
 ## Services coordinate; they do not leak
 
 A service owns one use case and receives every collaborator through its constructor. It reads and
-advances the engine, persists through a repository port, and issues effects through the relevant
-ports. It exposes intent-level methods to the UI and holds no reference to any host API.
+advances the engine, persists through a repository interface, and issues effects through the
+relevant providers. It holds no reference to any host API.
+
+In a networked product, authoritative services execute in the server composition root. The UI
+depends on a bounded application-use-case interface implemented by an authenticated transport; it
+does not instantiate the repository-backed service in the client. Keeping service code in
+`@app/shared` makes it reusable by the server and deterministic tests—it does not make client
+execution authoritative.
 
 ### The mediator for coordinated effects
 
-When entering a state should cause *several* timed effects (sound, light, animation) in concert, that
+When entering a state should cause _several_ timed effects (sound, light, animation) in concert, that
 choreography lives in **one** mediator service — not spread across components or the engine. Content
-*declares* what a state should do; the mediator compares the previous state with the new one, issues
+_declares_ what a state should do; the mediator compares the previous state with the new one, issues
 each cue through the ports (with any delay expressed through the scheduler port so it is testable),
 and cancels every unfired cue on the next transition. Keeping it in the core means the whole timeline
 is verified without a real audio context or real waiting.
 
-*Reference implementation:* Mystery's `SceneAudioDirector` decides whether a scene's ambience bed
+_Reference implementation:_ Mystery's `SceneAudioDirector` decides whether a scene's ambience bed
 carries over or restarts, schedules each state's start/stop/effect cues through a `Scheduler` port,
 and cancels pending cues on transition — so the UI's audio adapter only has to play, loop, and fade
 what it is told.
 
-## What does *not* live here
+## What does _not_ live here
 
 - Rendering, layout, DOM, or any component — that is [the shared UI](../components/SHARED_UI.md).
 - Any concrete host API (storage backend, HTTP framework, audio engine) — those are adapters in the

@@ -15,10 +15,10 @@ by the application—still apply under either choice.
 Do not encode origin, retrieval method, and data source in one growing union. They answer independent
 questions:
 
-| Axis | Question | Choices in this design |
-| --- | --- | --- |
-| **Origin** | Why and when did retrieval start? | automatic predictive, model-directed predictive, model-directed in-call |
-| **Method** | How is data selected? | relevance search or application-specific explicit retrieval |
+| Axis       | Question                                 | Choices in this design                                                                                             |
+| ---------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Origin** | Why and when did retrieval start?        | automatic predictive, model-directed predictive, model-directed in-call                                            |
+| **Method** | How is data selected?                    | relevance search or application-specific explicit retrieval                                                        |
 | **Source** | Where does authoritative data come from? | raw messages, assistant memory, other processed conversational data, or application-specific authoritative sources |
 
 An origin carries audit and policy metadata. A query describes what to retrieve. A source owns the
@@ -59,6 +59,13 @@ have different meanings. Raw messages are evidence, memory records are the appli
 interpretation of durable conversational knowledge, and application services own authoritative
 domain state. Search indexes, embeddings, selection hints, and predictive caches are derived
 projections rather than new sources of truth.
+
+For networked browser/WebView products, the server owns canonical sources, durable derived
+projections, context assembly, retrieval execution, and model interaction. The client sends the new
+message through a bounded authenticated conversation use case; it cannot supply the trusted access
+scope, source allowlist, server time, retrieval results/instructions, or mutation authority. A
+deliberately local-only product is a different trust architecture; a networked product may not use
+that label to bypass server authentication or tenant isolation.
 
 ### Route information to its authoritative owner
 
@@ -106,7 +113,7 @@ interface MemoryRecord {
   /** Complete current meaning; not a duplicate of the source message text. */
   readonly content: string;
   readonly evidenceMessageIds: readonly string[];
-  readonly deliveryMode: 'retrieval' | 'always-proactive';
+  readonly deliveryMode: "retrieval" | "always-proactive";
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly expiresAt?: string;
@@ -114,23 +121,23 @@ interface MemoryRecord {
 
 type MemoryMutationCandidate =
   | {
-      readonly operation: 'create';
+      readonly operation: "create";
       readonly content: string;
-      readonly deliveryMode: MemoryRecord['deliveryMode'];
+      readonly deliveryMode: MemoryRecord["deliveryMode"];
       readonly expiresAt?: string;
     }
   | {
-      readonly operation: 'update';
+      readonly operation: "update";
       readonly target: {
         readonly memoryRecordId: string;
         readonly expectedRevision: number;
       };
       readonly content: string;
-      readonly deliveryMode: MemoryRecord['deliveryMode'];
+      readonly deliveryMode: MemoryRecord["deliveryMode"];
       readonly expiresAt?: string;
     }
   | {
-      readonly operation: 'delete';
+      readonly operation: "delete";
       readonly target: {
         readonly memoryRecordId: string;
         readonly expectedRevision: number;
@@ -173,7 +180,7 @@ interface MemoryIndexProvider<TIndexEntry, TQuery> {
     accessScope: ContextAccessScope,
     query: TQuery,
     limits: ContextRetrievalLimits,
-  ): Promise<ContextRetrievalResult<ContextRecordReference<'memory-record'>>>;
+  ): Promise<ContextRetrievalResult<ContextRecordReference<"memory-record">>>;
 }
 ```
 
@@ -209,6 +216,25 @@ authoritative sources when their data has stronger invariants, transactional beh
 typed retrieval. Those sources may publish disposable search projections while retaining explicit
 retrieval through their owning services. Choosing assistant memory, another authoritative source, or
 both for distinct responsibilities is an application-design decision.
+
+### Durable derived-index lifecycle
+
+Persist enough server-owned projection input to rebuild a private search engine without rereading
+client storage. Cache document embeddings by a deterministic identity containing at least normalized
+source text (or its cryptographic digest), embedding provider/model, dimensions, and any task/config
+that changes vector meaning. A generation timestamp such as `embeddedAt` supports diagnostics,
+retention, and rebuild policy; it does not by itself decide cache correctness.
+
+Do not synchronously regenerate an entire corpus in a user turn. Commit canonical data first, make a
+lexical or otherwise deterministic projection available promptly, and queue missing/stale document
+embeddings in a bounded server worker. During backlog or provider failure, return lexical results
+with explicit incompleteness rather than blocking indefinitely or pretending semantic coverage is
+complete. Query embeddings are normally request-specific; cache them only with a measured reuse and
+privacy policy.
+
+Document update/deletion must invalidate or replace its revisioned projection. Cached vectors may be
+content-addressed and shared across equal permitted text, but need retention, model-version cleanup,
+and deletion policy. Neither a persisted search document nor a cached vector becomes canonical truth.
 
 ### Searchable application data
 
@@ -285,22 +311,22 @@ interface ContextAccessScope {
 
 type ContextRetrievalOrigin =
   | {
-      readonly type: 'automatic-predictive';
+      readonly type: "automatic-predictive";
       readonly userMessageId: string;
     }
   | {
-      readonly type: 'model-directed-predictive';
+      readonly type: "model-directed-predictive";
       readonly assistantResponseId: string;
       readonly instructionId: string;
     }
   | {
-      readonly type: 'model-directed-in-call';
+      readonly type: "model-directed-in-call";
       readonly turnId: string;
       readonly toolCallId: string;
     };
 
 interface RelevanceContextRetrievalQuery<TSourceId extends string> {
-  readonly method: 'relevance-search';
+  readonly method: "relevance-search";
   readonly queryText: string;
   readonly sourceIds: readonly TSourceId[];
   readonly excludedSourceReferences: readonly ContextRecordReference<TSourceId>[];
@@ -308,7 +334,7 @@ interface RelevanceContextRetrievalQuery<TSourceId extends string> {
 
 type ContextRetrievalQuery<
   TSourceId extends string,
-  TExplicitQuery extends { readonly method: 'explicit' },
+  TExplicitQuery extends { readonly method: "explicit" },
 > = RelevanceContextRetrievalQuery<TSourceId> | TExplicitQuery;
 
 interface ContextRetrievalLimits {
@@ -322,7 +348,7 @@ interface ContextPromptBudget {
 
 interface ContextRetrievalRequest<
   TSourceId extends string,
-  TExplicitQuery extends { readonly method: 'explicit' },
+  TExplicitQuery extends { readonly method: "explicit" },
 > {
   readonly requestId: string;
   readonly origin: ContextRetrievalOrigin;
@@ -337,7 +363,7 @@ interface ContextRetrievalRequest<
 
 interface ModelPredictiveContextRetrievalInstruction<
   TSourceId extends string,
-  TExplicitQuery extends { readonly method: 'explicit' },
+  TExplicitQuery extends { readonly method: "explicit" },
 > {
   readonly instructionId: string;
   readonly query: ContextRetrievalQuery<TSourceId, TExplicitQuery>;
@@ -345,7 +371,7 @@ interface ModelPredictiveContextRetrievalInstruction<
 
 interface PendingModelPredictiveContextRetrievalInstruction<
   TSourceId extends string,
-  TExplicitQuery extends { readonly method: 'explicit' },
+  TExplicitQuery extends { readonly method: "explicit" },
 > {
   readonly instruction: ModelPredictiveContextRetrievalInstruction<
     TSourceId,
@@ -382,14 +408,14 @@ interface ContextSearchDocument<TSourceId extends string> {
 interface ContextRetrievalHit<TSourceId extends string> {
   readonly sourceReference: ContextRecordReference<TSourceId>;
   readonly score: number;
-  readonly matchedBy: 'lexical' | 'vector' | 'hybrid';
+  readonly matchedBy: "lexical" | "vector" | "hybrid";
 }
 
 type ContextRetrievalOmissionReason =
-  | 'result-limit'
-  | 'prompt-token-limit'
-  | 'source-unavailable'
-  | 'record-unavailable';
+  | "result-limit"
+  | "prompt-token-limit"
+  | "source-unavailable"
+  | "record-unavailable";
 
 interface ContextRetrievalResult<TItem> {
   readonly items: readonly TItem[];
@@ -398,9 +424,7 @@ interface ContextRetrievalResult<TItem> {
 }
 
 interface ContextSearchIndexProvider<TSourceId extends string> {
-  upsert(
-    documents: readonly ContextSearchDocument<TSourceId>[],
-  ): Promise<void>;
+  upsert(documents: readonly ContextSearchDocument<TSourceId>[]): Promise<void>;
 
   remove(documentIds: readonly string[]): Promise<void>;
 }
@@ -438,7 +462,7 @@ interface ContextSourceProvider<
 
 interface ExplicitContextRetrievalProvider<
   TSourceId extends string,
-  TExplicitQuery extends { readonly method: 'explicit' },
+  TExplicitQuery extends { readonly method: "explicit" },
   TAuthority extends string,
 > {
   retrieve(
@@ -458,8 +482,7 @@ and not a canonical context record. A concrete integration may implement both na
 class OramaContextRetrievalAdapter<TSourceId extends string>
   implements
     ContextSearchIndexProvider<TSourceId>,
-    ContextRetrievalProvider<TSourceId>
-{
+    ContextRetrievalProvider<TSourceId> {
   // Maps the application contracts to Orama's private index representation.
 }
 ```
@@ -490,7 +513,7 @@ bounded recent conversation ─────────────────�
                                                                               └─final answer + next-turn queries
 ```
 
-For each new user turn, `AssistantContextAssemblyService`:
+For each new user turn, the server-side `AssistantContextAssemblyService`:
 
 1. constructs the trusted access scope and baseline context;
 2. takes the bounded recent-conversation window required for dialogue continuity;
@@ -513,6 +536,8 @@ and labeled rather than silently merged into a fabricated fact.
 - Apply tenant/owner partitions inside relevance search before nearest-neighbor ranking, then
   reauthorize every hydrated source record. Filtering only after a cross-owner vector search can leak
   information through results or scores.
+- Derive the principal, owner/tenant scope, server time, source allowlists, and budgets on the server;
+  never accept authority-bearing fields from the client or model.
 - Treat retrieved content as untrusted quoted data, never as system instructions. Retrieval does not
   weaken prompt-injection defenses or tool authorization.
 - Propagate source updates, expiry, deletion, and access changes to search projections and predictive
@@ -520,6 +545,11 @@ and labeled rather than silently merged into a fabricated fact.
 - Decide explicitly whether searchable text or embeddings may leave the application's trust
   boundary. Remote embedding creates a data disclosure that requires the same review as sending
   prompt content to a model provider.
+- Keep canonical sources, durable search inputs, vector caches, indexing workers, context assembly,
+  and model interaction on the server for networked thin clients. A deliberately local-only product
+  is a separate documented trust architecture, not an MVP shortcut for a networked system.
+- Key cached document vectors by content and every embedding configuration field that changes their
+  meaning; test restart reuse, model invalidation, deletion, and background-index degradation.
 - Bound query length, result count, prompt tokens, predictive instructions, in-call rounds, and
   equivalent repeated queries. Report source failure and truncation to the model rather than
   pretending retrieval was complete.
@@ -533,19 +563,27 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
 
 - automatic retrieval derives its query only from the newly received message and cannot return that
   message as its own result;
+- forged client identity, owner/tenant scope, time, source selection, or retrieval results cannot
+  enter the server-generated request;
 - predictive instructions expire deterministically and their permitted results are not rejudged for
   relevance against the next message;
 - invalid or unauthorized explicit queries never reach a repository;
 - access partitioning prevents cross-owner and cross-tenant retrieval;
 - stale memory-index revisions, source updates, expiry, and deletion cannot resurrect old context;
 - semantic cues can retrieve a memory without being presented as canonical memory content;
+- a restart reloads durable projection inputs without regenerating unchanged document embeddings;
+- slow or failed document embedding does not block canonical writes or lexical retrieval, and the
+  incomplete semantic state is visible;
+- changing model/dimensions/config invalidates the embedding cache deterministically;
 - application-specific index hits always rehydrate their owning current record;
 - exact domain commands are not duplicated into assistant memory, while uncertain intent cannot be
   written prematurely into an authoritative application source;
 - duplicate references converge without dropping distinct conflicting records;
 - partial failures and hard-budget truncation are visible to the model;
-- retrieved prompt injection cannot alter tool authority or system rules; and
-- in-call limits terminate repeated or cyclic retrieval requests.
+- retrieved prompt injection cannot alter tool authority or system rules;
+- in-call limits terminate repeated or cyclic retrieval requests; and
+- related canonical domain and memory mutations commit atomically or recover idempotently, including
+  under concurrent same-user turns.
 
 Evaluate this design against representative conversations before adoption. Retrieval precision,
 recall, latency, token cost, privacy, correction behavior, and user control—not architectural

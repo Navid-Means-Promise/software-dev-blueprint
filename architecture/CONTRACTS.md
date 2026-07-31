@@ -26,6 +26,20 @@ the assets it names" is a shape: the schema is defined once, the domain validate
 construction, and asset paths are **generated from one layout definition** so the on-disk tree, the
 build config, and the content never drift. Detail: [assets & content](../practices/ASSETS_AND_CONTENT.md).
 
+## Persistence ownership is part of the contract
+
+For a networked multi-client application, the server owns canonical durable records.
+Clients consume bounded, authenticated domain-use-case APIs; they do not receive generic persistence
+operations. Browser/native storage is transient cache, session state, or an explicitly retired
+migration source—not a competing truth.
+Record identity, revision/concurrency semantics, authorization scope, and deletion behavior belong
+to the shared contract even when the physical database schema remains private to the server.
+
+A deliberately local-only/offline product is a separate architecture variant. Before it adds a
+server, another device, or any second writable copy, it must define synchronization, conflict
+resolution, tombstones, encryption/key ownership, retention, recovery, and migration. “It uses
+IndexedDB/Preferences” is an adapter choice, not a synchronization design.
+
 ## The semantic device model
 
 The most important cross-language contract, and the one most often gotten wrong. A physical device is
@@ -34,7 +48,7 @@ the actual output locally from that meaning. The client never streams per-frame 
 can hold a faithful in-memory twin of the device by interpreting the same contract.
 
 This is worth stating as an explicit shape because the temptation to stream frames is strong and
-wrong. A minimal example of the *meaning*-level contract for a multi-light device:
+wrong. A minimal example of the _meaning_-level contract for a multi-light device:
 
 ```jsonc
 // Semantic: the client sends intent; the device computes frames.
@@ -50,11 +64,11 @@ Two things this buys, both required:
 - **A testable twin.** The server (and unit tests) interpret the same contract into an in-memory model
   and assert against it, with no hardware present.
 
-*Reference implementation:* Mystery's six-light box has two semantic modes — exactly one chamber
+_Reference implementation:_ Mystery's six-light box has two semantic modes — exactly one chamber
 communicates a rolled result, while all six render scene ambience outside a roll — and the firmware's
 allocation-free engine computes each mode's frames from the mode alone. The server mirrors it as an
 in-memory device twin. See the project's `docs/DEVICE_API.md` for the concrete wire format; this
-document is only the *pattern*.
+document is only the _pattern_.
 
 ## Rules
 
@@ -64,3 +78,5 @@ document is only the *pattern*.
   over any single implementation.
 - Devices receive semantic intent and render locally. Never stream frames.
 - Validate content against its schema at construction, so a malformed contract fails early.
+- For networked clients, keep canonical durable state server-owned; a local-only product is a
+  separate architecture variant.

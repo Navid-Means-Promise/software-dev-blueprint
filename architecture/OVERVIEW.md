@@ -30,11 +30,21 @@ business rules exist once, visual code exists once, and platform code is a thin 
                      │                                   │
               ┌──────┴──────┐                     ┌──────┴──────┐
               │  apps/web   │                     │ apps/mobile │
-              │ web adapter │                     │ Capacitor   │
-              │ (e.g. IDB)  │                     │ adapter     │
-              └─────────────┘                     └─────────────┘
+              │ HTTP/cache  │                     │ HTTP/native │
+              │ adapters    │                     │ adapters    │
+              └──────┬──────┘                     └──────┬──────┘
+                     └──────── authenticated ────────────┘
+                               bounded use cases
+                                      │
+                                      ▼
+                               ┌──────────────┐
+                               │ @app/server  │
+                               │ authority ·  │
+                               │ persistence  │
+                               └──────┬───────┘
+                                      │ imports
+                                      └──────────────▶ @app/shared
 
-     @app/server  ──imports──▶  @app/shared contracts (never the UI)
      firmware     ──implements──▶  the semantic device contract in docs
 ```
 
@@ -44,17 +54,17 @@ this direction is an architecture bug regardless of whether it compiles.
 
 ## Module map
 
-| Module | Package name (example) | Owns |
-| --- | --- | --- |
-| `packages/shared` | `@app/shared` | Pure domain, engine, services, ports, DI container + tokens, observer store, i18n |
-| `packages/ui` | `@app/ui` | The one component set both clients render, and the shared bootstrap |
-| `apps/web` | `@app/web` | Web host: bundler entry, web storage adapter, optional static-host target |
-| `apps/mobile` | `@app/mobile` | Android host: Capacitor project, native storage adapter |
-| `apps/server` | `@app/server` | HTTP API, contract endpoints, in-memory device twin, optional web hosting |
-| `firmware` | — | ESP-IDF / C++17 device engine implementing the semantic device contract |
-| `e2e` | `@app/e2e` | Browser acceptance tests over the shared UI |
-| `tooling` | — | Shared build config (bundler factory, budgets) and content generators |
-| `docs` | — | Per-project contracts, architecture notes, and roadmaps |
+| Module            | Package name (example) | Owns                                                                                                                            |
+| ----------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/shared` | `@app/shared`          | Pure domain, engine, services, ports, DI container + tokens, observer store, i18n                                               |
+| `packages/ui`     | `@app/ui`              | The one component set both clients render, and the shared bootstrap                                                             |
+| `apps/web`        | `@app/web`             | Untrusted web host: bundler entry, bounded HTTP/platform adapters, transient cache, optional static-host target                 |
+| `apps/mobile`     | `@app/mobile`          | Untrusted Android host: Capacitor project, bounded HTTP/native adapters, transient cache                                        |
+| `apps/server`     | `@app/server`          | Authenticated authoritative use cases, canonical persistence, provider/derived-index workers, device twin, optional web hosting |
+| `firmware`        | —                      | ESP-IDF / C++17 device engine implementing the semantic device contract                                                         |
+| `e2e`             | `@app/e2e`             | Browser acceptance tests over the shared UI                                                                                     |
+| `tooling`         | —                      | Shared build config (bundler factory, budgets) and content generators                                                           |
+| `docs`            | —                      | Per-project contracts, architecture notes, and roadmaps                                                                         |
 
 `@app` is the neutral placeholder scope; a real project substitutes its own package scope.
 
@@ -68,6 +78,8 @@ this direction is an architecture bug regardless of whether it compiles.
   the domain; UI code holds no business rules.
 - Shared **contracts** — wire, storage, content — are defined once and consumed everywhere. See
   [contracts](CONTRACTS.md).
+- Networked clients submit bounded intent; only the server authenticates, authorizes, validates, and
+  commits canonical effects. See [development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).
 
 ## Where each layer's detail lives
 
