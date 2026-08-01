@@ -5,23 +5,24 @@ small store — no reactive framework, no external state library.
 
 ## The store
 
-A single `Store<AppState>` holds the application's observable state. It exposes a way to read the
-current snapshot, to apply an update that produces the next snapshot, and to subscribe for change
-notifications. It is registered as a [DI singleton](DEPENDENCY_INJECTION.md) so every part of the app
-sees the same state.
+A single client-side `Store<AppState>` holds the UI's observable projection. It exposes a way to read
+the current snapshot, to apply an update that produces the next snapshot, and to subscribe for
+change notifications. It is registered as a [DI singleton](DEPENDENCY_INJECTION.md) so every part of
+one client instance sees the same projection.
 
-`AppState` is a plain, typed, serializable shape — the minimum the UI needs to render: the current
-locale, the active view, session-derived view state. It is not the domain model itself; services own
-the domain model and publish the derived view state the UI consumes.
+`AppState` is a plain, typed, serializable shape—the minimum the UI needs to render: the current
+locale, the active view, loading/error state, and server-derived view state. It is neither the domain
+model nor canonical persistence. Client presenters/use-case adapters publish results into it after
+the server accepts a canonical operation.
 
 ## The flow
 
 ```text
-Service advances the engine ──▶ writes next AppState into the Store
-                                        │  (Observer notifies)
-                                        ▼
-                         UI reads the snapshot and renders
-                  User acts ──▶ UI delegates intent to a service ──▶ (loop)
+UI delegates intent ──▶ bounded use-case provider ──▶ authenticated server
+          ▲                                                │
+          │                                      authoritative result
+          │                                                ▼
+          └──── UI renders ◀──── Store ◀──── client presenter/adapter
 ```
 
 The UI **renders and delegates**. It reads state and produces markup; on user action it calls an
@@ -49,6 +50,6 @@ edge.
 - Cosmetic, per-frame animation state never enters the store. A GPU canvas owns its own render loop;
   driving cosmetics through store updates would cause needless re-renders and is forbidden by
   [UI performance](../practices/UI_PERFORMANCE.md).
-- Persistence of state across launches is a [repository port](PORTS_AND_ADAPTERS.md) concern, not the
-  store's — the store is in-memory; a service rehydrates it from storage at startup and writes
-  through on change.
+- The store is in-memory and is rebuilt from authenticated server queries plus narrowly defined
+  device-local preferences. It is never written through as canonical domain persistence. This
+  blueprint defines no offline write queue; user-data mutations require a server response.

@@ -15,16 +15,19 @@ The shared domain validates and executes typed requests through the same service
 Shared assistant conversation UI
   ├─ AudioCaptureProvider
   │    └─ SpeechToTextProvider
-  │         └─ reviewed text transcript
-  └─ typed or reviewed text transcript
-       └─ AssistantTurnOrchestrator
-            ├─ relevant product-specific domain-state data
-            ├─ relevant records from MemoryRepository
-            └─ AssistantModelProvider
-                 └─ typed, application-validated domain-tool requests
-                      ├─ MemoryManagementService
-                      ├─ product-specific application services
-                      └─ DomainChangeProposalService
+  │         └─ server-observable text transcript
+  └─ typed or transcribed text
+       └─ AssistantConversationProvider (authenticated client transport)
+            └─ server conversation use case
+                 ├─ trusted principal, clock, scope, and policy
+                 └─ AssistantTurnOrchestrator
+                      ├─ relevant product-specific domain state
+                      ├─ relevant records from MemoryRepository
+                      └─ AssistantModelProvider
+                           └─ decoded, authorized domain-tool requests
+                                ├─ MemoryManagementService
+                                ├─ product-specific application services
+                                └─ DomainChangeProposalService
 
 Assistant response text
   └─ TextToSpeechProvider
@@ -35,10 +38,22 @@ Assistant response text
 `TextToSpeechProvider` are independent.
 A project may replace speech recognition, the assistant model, and speech synthesis separately.
 Direct audio-to-audio model sessions are an additional adapter path; they must still deliver a
-reviewable transcript and typed tool requests to the same orchestration and domain services.
+server-observable text representation and typed tool requests to the same orchestration and domain
+services.
 
-Provider credentials belong in the server that owns the provider adapter. A client connects directly
-to a real-time provider only with a short-lived, narrowly scoped credential issued by that server.
+Provider credentials and model connections belong in the server that owns the provider adapter.
+Interactive clients send text or media through bounded authenticated application endpoints; a
+short-lived provider credential is not, by itself, a substitute for server-owned orchestration and
+effect validation.
+
+For browser/WebView clients, the authenticated server use case owns turn orchestration and durable
+conversation, memory, usage, retrieval instructions, and application records. The client does not
+assemble the authoritative prompt, select trusted scope/time/identity, execute retrieval, validate
+model effects, or write repositories. Shared packages may still provide contracts and pure rules for
+both hosts, but client-side evaluation is presentation feedback—not authority. Client storage is
+limited to transient cache/session state and explicitly device-local preferences. Provider work,
+embedding, derived-index maintenance, retention jobs, and durable audit storage execute on the
+server. This blueprint defines no client-side offline write queue for assistant or application data.
 
 ## Application-owned durable context
 
@@ -92,8 +107,8 @@ and provider replacement boundaries remain.
 ## Typed domain tools and execution policy
 
 Model output is untrusted boundary input even when the provider guarantees syntactically valid JSON.
-Decode it into a closed union of named domain-tool requests, validate semantic values, authorize the
-operation, and execute only through application services.
+The server decodes it into a closed union of named domain-tool requests, validates semantic values,
+authorizes the operation, and executes only through application services.
 
 ### Model-output representation
 
@@ -132,13 +147,13 @@ turn/request envelope; it never relies on a model-supplied claim that a request 
 
 Classify tools by effect:
 
-| Effect class | Execution policy |
-| --- | --- |
-| Read-only query | Execute after validation. |
-| Explicit, unambiguous user request | Execute the validated desired-state mutation and show a truthful receipt. A later conversational request may edit or delete it. |
-| Durable-memory recording | Save current memory before asking about optional follow-up action; show a create/update/delete receipt. |
-| Multi-part or interpretive domain change | Create a proposal; do not mutate domain state. |
-| Destructive, irreversible, or externally visible action | Require explicit confirmation immediately before execution. |
+| Effect class                                            | Execution policy                                                                                                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Read-only query                                         | Execute after validation.                                                                                                       |
+| Explicit, unambiguous user request                      | Execute the validated desired-state mutation and show a truthful receipt. A later conversational request may edit or delete it. |
+| Durable-memory recording                                | Save current memory before asking about optional follow-up action; show a create/update/delete receipt.                         |
+| Multi-part or interpretive domain change                | Create a proposal; do not mutate domain state.                                                                                  |
+| Destructive, irreversible, or externally visible action | Require explicit confirmation immediately before execution.                                                                     |
 
 The policy is domain-owned and provider-independent. A prompt may guide tool selection but cannot
 grant authority.
@@ -161,13 +176,18 @@ reachable without losing the review position.
 
 ## Speech input and speech output
 
-The first implementation should normally be text-centered:
+The first implementation should normally convert speech to text before assistant reasoning:
 
 1. `AudioCaptureProvider` records a push-to-talk utterance.
 2. `SpeechToTextProvider` produces a transcript and confidence/alternative data.
-3. The user can correct the transcript before a consequential or ambiguous operation.
-4. `AssistantTurnOrchestrator` processes typed and spoken text identically.
+3. `AssistantTurnOrchestrator` processes typed and spoken text identically.
+4. When transcription or intent remains ambiguous, the assistant asks a concise clarification; a
+   consequential operation follows its normal confirmation policy.
 5. `TextToSpeechProvider` optionally speaks the final response.
+
+Showing an editable transcript is a product UX choice, not an authority requirement. A product may
+keep the transcript hidden and rely on clarification, confirmation, and truthful mutation receipts;
+the server still retains the bounded evidence/audit data required by its declared policy.
 
 This separation preserves provider choice, permits independent language-quality testing, and avoids
 retaining raw audio. Raw recordings are deleted after transcription by default.
@@ -182,18 +202,21 @@ failure.
 ## Persistence, privacy, and provider state
 
 Durable assistant memory and transcripts can contain sensitive personal information. A production
-design provides user-visible inspect/edit/delete/export controls, encrypts sensitive durable storage
-using platform-appropriate facilities, authenticates every server request, and records the minimum
-diagnostic content. Raw audio is not retained by default.
+design provides user-visible inspect/edit/delete/export controls, authenticates and authorizes every
+server request, encrypts server databases and backups with managed key lifecycle, partitions every
+query by owner/tenant before ranking, and records the minimum diagnostic content. Raw audio is not
+retained by default.
 
 Do not use a model provider's conversation identifier as durable product memory. Store short-term
 conversation state under product control, send only the turns or summary required for the current
 request, and allow a provider adapter to operate statelessly.
 
-A simple key/value adapter may prove a domain contract during an early vertical slice, but it is not
-an implicit approval for unbounded memory or transcript storage. Choose a durable
-adapter before size, query, encryption, synchronization, or retention requirements exceed the
-documented limits.
+An explicitly constructed process-local repository may support an isolated deterministic unit or
+component test. It is not a runnable development server, deployment mode, or fallback. Every
+networked environment starts with authenticated principals, tenant-scoped durable storage, server
+authorization and validation, defined transaction/concurrency behavior, and protected provider
+credentials as required by
+[development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).
 
 ## Required MVP compromise register
 
@@ -210,18 +233,23 @@ Every project that ships a reduced AI subsystem keeps a linked compromise regist
 
 An undocumented shortcut is not an MVP decision; it is invisible debt. The project architecture and
 roadmap link to the register, and closing a compromise records the replacement rather than deleting
-the history.
+the history. Authentication, authorization, tenant isolation, server-side validation, canonical
+write integrity, and secret protection are not eligible compromise entries; reduce feature breadth
+instead of removing those foundations.
 
 ## Module ownership and tests
 
-- `@app/shared` owns memory and application-domain types/services/repository ports, assistant turn
-  orchestration, adopted context-retrieval contracts, tool policies, proposal rules, and all four
-  provider/host ports.
-- `@app/ui` owns the shared conversation, transcript-review, context-receipt, proposal-review, and
-  mutation-receipt presentation.
-- `apps/web` and `apps/mobile` own audio-capture and platform speech-synthesis adapters.
-- `apps/server` owns assistant-model, remote speech-recognition, remote speech-synthesis, credential,
-  rate-limit, and provider-transport adapters.
+- `@app/shared` owns memory and application-domain contracts, reusable pure domain services and
+  repository/provider interfaces, assistant orchestration policy, adopted context-retrieval
+  contracts, tool policies, proposal rules, and all provider/host interfaces.
+- `@app/ui` owns the shared conversation, optional transcript-correction, clarification,
+  context-receipt, proposal-review, and mutation-receipt presentation.
+- `apps/web` and `apps/mobile` own the bounded authenticated conversation transport, audio capture,
+  platform speech synthesis, transient caches, and explicitly device-local preferences.
+- `apps/server` owns the authenticated conversation use case, authoritative orchestrator execution,
+  model-effect validation and domain-service execution, assistant-model and remote speech adapters,
+  credentials, rate limits, canonical persistence, remote embedding, derived indexes, retention,
+  and audits.
 
 Domain tests use fixed clock, model, speech, repositories, and delivery test doubles. They prove
 product-required temporal overlap, ambiguity preservation, save-before-follow-up ordering,

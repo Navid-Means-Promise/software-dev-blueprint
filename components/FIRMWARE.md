@@ -8,7 +8,7 @@ shared package.
 ## What it is
 
 An **ESP-IDF** (C++17, CMake) project for an ESP-family microcontroller. It renders the device's
-physical output — lights, sound, motion, whatever the product's device does — from *semantic intent*
+physical output — lights, sound, motion, whatever the product's device does — from _semantic intent_
 received over the wire. It shares no code with the TypeScript packages; it shares the **contract**,
 which is documented normatively in the project's `docs/` and is authoritative over both the firmware
 and the server twin.
@@ -27,13 +27,13 @@ Allocation-free matters on a microcontroller: the render path does no dynamic al
 fragment the heap or stall mid-animation. The engine is the stable core; transport and provisioning
 wrap around it without changing it.
 
-*Reference implementation:* Mystery's `MysteryLightEngine` separates `Off`, `Ambient`, and `Dice`
+_Reference implementation:_ Mystery's `MysteryLightEngine` separates `Off`, `Ambient`, and `Dice`
 modes, lights exactly `face - 1` in dice mode, computes ambient frames locally, and holds a brightness
 ceiling that protects the diffuser and power supply.
 
 ## Why semantic, not streamed
 
-The device owns its frames. The client sends *what it means* — a mode and parameters — and the engine
+The device owns its frames. The client sends _what it means_ — a mode and parameters — and the engine
 produces the animation on-device. This keeps timing correct under network jitter, keeps the link
 cheap, and lets the [server twin](SERVER.md) and unit tests reproduce the device's behavior from the
 same contract. Streaming per-frame data to the device is the rejected anti-pattern

@@ -13,8 +13,10 @@ in its one source **before** any code that depends on it — that ordering is pa
 
 Where the single source lives depends on who shares it:
 
-- **TypeScript-only contracts** (a wire message between web/mobile/server, a stored record shape) are
-  a type in `@app/shared`, imported by every TypeScript consumer.
+- **TypeScript-only contracts shared by multiple workspaces** (for example, a wire message between
+  web/mobile/server) are types in `@app/shared`, imported by their consumers. A server-persistence
+  record used only inside `@app/server` is defined once there; sharing a wire contract does not make
+  the physical database schema public to clients.
 - **Cross-language contracts** (anything firmware in C++ must also honor) are specified in a `docs/`
   contract file that is the normative source; the TypeScript twin and the firmware implementation
   both conform to that document, and the document — not either implementation — is authoritative.
@@ -26,6 +28,21 @@ the assets it names" is a shape: the schema is defined once, the domain validate
 construction, and asset paths are **generated from one layout definition** so the on-disk tree, the
 build config, and the content never drift. Detail: [assets & content](../practices/ASSETS_AND_CONTENT.md).
 
+## Persistence ownership is part of the contract
+
+For a networked multi-client application, the server owns canonical durable records.
+Clients consume bounded, authenticated domain-use-case APIs; they do not receive generic persistence
+operations. Browser/native storage is transient cache, session state, or an explicitly retired
+migration source—not a competing truth.
+Record identity, revision/concurrency semantics, authorization scope, and deletion behavior belong
+to the shared contract even when the physical database schema remains private to the server.
+
+This server-oriented blueprint does not define a local-only/offline-authoritative product. Such a
+product needs a separate architecture specification before implementation; it cannot use local-only
+language as an exception to the authentication, tenant-isolation, or server-authority rules of a
+networked composition. “It uses IndexedDB/Preferences” is an adapter choice, not a synchronization
+design.
+
 ## The semantic device model
 
 The most important cross-language contract, and the one most often gotten wrong. A physical device is
@@ -34,7 +51,7 @@ the actual output locally from that meaning. The client never streams per-frame 
 can hold a faithful in-memory twin of the device by interpreting the same contract.
 
 This is worth stating as an explicit shape because the temptation to stream frames is strong and
-wrong. A minimal example of the *meaning*-level contract for a multi-light device:
+wrong. A minimal example of the _meaning_-level contract for a multi-light device:
 
 ```jsonc
 // Semantic: the client sends intent; the device computes frames.
@@ -50,11 +67,11 @@ Two things this buys, both required:
 - **A testable twin.** The server (and unit tests) interpret the same contract into an in-memory model
   and assert against it, with no hardware present.
 
-*Reference implementation:* Mystery's six-light box has two semantic modes — exactly one chamber
+_Reference implementation:_ Mystery's six-light box has two semantic modes — exactly one chamber
 communicates a rolled result, while all six render scene ambience outside a roll — and the firmware's
 allocation-free engine computes each mode's frames from the mode alone. The server mirrors it as an
 in-memory device twin. See the project's `docs/DEVICE_API.md` for the concrete wire format; this
-document is only the *pattern*.
+document is only the _pattern_.
 
 ## Rules
 
@@ -64,3 +81,5 @@ document is only the *pattern*.
   over any single implementation.
 - Devices receive semantic intent and render locally. Never stream frames.
 - Validate content against its schema at construction, so a malformed contract fails early.
+- Keep canonical durable state server-owned. A local-authoritative product is outside this
+  blueprint and requires a separate architecture specification.

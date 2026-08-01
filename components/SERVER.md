@@ -33,7 +33,7 @@ Where the product has a physical device, the server hosts an **in-memory semanti
 routes parse the request and delegate to a device-state class that interprets the
 [semantic device contract](../architecture/CONTRACTS.md) — the same contract the firmware implements.
 This gives the clients a device to talk to without hardware, and gives tests an assertable device
-model. The twin renders *meaning* into state exactly as the firmware renders it into light; neither
+model. The twin renders _meaning_ into state exactly as the firmware renders it into light; neither
 streams frames.
 
 ## Typical endpoints
@@ -41,6 +41,53 @@ streams frames.
 The recurring baseline: a health endpoint, content/catalog endpoints that serve the shared content
 bundles, and the device-twin endpoints. Optionally, the server statically hosts the built
 [web client](WEB_CLIENT.md) so a single origin serves both the API and the app.
+
+## Canonical persistence and background work
+
+For networked web/mobile products, the server owns durable application data.
+Repositories expose domain-shaped operations and keep database schemas private; shared contracts
+still define record identity, authorization scope, revisions, and wire shapes. Browser/native stores
+are caches or migration inputs, never a second writable truth.
+
+Remote AI/provider work and durable derived indexes also belong here. Search documents and vector
+caches are projections that can be rebuilt from canonical records. Background workers perform
+expensive document embedding, reindexing, retention, and repair without holding a user request open;
+the request path exposes a deterministic degraded mode while work is pending.
+
+Process-local repositories and fixed-principal substitutes are allowed only when explicitly
+constructed inside isolated unit or component tests. They are not selectable server modes. Every
+listening environment—including local development, E2E, demos, staging, and an MVP—uses the
+authenticated multi-user boundary, tenant-scoped queries, and the canonical persistence adapter
+with defined transactions, revision/conflict handling, and restart recovery. It does not expose
+generic storage CRUD to an untrusted client; routes represent bounded application use cases.
+
+## Identity, authority, and tenant isolation
+
+The server derives the principal from an authenticated session or token and derives ownership,
+tenant scope, server time, and policy limits itself. Client- or model-supplied versions of those
+values are ignored or rejected. Every repository query—including full-text/vector candidate
+selection—applies the principal's permitted partition before reading, ranking, or mutating records.
+
+Use a maintained authentication implementation and document credential issuance, expiry, rotation,
+revocation, and recovery. Password authentication uses a current password-hashing construction and
+never stores recoverable passwords. Session/token secrets remain server-side. Browser cookie
+sessions use `Secure`, `HttpOnly`, and suitable `SameSite` settings plus CSRF and origin defenses.
+Validate exact request shapes at the HTTP boundary, authorize again at the use-case boundary, and
+execute related canonical mutations in one transaction or through an explicitly idempotent recovery
+protocol. Apply per-principal resource and rate limits before expensive provider work.
+
+Local development may use seeded credentials or a development identity provider only when requests
+still traverse the normal authentication, authorization, and tenant-isolation paths. A trusted
+identity header, global fixed user, or authentication-disable switch must not exist in a listening
+composition.
+
+One-time client-data migration is a separate authenticated use case: strictly decode its bounded
+input, replace claimed ownership with the authenticated principal, preserve newer server state, and
+commit atomically and idempotently. It never leaves a permanent generic persistence endpoint behind.
+
+These are the server-specific consequences of
+[development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises),
+not optional hardening for after launch.
 
 ## Security and dependencies
 
@@ -54,3 +101,8 @@ part of a clean [definition of done](../principles/WORKING_AGREEMENT.md).
 - The server imports shared contracts, reuses shared domain rules, and never imports the UI.
 - A device twin interprets the same semantic contract the firmware does; it never streams frames.
 - Keep the dependency surface audited and current.
+- Own canonical durable records and expensive background/index work for networked thin clients.
+- Expose bounded authenticated use cases, never generic client-controlled persistence.
+- Enforce authorization and owner/tenant partitions before every read, search, ranking, and write.
+- A local-authoritative product is outside this server-oriented blueprint, not a networked MVP
+  shortcut.
