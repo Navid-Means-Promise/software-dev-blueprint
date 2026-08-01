@@ -50,7 +50,7 @@ budgets, and stop whenever it is not visible or motion has been reduced.
 Beyond the performance budget, these design techniques keep a rich or 3D renderer **reusable and
 accessible** across projects — they are what let one renderer serve more than one product.
 
-- **Decouple the renderer from the domain.** A renderer takes a typed *settings* object (image URL,
+- **Decouple the renderer from the domain.** A renderer takes a typed _settings_ object (image URL,
   colour palette, supported effects, intensity) rather than a domain entity, and validates its effect
   inputs. Any product that can produce those settings can reuse the renderer unchanged.
 - **Share one implementation for related visuals, and one module for a heavy dependency.** Cutting
@@ -61,11 +61,11 @@ accessible** across projects — they are what let one renderer serve more than 
   scene, keep the accessible HTML element (localized label, keyboard focus, screen-reader name) and
   let pointer events fall through to the canvas, which raycasts the scene beneath. Selection is then
   identical whether or not the scene rendered, and accessibility never depends on the renderer.
-- **Render domain text into a texture, not an overlay.** A label that belongs *inside* the scene (a
+- **Render domain text into a texture, not an overlay.** A label that belongs _inside_ the scene (a
   title down a 3D spine) is painted into a canvas texture from the localized domain text, rather than
   floated as an HTML card over the canvas where it could never sit correctly in the 3D space.
 
-*Reference implementation:* Mystery's crystal-orb and library-bookcase renderers share one wood
+_Reference implementation:_ Mystery's crystal-orb and library-bookcase renderers share one wood
 material and one hoisted 3D-engine chunk, take typed settings rather than scene objects, project HTML
 controls onto a raycast 3D bookcase, and paint book titles into spine textures from localized text.
 
@@ -79,7 +79,7 @@ controls onto a raycast 3D bookcase, and paint book titles into spine textures f
 - Focus targets, clicks, scrolling, and screen-reader labels stay stable during ambience.
 - **Record the numbers.** Keep a dated performance baseline (average FPS, worst frame, buffer size,
   conditions) so a later change has a regression reference. Distinguish a hardware-GPU measurement
-  from a software-renderer measurement — the latter validates the *fallback and lifecycle*, not
+  from a software-renderer measurement — the latter validates the _fallback and lifecycle_, not
   animated-shader performance, and the two must never be reported as the same thing.
 - Real GPU/thermal behavior is ultimately confirmed on a physical device, not only in a desktop
   browser or emulator.

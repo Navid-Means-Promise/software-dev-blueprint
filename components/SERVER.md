@@ -54,10 +54,12 @@ caches are projections that can be rebuilt from canonical records. Background wo
 expensive document embedding, reindexing, retention, and repair without holding a user request open;
 the request path exposes a deterministic degraded mode while work is pending.
 
-Process-local, in-memory, and single-user stores are test/development adapters only. A networked MVP
-that accepts user data uses durable server persistence with defined transactions, revision/conflict
-handling, restart recovery, and tenant-scoped queries. It does not expose generic storage CRUD to an
-untrusted client; routes represent bounded application use cases.
+Process-local repositories and fixed-principal substitutes are allowed only when explicitly
+constructed inside isolated unit or component tests. They are not selectable server modes. Every
+listening environment—including local development, E2E, demos, staging, and an MVP—uses the
+authenticated multi-user boundary, tenant-scoped queries, and the canonical persistence adapter
+with defined transactions, revision/conflict handling, and restart recovery. It does not expose
+generic storage CRUD to an untrusted client; routes represent bounded application use cases.
 
 ## Identity, authority, and tenant isolation
 
@@ -66,11 +68,18 @@ tenant scope, server time, and policy limits itself. Client- or model-supplied v
 values are ignored or rejected. Every repository query—including full-text/vector candidate
 selection—applies the principal's permitted partition before reading, ranking, or mutating records.
 
-Use password hashing and protected session/token handling appropriate to the deployment. Browser
-cookie sessions also require CSRF and origin defenses. Validate exact request shapes at the HTTP
-boundary, authorize again at the use-case boundary, and execute related canonical mutations in one
-transaction or through an explicitly idempotent recovery protocol. Apply per-principal resource and
-rate limits before expensive provider work.
+Use a maintained authentication implementation and document credential issuance, expiry, rotation,
+revocation, and recovery. Password authentication uses a current password-hashing construction and
+never stores recoverable passwords. Session/token secrets remain server-side. Browser cookie
+sessions use `Secure`, `HttpOnly`, and suitable `SameSite` settings plus CSRF and origin defenses.
+Validate exact request shapes at the HTTP boundary, authorize again at the use-case boundary, and
+execute related canonical mutations in one transaction or through an explicitly idempotent recovery
+protocol. Apply per-principal resource and rate limits before expensive provider work.
+
+Local development may use seeded credentials or a development identity provider only when requests
+still traverse the normal authentication, authorization, and tenant-isolation paths. A trusted
+identity header, global fixed user, or authentication-disable switch must not exist in a listening
+composition.
 
 One-time client-data migration is a separate authenticated use case: strictly decode its bounded
 input, replace claimed ownership with the authenticated principal, preserve newer server state, and
@@ -95,4 +104,5 @@ part of a clean [definition of done](../principles/WORKING_AGREEMENT.md).
 - Own canonical durable records and expensive background/index work for networked thin clients.
 - Expose bounded authenticated use cases, never generic client-controlled persistence.
 - Enforce authorization and owner/tenant partitions before every read, search, ranking, and write.
-- Treat a deliberately local-only product as a separate architecture, not a networked MVP shortcut.
+- A local-authoritative product is outside this server-oriented blueprint, not a networked MVP
+  shortcut.

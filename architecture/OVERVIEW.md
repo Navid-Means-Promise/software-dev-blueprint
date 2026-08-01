@@ -34,7 +34,7 @@ business rules exist once, visual code exists once, and platform code is a thin 
               │ adapters    │                     │ adapters    │
               └──────┬──────┘                     └──────┬──────┘
                      └──────── authenticated ────────────┘
-                               bounded use cases
+                          bounded runtime requests
                                       │
                                       ▼
                                ┌──────────────┐
@@ -48,9 +48,10 @@ business rules exist once, visual code exists once, and platform code is a thin 
      firmware     ──implements──▶  the semantic device contract in docs
 ```
 
-The one direction that matters: **arrows only point up and inward, toward the domain core.** The core
-imports nothing above it — not the UI, not a client, not a framework, not the DOM. A violation of
-this direction is an architecture bug regardless of whether it compiles.
+For compile-time dependencies, **imports point inward toward the domain core.** The core imports
+nothing above it—not the UI, not a client, not a framework, not the DOM. The client-to-server arrow
+is a runtime network request, not a package import. Confusing those two arrow types would make the
+diagram contradictory; a compile-time violation remains an architecture bug even when it compiles.
 
 ## Module map
 
@@ -76,7 +77,8 @@ this direction is an architecture bug regardless of whether it compiles.
   [DI container](DEPENDENCY_INJECTION.md).
 - The UI renders state from the [observer store](STATE_MANAGEMENT.md) and delegates every decision to
   the domain; UI code holds no business rules.
-- Shared **contracts** — wire, storage, content — are defined once and consumed everywhere. See
+- Shared **contracts**—wire, persistence, content—are defined once; every applicable consumer
+  imports or conforms to that definition. See
   [contracts](CONTRACTS.md).
 - Networked clients submit bounded intent; only the server authenticates, authorizes, validates, and
   commits canonical effects. See [development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).

@@ -55,10 +55,11 @@ documents a clear ownership rule and does not create a second source of applicat
 
 ## The shared bootstrap seam
 
-The startup of the two clients is nearly identical: register core services, override the platform
-adapters, mount the root component. The _only_ real difference is which adapters get injected.
-Collapse that into **one shared bootstrap** in `@app/ui` that takes the adapter set as its argument;
-each client's entry point becomes a single call passing its own adapters.
+The startup of the two clients is nearly identical: register client-safe core services, supply the
+required application transport and platform adapters, verify the bindings, and mount the root
+component. The only architectural difference is the injected adapter set. Collapse that into **one
+shared bootstrap** in `@app/ui`; each client's entry point supplies its adapters and host mount
+point.
 
 ```ts
 // @app/ui/bootstrap.ts — the seam. Only `adapters` differs per client.
@@ -116,6 +117,8 @@ or component re-renders.
 - One screen implementation per route, shared by all clients; it may compose smaller components, and
   platform difference is a port, not a fork.
 - The document consumer chooses and records the component-wiring option; UI code holds no domain
-  rules, port access, or DI-container lookup under either option.
+  rules, repository/raw infrastructure port, or DI-container lookup. A connected component may call
+  only the bounded intent-level interface explicitly supplied to it.
 - All user-facing strings come from the i18n catalog.
-- Startup goes through the shared readiness gate; the bootstrap's only variable is the adapter set.
+- Startup goes through the shared readiness gate; platform behavior varies only through the adapter
+  set.

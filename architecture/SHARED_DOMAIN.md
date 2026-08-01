@@ -7,9 +7,9 @@ depends on nothing above it. This is where the product's rules live.
 
 `@app/shared` is **framework-free and DOM-free.** No Lit, no browser globals, no `window`, no
 Capacitor, no Fastify. The server may import it; it must never import the UI. Everything the domain
-needs from a host arrives through a [port](PORTS_AND_ADAPTERS.md). This is what lets the same rules run
-in a browser, in an Android WebView, on the server, and in a plain unit test with no environment at
-all.
+needs from a host arrives through a [port](PORTS_AND_ADAPTERS.md). Pure rules can therefore run in a
+browser, an Android WebView, the server, or a unit test. For a networked product, the ability to run
+code in a client does not grant that client authority: canonical use cases execute on the server.
 
 ## What lives here
 
@@ -48,9 +48,10 @@ only a `roll()` step resolves through an injected `DiceRoller`.
 
 ## Services coordinate; they do not leak
 
-A service owns one use case and receives every collaborator through its constructor. It reads and
-advances the engine, persists through a repository interface, and issues effects through the
-relevant providers. It holds no reference to any host API.
+A service owns one use case and receives every collaborator through its constructor. Depending on
+its role, it may advance a pure engine, call a bounded application-use-case provider, persist through
+a server repository, or issue effects through a capability provider. It holds no reference to any
+host API.
 
 In a networked product, authoritative services execute in the server composition root. The UI
 depends on a bounded application-use-case interface implemented by an authenticated transport; it

@@ -7,25 +7,28 @@ agent inside the rules.
 
 ## Single-source rulebook, dual entry points
 
-There is **one** normative rules document per repository. Both agent entry points *point to* it and
+There is **one** normative rules document per repository. Both agent entry points _point to_ it and
 never restate it, so they cannot drift:
 
 - **`CLAUDE.md`** — the Claude Code entry point: a short pointer to the rules plus the document map.
 - **`AGENTS.md`** — the same pointer for other agent tooling, kept in sync with `CLAUDE.md`.
 
 Restating a rule in an entry point is the drift bug this structure exists to prevent. Both files carry
-the *pointer* and the *map*; the rules live once, in the normative document. On this stack that
+the _pointer_ and the _map_; the rules live once, in the normative document. On this stack that
 normative document is the project's development-rules file (modeled on
 [development principles](../principles/DEVELOPMENT_PRINCIPLES.md) +
 [working agreement](../principles/WORKING_AGREEMENT.md)).
 
-## The branch-guard hook
+## Branch guards
 
-The branch-first rule ([working agreement](../principles/WORKING_AGREEMENT.md) §1) is enforced by a
-`PreToolUse` hook that **denies edits while `HEAD` is on `main`**. This is the one piece of the
-workflow worth showing exactly, because it is what makes the rule survive an agent forgetting it.
+The branch-first rule ([working agreement](../principles/WORKING_AGREEMENT.md) §1) requires guards for
+every mutation path available to the agent: direct edit/write tools, shell commands that can write,
+and Git commits. A direct-editor hook alone is not complete enforcement because a shell or another
+tool could still change files. Install tool-specific guards at the agent boundary and a repository
+commit guard as defense in depth; both reject mutation while `HEAD` is `main`.
 
-Settings register the hook against the edit tools:
+The following is the minimum direct-editor portion for an environment with these named tools. It
+must be extended for every other mutating tool that environment exposes:
 
 ```jsonc
 // .claude/settings.json
@@ -35,17 +38,19 @@ Settings register the hook against the edit tools:
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          { "type": "command",
+          {
+            "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-main-branch.sh",
-            "statusMessage": "Checking branch rule" }
-        ]
-      }
-    ]
-  }
+            "statusMessage": "Checking branch rule",
+          },
+        ],
+      },
+    ],
+  },
 }
 ```
 
-The hook denies the edit when on `main`, and stays silent otherwise:
+The direct-editor hook denies the edit when on `main`, and stays silent otherwise:
 
 ```bash
 #!/usr/bin/env bash
@@ -62,12 +67,13 @@ JSON
 fi
 ```
 
-Treat the hook as a backstop, not a reminder: the agent still branches first by rule; the hook only
-catches the lapse.
+Treat guards as backstops, not reminders: the agent still branches first by rule. Test the installed
+guard set by proving that each mutating path and a commit are rejected on `main` while read-only
+inspection remains available.
 
 ## The answer-summary rule
 
-An agent's *answers* are governed too: any answer carrying findings, comparisons, trade-offs, or a
+An agent's _answers_ are governed too: any answer carrying findings, comparisons, trade-offs, or a
 decision ends with a `## Summary` that stands alone. The full rule is in the
 [working agreement](../principles/WORKING_AGREEMENT.md) §4. It exists because the owner reads the
 summary to act; burying a decision in prose above it hides the thing they need.
@@ -83,6 +89,7 @@ summary to act; burying a decision in prose above it hides the thing they need.
 ## Rules
 
 - One normative rules document; `CLAUDE.md` and `AGENTS.md` point to it and stay in sync.
-- The `PreToolUse` branch-guard hook is installed; branch-first is still a rule, not just the hook.
+- Guards cover every available mutation path and commits; branch-first is still a rule, not just a
+  tool hook.
 - Answers with findings or decisions end in a standalone `## Summary`.
 - The agent executes; the owner merges and directs.

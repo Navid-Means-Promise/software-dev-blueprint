@@ -28,9 +28,9 @@ seam is the adapter, never the screen.
 
 For a networked application, Android calls the same bounded server-owned use cases as web rather than
 exposing a generic repository/storage transport. Preferences/SQLite may hold settings that are
-inherently device-local, bounded caches, pending offline operations, or one-time migration input;
-they do not become competing application truth. A deliberately local-only product is a separate
-architecture variant. See
+inherently device-local, bounded response caches, or one-time migration input; they do not become
+competing application truth or queue canonical writes. A local-authoritative product is outside this
+server-oriented blueprint. See
 [ports & adapters](../architecture/PORTS_AND_ADAPTERS.md).
 
 ## Build flow
@@ -52,6 +52,6 @@ live as scripts so the flow is one command per step.
 - One UI, shared with web; platform difference is an adapter, never a screen fork.
 - Canonical operations use bounded authenticated server APIs; no generic storage or client-authority
   fallback exists.
-- A deliberately local-only product is a separate architecture, not a networked fallback.
+- A local-authoritative product is outside this server-oriented blueprint, not a networked fallback.
 - The bootstrap call matches the web client's; only the adapter set differs.
 - Device-dependent performance is confirmed on real hardware before it is called done.

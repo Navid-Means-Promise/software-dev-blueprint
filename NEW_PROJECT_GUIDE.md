@@ -16,12 +16,15 @@ first, because they shape the domain, the ports, and the contracts:
 2. **Locales.** The default locale and every other, in full parity ([i18n](practices/I18N.md)).
 3. **Typography.** The interface and display faces for each locale, plus the supported local font
    formats and compatibility target ([typography](practices/TYPOGRAPHY.md)).
-4. **Which ports the domain needs.** Storage is a given; which others — audio, a physical device, a
-   clock/scheduler, randomness ([ports & adapters](architecture/PORTS_AND_ADAPTERS.md))?
+4. **Which injected boundaries each composition needs.** Clients need bounded authenticated
+   application-use-case transports plus any optional host capabilities such as audio or a physical
+   device. The server needs identity, canonical repositories, provider integrations, a clock, and
+   other infrastructure required by its use cases
+   ([ports & adapters](architecture/PORTS_AND_ADAPTERS.md)).
 5. **Whether there is a physical device**, and if so, its **semantic contract** — the modes and
    parameters, meaning only, no frames ([contracts](architecture/CONTRACTS.md)).
 6. **Identity and data authority.** Define the principal/tenant model, canonical server store, and
-   bounded use cases before building a networked client persistence path
+   bounded use cases before wiring any networked client data flow
    ([server](components/SERVER.md)).
 7. **The package scope** (e.g. `@yourproject/*`).
 
@@ -41,7 +44,9 @@ exists.
    ([AI agent workflow](practices/AI_AGENT_WORKFLOW.md)).
 
 2. **The domain core (`@app/shared`).** In dependency order:
-   - the **ports** the domain needs, each with a safe no-op / in-memory default;
+   - the **ports** required by pure rules and client presentation; only genuinely optional
+     presentation/device capabilities receive no-op defaults, while authority-bearing ports have no
+     default;
    - the **DI container**, typed **tokens**, and `registerCoreServices()`
      ([dependency injection](architecture/DEPENDENCY_INJECTION.md));
    - the **observer store** and `AppState` ([state management](architecture/STATE_MANAGEMENT.md));
@@ -62,8 +67,8 @@ exists.
    the shared contracts; authentication, authorization, tenant-scoped durable persistence,
    transaction/concurrency policy, bounded use cases, a health endpoint, content/catalog endpoints,
    and—if there is a device—the in-memory semantic twin ([server](components/SERVER.md)). Use
-   in-memory repositories only as explicit test doubles. The first externally usable slice already
-   obeys the trust boundary in
+   in-memory repositories only as explicit doubles in isolated tests. Every runnable networked
+   composition, including local development and E2E, already obeys the trust boundary in
    [development principles §7](principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).
 
 5. **The web client (`@app/web`).** Vite config from the shared factory, HTTP/browser adapters, one
@@ -87,8 +92,9 @@ exists.
 ## The vertical slice as the milestone
 
 Aim first for a **thin end-to-end slice**, not a complete product: the smallest real flow that
-exercises the engine, the store, one persisted port, the shared UI on web, and — if applicable — the
-device twin. A running slice proves the architecture; breadth comes after.
+exercises the engine, the store, one authenticated server-owned persisted use case, the shared UI on
+web, and—if applicable—the device twin. A running slice proves the architecture; breadth comes
+after.
 
 _Reference:_ A Cup of Mystery's first slice was two opening choices, a deterministic dice gate, two
 endings, persistence, a device mock, bilingual RTL, and a firmware engine — the whole stack end to

@@ -73,7 +73,7 @@ container.registerSingleton(
   () =>
     new SessionFactory(
       container.resolve(CATALOG),
-      container.resolve(STORAGE) /* … */,
+      container.resolve(SCHEDULER) /* … */,
     ),
 );
 

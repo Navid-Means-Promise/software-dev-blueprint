@@ -6,8 +6,8 @@ name, everywhere.** A second name for a thing that already has one is a bug.
 
 ## Architecture
 
-- **Domain core** — `@app/shared`: the pure, framework- and DOM-free package that holds the product's
-  rules. Everything depends on it; it depends on nothing above it. See
+- **Domain core** — `@app/shared`: the pure, framework- and DOM-free package that holds reusable
+  product rules. TypeScript hosts depend inward on it; it depends on nothing above it. See
   [shared domain](architecture/SHARED_DOMAIN.md).
 - **Port** — a narrow interface in the domain core for one host capability. See
   [ports & adapters](architecture/PORTS_AND_ADAPTERS.md).
@@ -19,14 +19,15 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   persistence.
 - **Container / token** — the DI container maps a typed token to a factory that builds an
   implementation. See [dependency injection](architecture/DEPENDENCY_INJECTION.md).
-- **Store** — the observable `AppState` the UI subscribes to; the Observer mechanism. See
+- **Store** — the in-memory observable UI projection (`AppState`) one client instance subscribes to;
+  never canonical domain persistence. See
   [state management](architecture/STATE_MANAGEMENT.md).
 - **Engine** — the domain state machine that walks the product's flow and owns branching.
 - **Mediator** — the single service that turns a state's declared intent into coordinated, cancellable
   port calls (e.g. a director of timed effects).
 - **Contract** — any shape that crosses a boundary (wire, storage, content, device), defined once and
   consumed everywhere. See [contracts](architecture/CONTRACTS.md).
-- **Semantic device model** — a device driven by *meaning* (a mode + parameters) that renders frames
+- **Semantic device model** — a device driven by _meaning_ (a mode + parameters) that renders frames
   locally; never streamed frames.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
   the firmware does, for use without hardware.
@@ -67,7 +68,7 @@ name, everywhere.** A second name for a thing that already has one is a bug.
 ## Practices
 
 - **Content** — schema-validated product data ("one validated definition plus the assets it names"),
-  validated at construction. A project gives it one concrete name (e.g. *story content*) and never a
+  validated at construction. A project gives it one concrete name (e.g. _story content_) and never a
   second. See [assets & content](practices/ASSETS_AND_CONTENT.md).
 - **Layout definition** — the single source every content asset path derives from.
 - **Message catalog** — the typed, per-locale-in-parity source of every UI string. See

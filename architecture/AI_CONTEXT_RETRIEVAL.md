@@ -64,8 +64,9 @@ For networked browser/WebView products, the server owns canonical sources, durab
 projections, context assembly, retrieval execution, and model interaction. The client sends the new
 message through a bounded authenticated conversation use case; it cannot supply the trusted access
 scope, source allowlist, server time, retrieval results/instructions, or mutation authority. A
-deliberately local-only product is a different trust architecture; a networked product may not use
-that label to bypass server authentication or tenant isolation.
+local-authoritative product is outside this server-oriented blueprint and needs a separate
+architecture specification; the label cannot bypass server authentication or tenant isolation in a
+networked composition.
 
 ### Route information to its authoritative owner
 
@@ -219,11 +220,12 @@ both for distinct responsibilities is an application-design decision.
 
 ### Durable derived-index lifecycle
 
-Persist enough server-owned projection input to rebuild a private search engine without rereading
-client storage. Cache document embeddings by a deterministic identity containing at least normalized
-source text (or its cryptographic digest), embedding provider/model, dimensions, and any task/config
-that changes vector meaning. A generation timestamp such as `embeddedAt` supports diagnostics,
-retention, and rebuild policy; it does not by itself decide cache correctness.
+Persist enough server-owned projection input to rebuild a private search engine without depending on
+transient client storage or regenerating unchanged embeddings. Cache document embeddings by a
+deterministic identity containing at least normalized source text (or its cryptographic digest),
+embedding provider/model, dimensions, and any task/config that changes vector meaning. A generation
+timestamp such as `embeddedAt` supports diagnostics, retention, and rebuild policy; it does not by
+itself decide cache correctness.
 
 Do not synchronously regenerate an entire corpus in a user turn. Commit canonical data first, make a
 lexical or otherwise deterministic projection available promptly, and queue missing/stale document
@@ -546,8 +548,8 @@ and labeled rather than silently merged into a fabricated fact.
   boundary. Remote embedding creates a data disclosure that requires the same review as sending
   prompt content to a model provider.
 - Keep canonical sources, durable search inputs, vector caches, indexing workers, context assembly,
-  and model interaction on the server for networked thin clients. A deliberately local-only product
-  is a separate documented trust architecture, not an MVP shortcut for a networked system.
+  and model interaction on the server. A local-authoritative product is outside this
+  server-oriented blueprint, not an MVP shortcut for a networked system.
 - Key cached document vectors by content and every embedding configuration field that changes their
   meaning; test restart reuse, model invalidation, deletion, and background-index degradation.
 - Bound query length, result count, prompt tokens, predictive instructions, in-call rounds, and

@@ -7,8 +7,8 @@ stack" into "every project keeps the stack current, and the stack keeps every pr
 ## The model: a hub, not pairs
 
 **This blueprint repository is the canonical source** of the stack's rules, architecture, patterns,
-and reusable concepts. Every project **conforms to the blueprint** and exchanges improvements *with
-the blueprint* — not directly with its siblings.
+and reusable concepts. Every project **conforms to the blueprint** and exchanges improvements _with
+the blueprint_ — not directly with its siblings.
 
 ```text
                         ┌───────────────────────────┐
@@ -53,19 +53,19 @@ rule, a better shared utility. Each is a **candidate**, recorded here in the sam
 it, and carried to the blueprint through the blueprint's own [working
 agreement](../principles/WORKING_AGREEMENT.md). Status per candidate:
 
-| Status | Meaning |
-| --- | --- |
-| Proposed | A reusable improvement identified here, offered to the blueprint |
-| Merged | The blueprint adopted it — record the blueprint commit hash |
-| Rejected | Considered for the stack and declined, with the reason |
-| Project-specific | Deliberately kept local; not a stack concern |
+| Status           | Meaning                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| Proposed         | A reusable improvement identified here, offered to the blueprint |
+| Merged           | The blueprint adopted it — record the blueprint commit hash      |
+| Rejected         | Considered for the stack and declined, with the reason           |
+| Project-specific | Deliberately kept local; not a stack concern                     |
 
 A healthy "Proposed" list is the stack's improvement pipeline made visible.
 
 ## What conforming means (and does not)
 
 - **Conform to the rules and architecture, adapt to the domain.** A project applies the blueprint's
-  principles, boundaries, and patterns; it does *not* copy another project's product assumptions. The
+  principles, boundaries, and patterns; it does _not_ copy another project's product assumptions. The
   blueprint is deliberately neutral so that conforming never imports someone else's domain.
 - **Reconcile, do not overwrite.** Porting a blueprint change means re-expressing it through the
   project's own domain seams, exactly as porting a pattern always has.
@@ -96,5 +96,5 @@ A project that previously kept a sibling-to-sibling ledger (e.g. an early `*_SYN
 product) retires it once its reusable contents are represented in the blueprint: verify each still-
 relevant candidate exists in the blueprint (add it there first if not), then replace the old ledger
 with a `docs/BLUEPRINT_SYNC.md` whose baseline is the blueprint commit that absorbed them. Historical
-provenance ("this idea originated in project X") may stay as a factual note; the *live* sync
+provenance ("this idea originated in project X") may stay as a factual note; the _live_ sync
 relationship is now only with the blueprint.

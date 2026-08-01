@@ -13,8 +13,10 @@ in its one source **before** any code that depends on it — that ordering is pa
 
 Where the single source lives depends on who shares it:
 
-- **TypeScript-only contracts** (a wire message between web/mobile/server, a stored record shape) are
-  a type in `@app/shared`, imported by every TypeScript consumer.
+- **TypeScript-only contracts shared by multiple workspaces** (for example, a wire message between
+  web/mobile/server) are types in `@app/shared`, imported by their consumers. A server-persistence
+  record used only inside `@app/server` is defined once there; sharing a wire contract does not make
+  the physical database schema public to clients.
 - **Cross-language contracts** (anything firmware in C++ must also honor) are specified in a `docs/`
   contract file that is the normative source; the TypeScript twin and the firmware implementation
   both conform to that document, and the document — not either implementation — is authoritative.
@@ -35,10 +37,11 @@ migration source—not a competing truth.
 Record identity, revision/concurrency semantics, authorization scope, and deletion behavior belong
 to the shared contract even when the physical database schema remains private to the server.
 
-A deliberately local-only/offline product is a separate architecture variant. Before it adds a
-server, another device, or any second writable copy, it must define synchronization, conflict
-resolution, tombstones, encryption/key ownership, retention, recovery, and migration. “It uses
-IndexedDB/Preferences” is an adapter choice, not a synchronization design.
+This server-oriented blueprint does not define a local-only/offline-authoritative product. Such a
+product needs a separate architecture specification before implementation; it cannot use local-only
+language as an exception to the authentication, tenant-isolation, or server-authority rules of a
+networked composition. “It uses IndexedDB/Preferences” is an adapter choice, not a synchronization
+design.
 
 ## The semantic device model
 
@@ -78,5 +81,5 @@ document is only the _pattern_.
   over any single implementation.
 - Devices receive semantic intent and render locally. Never stream frames.
 - Validate content against its schema at construction, so a malformed contract fails early.
-- For networked clients, keep canonical durable state server-owned; a local-only product is a
-  separate architecture variant.
+- Keep canonical durable state server-owned. A local-authoritative product is outside this
+  blueprint and requires a separate architecture specification.

@@ -1,6 +1,6 @@
 # Monorepo
 
-Authoritative for the repository layout, workspace wiring, and shared toolchain. The module *roles*
+Authoritative for the repository layout, workspace wiring, and shared toolchain. The module _roles_
 are in [architecture overview](../architecture/OVERVIEW.md); this document is how they are assembled
 into one repository.
 

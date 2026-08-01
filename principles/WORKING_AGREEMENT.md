@@ -21,9 +21,9 @@ _how code is designed_; this document governs _how a task is run and landed_. Bo
   re-run its checks, and present it for review unprompted. The request stays open until every branch
   is merged or explicitly dropped.
 
-This rule is mechanically enforced by a `PreToolUse` branch-guard hook that denies edits while `HEAD`
-is on `main`. Treat the hook as a backstop, not a reminder. See
-[AI agent workflow](../practices/AI_AGENT_WORKFLOW.md) for the hook.
+This rule is mechanically guarded across every available mutation path, including direct edit tools,
+shell-based writes, and commits. A guard that covers only one editor is incomplete. Treat enforcement
+as a backstop, not a reminder. See [AI agent workflow](../practices/AI_AGENT_WORKFLOW.md).
 
 ---
 
@@ -81,7 +81,8 @@ A task is landable when:
   motion.
 - Any improvement worth proposing upstream to the blueprint is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
-- The repository-wide check passes; UI changes also pass the browser acceptance flow.
+- The repository-wide check passes; shared UI changes also pass the browser acceptance flow, and
+  Android shell/bridge/adapter changes pass the relevant Android host tests.
 - The merge into `main` waits for the owner's explicit confirmation.
 
 ---
