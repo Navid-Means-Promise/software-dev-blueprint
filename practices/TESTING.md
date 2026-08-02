@@ -48,7 +48,9 @@ covering the shared web-rendered behavior, [i18n](I18N.md), and browser-side
 native bridge behavior, Android permissions, or device-specific performance; focused Android tests
 cover those boundaries. Isolate any measurement that needs real GPU hardware into its own run that
 **rejects a software renderer**, so a software-fallback result is never mistaken for animated-shader
-performance.
+performance. Localized-form acceptance enters every supported digit/format representation, proves
+canonical values reach the boundary, and asserts that invalid input produces a catalog message in
+the active locale rather than browser-native text in another language.
 
 When the server owns canonical state, browser tests assert through server-visible records and reset
 or namespace that state explicitly. Do not mistake a fresh browser context for data isolation. Add
