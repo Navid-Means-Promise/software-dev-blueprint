@@ -84,11 +84,11 @@ protocol. Apply per-principal resource and rate limits before expensive provider
 
 ### Passwordless phone authentication
 
-When phone numbers are an appropriate identity channel, prefer one passwordless flow over separate
-sign-up and sign-in forms: request a one-time code, verify it, create the account on first successful
-verification, and create a session for both new and returning principals. Collect profile fields only
-after authentication when the product actually needs them. Do not reveal whether a phone number is
-already registered.
+Long upfront registration forms create avoidable friction and abandonment. When phone ownership is
+sufficient for initial identity, ask only for the phone number and OTP, then collect additional
+profile information progressively when it becomes necessary. Use one flow for both sign-up and
+sign-in: create the account on first successful verification and a session for both new and returning
+principals. Do not reveal whether a phone number is already registered.
 
 The server owns code generation, verification, and account/session creation. SMS is delivery only:
 define a narrow provider-neutral sender port and inject one configured adapter at the server
