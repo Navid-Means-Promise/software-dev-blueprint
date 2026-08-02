@@ -20,6 +20,11 @@ The house style, and the lens for every rule below. Say exactly what is true, an
   does not already carry.
 - Applied to **code:** the shortest expression that is still obvious. Not code golf — clarity is the
   target, brevity is what clarity usually costs once the design is right.
+- Applied to **names:** evaluate them in their qualified context. Standalone functions and broadly
+  scoped objects need self-descriptive operations, such as `verifyPhoneOtpChallenge()` and
+  `authenticationService.verifyPhoneOtpChallenge()`. Narrowly scoped objects avoid repeating the
+  domain already named by their receiver: `otpChallengeService.verifyPhoneChallenge()`. This is a
+  system-wide readability rule, not permission to maximize identifier length.
 - Applied to **docs and comments:** explain the _why_ the code cannot say itself. Never narrate what
   the code already states. A comment that repeats its line is deleted, not maintained.
 - Applied to **this repository:** describe intent and constraints in prose; drop into a code or
