@@ -101,6 +101,10 @@ Server dependencies carry a real audit surface (static file serving, request par
 current and clear known-vulnerable lines rather than pinning to them — a resolved audit finding is
 part of a clean [definition of done](../principles/WORKING_AGREEMENT.md).
 
+Credentials enter deployment through environment-backed secret management; tracked configuration,
+documentation, fixtures, and examples contain placeholders only. Rotate any credential exposed in
+source, logs, issue trackers, chat, test output, or another unintended channel.
+
 ## Rules
 
 - Routes are thin; rules live in services; persistence lives behind repositories.
