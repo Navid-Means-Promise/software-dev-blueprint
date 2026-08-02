@@ -107,8 +107,8 @@ challenge identifier, and make challenges short-lived, single-use, and attempt-l
 issuance by canonical phone number and trustworthy source signal before calling the paid provider;
 bound total issuance as well. Invalidate superseded challenges where product policy allows only the
 newest code, use constant-time comparison, and make successful consumption plus first-account
-creation atomic or idempotently recoverable. Logs and provider errors must omit codes, full phone
-numbers, credentials, and provider response bodies that may contain them.
+creation atomic or idempotently recoverable. Production logs and provider errors must omit codes,
+full phone numbers, credentials, and provider response bodies that may contain them.
 
 Define request, challenge, verification, and authenticated-session wire shapes once in shared
 contracts, with explicit names such as `OtpChallenge`, `otpChallengeId`, `otpCode`, and
@@ -122,6 +122,12 @@ provider-specific request mapping without sending a real message. Acceptance tes
 account creation, returning sign-in, expiry, replay, wrong-code attempt exhaustion, resend/rate
 limits, concurrent verification, provider failure, localized-input normalization, localized errors,
 and tenant isolation.
+
+The local-development composition may decorate the delivery port with an explicit fallback that
+logs each generated code with no full phone number, then treats absent or failed SMS delivery as
+nonfatal. The logged code still traverses the normal challenge, verification, account, and session
+paths; this is not an authentication bypass. Production and staging never install this decorator,
+delivery failures remain fatal there, and tests prove both composition modes.
 
 Local development may use seeded credentials or a development identity provider only when requests
 still traverse the normal authentication, authorization, and tenant-isolation paths. A trusted
