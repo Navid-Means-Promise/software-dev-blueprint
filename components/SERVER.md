@@ -82,6 +82,47 @@ Validate exact request shapes at the HTTP boundary, authorize again at the use-c
 execute related canonical mutations in one transaction or through an explicitly idempotent recovery
 protocol. Apply per-principal resource and rate limits before expensive provider work.
 
+### Passwordless phone authentication
+
+Long upfront registration forms create avoidable friction and abandonment. When phone ownership is
+sufficient for initial identity, ask only for the phone number and OTP, then collect additional
+profile information progressively when it becomes necessary. Use one flow for both sign-up and
+sign-in: create the account on first successful verification and a session for both new and returning
+principals. Do not reveal whether a phone number is already registered.
+
+The server owns code generation, verification, and account/session creation. SMS is delivery only:
+define a narrow provider-neutral sender port and inject one configured adapter at the server
+composition root. Provider API keys, sender identities, approved-template identifiers, and template
+parameter mappings belong only to that adapter's server-side configuration. Switching providers
+must not change the authentication service, HTTP contract, or UI flow; missing required delivery
+wiring fails startup rather than selecting a permissive fallback. Bound delivery calls with an
+explicit timeout; a failed delivery leaves no verifiable challenge and returns a provider-neutral
+error under a defined retry/idempotency policy.
+
+Normalize before validating: canonicalize supported Unicode decimal digits, accepted presentation
+separators, and national/international phone forms into one E.164 value. Repeat normalization and
+validation on the server before lookup or delivery, normalize code digits before verification, and
+persist only canonical values. Store only a cryptographic digest of each code, bind it to an opaque
+challenge identifier, and make challenges short-lived, single-use, and attempt-limited. Rate-limit
+issuance by canonical phone number and trustworthy source signal before calling the paid provider;
+bound total issuance as well. Invalidate superseded challenges where product policy allows only the
+newest code, use constant-time comparison, and make successful consumption plus first-account
+creation atomic or idempotently recoverable. Logs and provider errors must omit codes, full phone
+numbers, credentials, and provider response bodies that may contain them.
+
+Define request, challenge, verification, and authenticated-session wire shapes once in shared
+contracts, with explicit names such as `OtpChallenge`, `otpChallengeId`, `otpCode`, and
+`otpChallengeExpiresAt` rather than generic `id` and `code` fields within the challenge contract. OTP
+responses are non-cacheable, and browser requests receive the normal origin and CSRF defenses. The
+shared UI models the flow as explicit `phone entry → code entry → authenticated` states, uses
+telephone and one-time-code autofill semantics, supports correction and controlled resend, and does
+not encode provider details. Deterministic tests inject a fixed clock, randomness source, challenge
+repository, and recording delivery adapter; adapter contract tests separately prove the
+provider-specific request mapping without sending a real message. Acceptance tests cover first-use
+account creation, returning sign-in, expiry, replay, wrong-code attempt exhaustion, resend/rate
+limits, concurrent verification, provider failure, localized-input normalization, localized errors,
+and tenant isolation.
+
 Local development may use seeded credentials or a development identity provider only when requests
 still traverse the normal authentication, authorization, and tenant-isolation paths. A trusted
 identity header, global fixed user, or authentication-disable switch must not exist in a listening
