@@ -61,6 +61,12 @@ authenticated multi-user boundary, tenant-scoped queries, and the canonical pers
 with defined transactions, revision/conflict handling, and restart recovery. It does not expose
 generic storage CRUD to an untrusted client; routes represent bounded application use cases.
 
+In server-owned relational schemas, a table normally names its own primary key `id`; foreign keys
+name the referenced role, such as `otp_challenge_id`. Domain and wire identifiers remain explicit
+(`otpChallengeId`) even when the private row key is `otp_challenges.id`. Schema changes use
+data-preserving, restart-safe migrations, with tests that open the previous schema and prove both its
+records and constraints survive.
+
 ## Identity, authority, and tenant isolation
 
 The server derives the principal from an authenticated session or token and derives ownership,
