@@ -27,6 +27,9 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   port calls (e.g. a director of timed effects).
 - **Contract** — any shape that crosses a boundary (wire, storage, content, device), defined once and
   consumed everywhere. See [contracts](architecture/CONTRACTS.md).
+- **OTP challenge** — server-owned, short-lived, single-use verification state that binds a
+  one-time-code digest to a canonical identity. Marking it consumed is the atomic transition that
+  prevents replay. See [server](components/SERVER.md#passwordless-phone-authentication).
 - **Semantic device model** — a device driven by _meaning_ (a mode + parameters) that renders frames
   locally; never streamed frames.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
