@@ -138,9 +138,11 @@ when practical; otherwise colocate it with the adapter and enforce structural pa
 Measure the UTF-8 bytes and observed input tokens of the complete static request configuration, set a
 regression budget, and split the interaction or relevant tool set when growth is no longer justified.
 Audit validation failures, bounded corrective retries, model version, latency, and reported token
-usage. Retain exact instructions or response content only under the application's separately
-protected sensitive-payload access, retention, and deletion policy; strip provider-routing metadata
-from that payload and link the sanitized diagnostic projection described below.
+usage. When protected raw diagnostics are enabled, retain the exact instructions and complete
+provider response body—including routing metadata—under the application's separately protected
+sensitive-payload access, retention, and deletion policy. Keep that raw artifact separate from the
+structured diagnostic projection described below, and never capture transport credentials or
+authorization headers with it.
 
 ### Provider resilience and routing diagnostics
 
@@ -159,15 +161,18 @@ This makes transport replay safe while desired-state commands and trusted turn i
 convergence at later delivery boundaries. Tests inject the delay and prove both the retryable
 classification and the maximum request count without waiting or using a network.
 
-When a provider or router offers routing diagnostics, opt in explicitly but do not persist its raw
-additive metadata object. Decode permissively into a content-free allow list such as generation ID,
-requested model, strategy/region, selected provider and model, attempt count, and each fallback
-attempt's provider, model, and status; discard summaries, pipeline payloads, raw upstream errors,
-headers, and unknown fields. Capture the same projection on success and error paths under the
-diagnostic retention policy. Within an owner-approved, fully configured set of model endpoints,
-leave router fallback enabled by default. Every permitted endpoint must already satisfy the
-project's privacy, data residency, capability, and reliability policy; pinning or excluding one is
-an explicit policy decision, not a routine response to one transient failure.
+When a provider or router offers routing diagnostics, opt in explicitly. Preserve its additive
+metadata object inside the protected complete-response artifact because reconstructing provider
+selection and fallback behavior depends on it; do not promote the vendor-shaped object into a
+canonical contract or ordinary queryable log. Independently decode a content-free projection such
+as generation ID, requested model, strategy/region, selected provider and model, attempt count, and
+each fallback attempt's provider, model, and status. Omit summaries, pipeline payloads, raw upstream
+errors, headers, and unknown fields from that structured projection—not from the raw artifact—and
+capture the projection on success and error paths under the diagnostic retention policy. Within an
+owner-approved, fully configured set of model endpoints, leave router fallback enabled by default.
+Every permitted endpoint must already satisfy the project's privacy, data residency, capability,
+and reliability policy; pinning or excluding one is an explicit policy decision, not a routine
+response to one transient failure.
 
 Mutation tools express the desired resulting state rather than a toggle and target the exact
 revision the model was supplied: delivery retries must converge on the same state instead of
@@ -233,8 +238,9 @@ failure.
 Durable assistant memory and transcripts can contain sensitive personal information. A production
 design provides user-visible inspect/edit/delete/export controls, authenticates and authorizes every
 server request, encrypts server databases and backups with managed key lifecycle, partitions every
-query by owner/tenant before ranking, and records the minimum diagnostic content. Raw audio is not
-retained by default.
+query by owner/tenant before ranking, and records the minimum ordinary diagnostic content. Any
+protected raw model-provider captures remain separate and follow the bounded access, retention, and
+deletion policy above. Raw audio is not retained by default.
 
 Do not use a model provider's conversation identifier as durable product memory. Store short-term
 conversation state under product control, send only the turns or summary required for the current

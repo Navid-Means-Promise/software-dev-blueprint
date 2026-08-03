@@ -143,6 +143,16 @@ externally usable slice. Feature scope may be reduced; the trust boundary may no
 - Canonical mutations define transaction, concurrency, retry/idempotency, and failure behavior.
   Provider credentials stay server-side; public endpoints have resource/rate bounds; sensitive logs
   and durable data have explicit access, retention, and deletion policies.
+- **Safeguards are proportionate and capability-preserving.** Security, privacy, retention, and data
+  minimization controls mitigate a named risk with the narrowest control that preserves the
+  capabilities required to operate, debug, audit, recover, and prove the system. Do not prohibit
+  necessary data or behavior merely because it is sensitive or vendor-specific; prefer isolation,
+  restricted access, encryption, bounded retention, and separate raw/structured stores when those
+  controls address the risk. A broader prohibition must explain why narrower controls are
+  insufficient. Provider routing is the recurring example: a bounded protected raw-response artifact
+  retains the routing metadata needed to reconstruct fallback behavior, while ordinary queryable
+  telemetry uses an allowlisted projection. The vendor-shaped object remains diagnostic evidence,
+  not canonical application data.
 - Every composition that accepts requests from a network client—including local development, E2E,
   demos, staging, and an MVP—uses the authenticated multi-user server boundary and the same
   authorization and tenant-isolation rules. Development credentials or a development identity
@@ -167,6 +177,9 @@ scope it touches and reconcile the addition with the repository as a whole.
   guidance. Preserve the normative hierarchy and the one-fact-one-source rule.
 - Resolve every discovered inconsistency in the same coherent change. If the proposed content cannot
   be reconciled without an explicit owner decision, do not add or merge it.
+- Do not resolve a disagreement by automatically choosing the more restrictive statement. "More
+  restrictive" is not "more correct"; apply the proportionate, capability-preserving safeguard rule
+  in §7.
 - Review is semantic, not merely textual: different wording is inconsistent when it prescribes
   incompatible architecture, behavior, workflow, responsibility, or constraints.
 
