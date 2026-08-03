@@ -75,6 +75,8 @@ A task is landable when:
 - Domain behavior stayed out of components; platform APIs stayed behind ports.
 - Any shared contract was updated in its single source **before** the code that depends on it. See
   [contracts](../architecture/CONTRACTS.md).
+- The [repository-wide consistency invariant](DEVELOPMENT_PRINCIPLES.md#8-repository-wide-consistency-is-mandatory)
+  passed a semantic review across every affected document.
 - Deterministic tests cover every domain rule and boundary the change touches. See
   [testing](../practices/TESTING.md).
 - Animations obey the [UI performance](../practices/UI_PERFORMANCE.md) budget, including reduced

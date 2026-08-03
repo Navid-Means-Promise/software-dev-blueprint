@@ -157,7 +157,20 @@ validation, and a safe canonical write path are architectural foundations.
 
 ---
 
-## 8. Definition of done
+## 8. Repository-wide consistency is mandatory
+
+New rules, guidance, examples, and recommendations **must not contradict or be inconsistent with any
+existing content in this repository**. Before adding or merging content, review every document whose
+scope it touches and reconcile the addition with the repository as a whole.
+
+- Do not let newer text silently override, weaken, or create an ambiguous alternative to existing
+  guidance. Preserve the normative hierarchy and the one-fact-one-source rule.
+- Resolve every discovered inconsistency in the same coherent change. If the proposed content cannot
+  be reconciled without an explicit owner decision, do not add or merge it.
+- Review is semantic, not merely textual: different wording is inconsistent when it prescribes
+  incompatible architecture, behavior, workflow, responsibility, or constraints.
+
+## 9. Definition of done
 
 A change is done when all of the following are true — see [working agreement](WORKING_AGREEMENT.md)
 for the workflow that enforces them:
@@ -167,6 +180,8 @@ for the workflow that enforces them:
   broad change. Shared UI changes additionally pass the browser acceptance flow in every supported
   locale; Android shell/bridge/adapter changes pass the relevant Android host tests.
 - Any contract it touched was updated in the single source _before_ the code that depends on it.
+- The repository-wide consistency review passed, and every affected area document agrees with this
+  normative source.
 - Any cross-project reuse it introduced or adopted is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
 - The result — including failures and skipped steps — is reported honestly, and `main` is not
