@@ -199,6 +199,13 @@ index candidates, or produced by another adapter. In every case, trusted applica
 the record reference and revision and validates the closed product-specific index schema; the model
 does not choose authority, access scope, ownership, or physical index fields.
 
+Validate the canonical mutation and its disposable projection independently. Normalized duplicate
+semantic cues converge to one entry; a cue that repeats canonical text may be retained or omitted by
+projection policy, but it never invalidates an otherwise valid memory mutation. If optional
+projection input cannot be used or projection persistence fails, commit valid canonical memory and
+report or queue deferred index repair. Never silently drop the canonical mutation, report it failed
+after it committed, or claim it succeeded when the canonical write did not commit.
+
 Index entries deliberately duplicate selection information. They are disposable and are never sent
 to the model as authoritative canonical claims. A hit returns a record reference; prompt assembly
 reloads the current memory, verifies that the projection revision still matches, and rechecks access
@@ -573,6 +580,8 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
 - access partitioning prevents cross-owner and cross-tenant retrieval;
 - stale memory-index revisions, source updates, expiry, and deletion cannot resurrect old context;
 - semantic cues can retrieve a memory without being presented as canonical memory content;
+- duplicate or canonical-overlapping semantic cues cannot suppress an otherwise valid memory
+  mutation or visible assistant reply;
 - a restart reloads durable projection inputs without regenerating unchanged document embeddings;
 - slow or failed document embedding does not block canonical writes or lexical retrieval, and the
   incomplete semantic state is visible;
