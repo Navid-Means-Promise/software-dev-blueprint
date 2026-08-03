@@ -40,6 +40,11 @@ license, and — if it obeys [UI performance](UI_PERFORMANCE.md) — nothing per
 themed, rich screen with zero image requests is a recurring
 [candidate to propose upstream to the blueprint](../reuse/CROSS_PROJECT_SYNC.md).
 
+An image-backed enhancement to a code-native surface retains the deterministic implementation as
+its load-failure fallback and applies both through the same material/style owner. A missing optional
+texture must not remove the object, change its interaction boundary, or create a second independently
+maintained rendering path. The fetched asset improves detail; it does not become structural truth.
+
 ## The readiness gate is bounded
 
 The shared [readiness gate](../components/SHARED_UI.md) preloads **startup-critical** assets only —

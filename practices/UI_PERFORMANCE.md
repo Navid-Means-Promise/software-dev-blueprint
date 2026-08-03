@@ -45,6 +45,23 @@ budgets, and stop whenever it is not visible or motion has been reduced.
     **consciously set** bundle budget that acts as a review guardrail. Crossing it triggers a new
     bundle inspection; it is never silenced. See [monorepo](../components/MONOREPO.md).
 
+## Rendering-path policy and inspection
+
+An optional rich scene that has a complete non-GPU path declares one production policy in a shared,
+typed configuration: `automatic` selects the GPU path only from the centralized hardware-capability
+profile, while `force-fallback` always selects the non-GPU path. Record the policy per scene so an
+unfinished renderer can remain available for development without accidentally becoming a
+production path. Components and renderers consume the resolved path; they do not repeat capability
+detection or read environment flags themselves.
+
+Keep launch-only inspection overrides separate from production policy. Provide one development
+entry point that makes optional GPU scenes inspectable with pointer camera controls and another that
+forces every fallback path. Inspection controls request frames only while input changes the camera;
+they do not turn a settled scene into a perpetual render loop. Validate override values at startup,
+exclude them from ordinary production launches, and exercise both entries in browser acceptance
+tests. This makes the expensive and fallback paths continuously reviewable even while production
+deliberately ships only one of them.
+
 ## Reusable rendering-architecture techniques
 
 Beyond the performance budget, these design techniques keep a rich or 3D renderer **reusable and
@@ -77,6 +94,8 @@ controls onto a raycast 3D bookcase, and paint book titles into spine textures f
   frame rate (target ≥ 55 FPS) with no frame over ~33 ms outside deliberate, transient transitions.
 - Resting paint-flashing shows no continuous repaint.
 - Focus targets, clicks, scrolling, and screen-reader labels stay stable during ambience.
+- Every optional GPU scene is exercised once through its production policy, forced-fallback launch,
+  and inspection launch.
 - **Record the numbers.** Keep a dated performance baseline (average FPS, worst frame, buffer size,
   conditions) so a later change has a regression reference. Distinguish a hardware-GPU measurement
   from a software-renderer measurement — the latter validates the _fallback and lifecycle_, not
