@@ -140,6 +140,30 @@ regression budget, and split the interaction or relevant tool set when growth is
 Audit the exact instructions, raw provider response, validation failure, bounded retry, model version,
 latency, and reported token usage under the application's sensitive-log retention policy.
 
+### Provider resilience and routing diagnostics
+
+Provider-side fallback does not remove the application's resilience responsibility: an upstream can
+fail after fallback is exhausted or too late for the router to replay safely. Keep a transport retry
+policy distinct from corrective retries for successfully returned but invalid model output. A model
+analysis request may retry only a small bounded set of transient network, timeout, overload, and
+unavailability failures, using an injected delay with short exponential backoff. Honor `Retry-After`
+only when it fits the interactive request budget; otherwise fail without an immediate retry. Never
+retry authentication, payment, permission, request-validation, or content-policy failures.
+
+Replay the same model-analysis input, count and audit every provider request, and perform no domain
+mutation until a final response has crossed application decoding, validation, and authorization.
+This makes transport replay safe while desired-state commands and trusted turn identities preserve
+convergence at later delivery boundaries. Tests inject the delay and prove both the retryable
+classification and the maximum request count without waiting or using a network.
+
+When a provider or router offers routing diagnostics, opt in explicitly but do not persist its raw
+additive metadata object. Decode permissively into a content-free allow list such as generation ID,
+requested model, strategy/region, selected provider/model, attempt count, and provider/model/status
+for fallback attempts; discard summaries, pipeline payloads, raw upstream errors, headers, and
+unknown fields. Capture the same projection on success and error paths. Leave provider fallback
+enabled by default; pinning or excluding endpoints is an explicit reliability/privacy/capability
+decision, not a routine response to one transient failure.
+
 Mutation tools express the desired resulting state rather than a toggle and target the exact
 revision the model was supplied: delivery retries must converge on the same state instead of
 reversing a successful action. The application may derive an idempotency identity from its trusted
