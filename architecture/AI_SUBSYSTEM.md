@@ -137,6 +137,11 @@ a competing source of truth: generate its model-facing representation from share
 when practical; otherwise colocate it with the adapter and enforce structural parity in tests.
 Measure the UTF-8 bytes and observed input tokens of the complete static request configuration, set a
 regression budget, and split the interaction or relevant tool set when growth is no longer justified.
+Keep that static configuration as a stable prefix and put turn-specific data afterward so provider
+prompt caching can reuse it. Treat cache affinity as an opaque optimization, record reported cached
+tokens in live tests, and do not add intent classifiers, alternate greeting prompts, or padding to
+manufacture cache hits. Full-response caching is unsafe when exact replay of dynamic private or
+domain context is not explicitly valid.
 Audit validation failures, bounded corrective retries, model version, latency, and reported token
 usage. When protected raw diagnostics are enabled, retain the exact instructions and complete
 provider response body—including routing metadata—under the application's separately protected
