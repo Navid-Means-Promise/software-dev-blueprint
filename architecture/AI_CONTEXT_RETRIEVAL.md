@@ -260,11 +260,13 @@ comes from the source that owns that application data.
 
 ### 1. Automatic predictive context retrieval
 
-After the server receives a new user message but before the model sees it, relevance search runs
-using **only that new message** as the source of `queryText`. It does not silently expand the query
-with earlier turns. Provider-independent normalization and the declared query-length limit may still
-apply. Previous turns may appear in the bounded recent-conversation window, while context that the
-previous model turn predicted is supplied through the next origin.
+On an opening turn, or when the bounded conversation ends with an unanswered user message, relevance
+search runs after the server receives the new message but before the model sees it. It uses **only
+that new message** as the source of `queryText`; it does not silently expand the query with earlier
+turns. After a completed assistant exchange, exact recent conversation carries dialogue continuity
+first and the model may request a focused in-call read only when durable context is genuinely needed.
+Provider-independent normalization and the declared query-length limit may still apply. Context that
+the previous model turn predicted is supplied through the next origin.
 
 This origin is automatic because application code starts it and predictive because lexical,
 semantic/vector, or hybrid search estimates which stored records will help. It is not a model tool
@@ -277,6 +279,11 @@ A completed model turn may return hidden, typed retrieval instructions for a fut
 its visible answer. The application validates and stores accepted instructions with a short
 application-assigned turn expiry. On the next eligible turn it executes each instruction and supplies
 the permitted results to the model.
+
+A response that asks a necessary clarification returns no predictive instructions. The bounded
+recent-conversation window carries the unresolved exchange into the user's answer; if that clarified
+turn needs durable or domain context, the model requests a focused in-call read after interpreting
+the answer. This prevents an unaccepted assistant suggestion from becoming a retrieval anchor.
 
 The application does not rerank or discard those results against the next user message: deciding
 their anticipated relevance was the model's job. It still enforces ownership, authorization,
@@ -511,30 +518,49 @@ never seen the rendered prompt text.
 
 ## Turn orchestration
 
-```text
-baseline context ───────────────────────────────┐
-new user message ──automatic predictive search─┤
-pending model prediction ──validated retrieval─┼─resolve/deduplicate/budget─▶ model
-bounded recent conversation ───────────────────┘                              │
-                                                                              ├─tool request─▶ bounded retrieval ─┐
-                                                                              │                                  │
-                                                                              ◀──────────────────────────────────┘
-                                                                              └─final answer + next-turn queries
+The complete subsystem boundary lives in the canonical
+[AI runtime workflow](AI_SUBSYSTEM.md#end-to-end-runtime-workflow). This diagram expands only
+the optional context-assembly portion:
+
+```mermaid
+flowchart LR
+  message["New user message"] --> persist["Persist message and derive trusted envelope"]
+  persist --> recent["Select bounded recentConversation"]
+  persist --> automatic{"Opening or unanswered-user exchange?"}
+  automatic -->|yes| search["Automatic search from the new message only"]
+  automatic -->|no| nosearch["Use recent dialogue first"]
+  persist --> prior["Consume unexpired prior predictive instructions"]
+  baseline["Trusted baseline and pinned context"] --> assemble["Resolve · reauthorize · deduplicate · budget"]
+  recent --> assemble
+  search --> assemble
+  nosearch --> assemble
+  prior --> assemble
+  assemble --> model["AssistantModelProvider"]
+  model -->|context-retrieval step| read["Validate and execute bounded read"]
+  read -->|typed result; bounded rounds| model
+  model -->|complete decision| clarification{"Clarification required?"}
+  clarification -->|yes| none["Store no predictive instructions"]
+  clarification -->|no| next["Validate and store short-lived next-turn queries"]
+  none --> reply["Persist and return final reply"]
+  next --> reply
+  next -.-> future["Next eligible user turn"] -.-> prior
 ```
 
 For each new user turn, the server-side `AssistantContextAssemblyService`:
 
 1. constructs the trusted access scope and baseline context;
 2. takes the bounded recent-conversation window required for dialogue continuity;
-3. runs automatic predictive relevance retrieval from only the new message while excluding the
-   message itself as a result;
+3. on an opening or unanswered-user exchange, runs automatic predictive relevance retrieval from
+   only the new message while excluding the message itself as a result; otherwise lets recent
+   dialogue establish meaning before the model requests any focused read;
 4. executes every unexpired predictive instruction accepted from the previous model response;
 5. resolves current authoritative records and removes only inaccessible, invalid, expired, stale,
    or identity-duplicate references;
 6. applies declared per-origin and total hard budgets, marking any partial result;
 7. sends the assembled context and new message to `AssistantModelProvider`;
 8. services bounded, validated in-call retrieval requests through the same retrieval path; and
-9. validates and stores any next-turn predictive instructions returned with the final response.
+9. validates and stores any next-turn predictive instructions returned with a non-clarification
+   final response.
 
 Independent automatic and predictive requests may execute concurrently. Context ordering is stable
 and source authority/provenance is visible to the model. Conflicting permitted records are preserved
@@ -576,6 +602,8 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
   enter the server-generated request;
 - predictive instructions expire deterministically and their permitted results are not rejudged for
   relevance against the next message;
+- clarification responses persist no predictive instructions, while the user's answer retains
+  continuity through bounded recent conversation;
 - invalid or unauthorized explicit queries never reach a repository;
 - access partitioning prevents cross-owner and cross-tenant retrieval;
 - stale memory-index revisions, source updates, expiry, and deletion cannot resurrect old context;
