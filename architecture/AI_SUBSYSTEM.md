@@ -11,28 +11,45 @@ An AI model is an interchangeable, untrusted interpreter at the edge of the appl
 own conversation memory, user context, or domain state, and it never writes a repository directly.
 The shared domain validates and executes typed requests through the same services used by the UI.
 
-```text
-Shared assistant conversation UI
-  ├─ AudioCaptureProvider
-  │    └─ SpeechToTextProvider
-  │         └─ server-observable text transcript
-  └─ typed or transcribed text
-       └─ AssistantConversationProvider (authenticated client transport)
-            └─ server conversation use case
-                 ├─ trusted principal, clock, scope, and policy
-                 └─ AssistantTurnOrchestrator
-                      ├─ relevant product-specific domain state
-                      ├─ relevant records from MemoryRepository
-                      └─ AssistantModelProvider
-                           └─ decoded, authorized domain-tool requests
-                                ├─ MemoryManagementService
-                                ├─ product-specific application services
-                                └─ DomainChangeProposalService
+### End-to-end runtime workflow
 
-Assistant response text
-  └─ TextToSpeechProvider
-       └─ platform or remote speech-synthesis adapter
+```mermaid
+flowchart TD
+  input["Typed text or server-observable voice transcript"]
+  boundary["Authenticated bounded conversation endpoint"]
+  trusted["Derive principal, scope, IDs, clock, time zone, and policy<br/>Persist the user message"]
+  context["Assemble trusted turn input<br/>current message + baseline + bounded recentConversation + selected canonical context"]
+  model["AssistantModelProvider<br/>untrusted interpreter"]
+  read["Validate and execute a bounded read"]
+  validate["Strictly decode, semantically validate, and authorize"]
+  clarification{"Clarification required?"}
+  clarify["Allow only directly supported memory<br/>No mutation of unresolved domain state · no predictive instruction"]
+  policy["Apply domain-owned execution policy<br/>reply · exact desired state · proposal · confirmation"]
+  commit["Commit accepted canonical effects transactionally"]
+  persist["Persist the assistant reply and presentation events"]
+  prediction{"Accepted next-turn queries?"}
+  pending["Store validated short-lived predictive instructions"]
+  deliver["Return text and truthful receipts<br/>Optionally synthesize speech"]
+
+  input --> boundary --> trusted --> context --> model
+  model -->|context-retrieval step| read
+  read -->|typed result; bounded loop| model
+  model -->|complete decision| validate --> clarification
+  clarification -->|yes| clarify --> commit
+  clarification -->|no| policy --> commit
+  commit --> persist --> prediction
+  prediction -->|yes; non-clarification only| pending --> deliver
+  prediction -->|no| deliver
+  pending -.-> nextturn["Consume once on the next eligible user turn"] -.-> context
 ```
+
+The Mermaid source above is the canonical workflow.
+
+![AI agent runtime workflow visual overview](assets/ai-agent-runtime-workflow.png)
+
+The image is a concise companion for design reviews and presentations; if it ever differs, the
+Mermaid workflow and the surrounding rules win. Its generation record lives in the
+[architecture asset provenance](assets/PROVENANCE.md).
 
 `AudioCaptureProvider`, `SpeechToTextProvider`, `AssistantModelProvider`, and
 `TextToSpeechProvider` are independent.
