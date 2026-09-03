@@ -28,7 +28,9 @@ tool could still change files. Install tool-specific guards at the agent boundar
 commit guard as defense in depth; both reject mutation while `HEAD` is `main`.
 
 The following is the minimum direct-editor portion for an environment with these named tools. It
-must be extended for every other mutating tool that environment exposes:
+must be extended for every other mutating tool that environment exposes. A complete installation
+also guards shell-based writes and commits at the repository boundary; showing only an editor hook
+without those guards is an incomplete setup.
 
 ```jsonc
 // .claude/settings.json
@@ -70,6 +72,11 @@ fi
 Treat guards as backstops, not reminders: the agent still branches first by rule. Test the installed
 guard set by proving that each mutating path and a commit are rejected on `main` while read-only
 inspection remains available.
+
+For shell and Git entry points, use the same branch check before commands that can write, and add a
+`pre-commit`/`commit-msg` guard that rejects commits while `HEAD` is `main` (while still validating the
+required commit subject on feature branches). The exact hook mechanism is environment-specific; the
+invariant is not: no available mutation path may bypass the branch rule.
 
 ## The answer-summary rule
 
