@@ -63,7 +63,7 @@ exists.
    catalog and shared [typography](practices/TYPOGRAPHY.md) roles. Obey the
    [UI performance](practices/UI_PERFORMANCE.md) budget from the first animated surface.
 
-4. **The server (`@app/server`).** Fastify, thin routes → controller → service → repository, importing
+4. **The server (`@app/server`).** Fastify (or the [PHP/Laravel adaptation](components/PHP_LARAVEL.md)), thin routes → controller → service/action → repository, importing
    the shared contracts; authentication, authorization, tenant-scoped durable persistence,
    transaction/concurrency policy, bounded use cases, a health endpoint, content/catalog endpoints,
    and—if there is a device—the in-memory semantic twin ([server](components/SERVER.md)). Use

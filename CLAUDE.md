@@ -20,7 +20,7 @@ is authoritative in its own area and assumes you have.
 | AI subsystem, durable context, domain tools, and speech        | [`architecture/AI_SUBSYSTEM.md`](architecture/AI_SUBSYSTEM.md)                 |
 | Optional experimental AI-chat context memory and retrieval     | [`architecture/AI_CONTEXT_RETRIEVAL.md`](architecture/AI_CONTEXT_RETRIEVAL.md) |
 | Ports & adapters, DI, store, contracts                         | the rest of [`architecture/`](architecture/)                                   |
-| Clients, server, firmware, monorepo                            | the [`components/`](components/) set                                           |
+| Clients, server, PHP/Laravel, firmware, monorepo                | the [`components/`](components/) set                                           |
 | i18n, typography, performance, testing, assets, agent workflow | the [`practices/`](practices/) set                                             |
 | Building more projects on the stack                            | [`reuse/CROSS_PROJECT_SYNC.md`](reuse/CROSS_PROJECT_SYNC.md)                   |
 | Bootstrapping a new project                                    | [`NEW_PROJECT_GUIDE.md`](NEW_PROJECT_GUIDE.md)                                 |
