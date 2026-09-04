@@ -98,11 +98,12 @@ Design so that every rule can be proven without a DOM, a network, or real time.
 
 ## 4. Strict typing
 
-- Application code and reusable tooling logic are **strict TypeScript**; firmware is **C++17**.
+- TypeScript application code and reusable tooling logic are strict; PHP applications follow the
+  [PHP/Laravel strict-typing rules](../components/PHP_LARAVEL.md); firmware is C++17.
   Environment-required declarative configuration and minimal shell hooks are allowed only at their
   integration boundary; they do not become an alternate application-logic language.
-- No `any`, no unchecked casts, no silently widened types at a module boundary. A value that crosses
-  a boundary has a named, checked type.
+- No unbounded dynamic type, unchecked cast, or silently widened type crosses a module boundary. A
+  boundary value has a named, checked type in its implementation language.
 - The shared strict compiler baseline (`tsconfig.base.json`) and lint/format config live once at the
   monorepo root and every workspace extends them. See [monorepo](../components/MONOREPO.md).
 

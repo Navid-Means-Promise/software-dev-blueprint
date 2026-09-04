@@ -15,6 +15,9 @@ rules.
   pass unbounded `mixed` values across an application boundary.
 - Keep application logic in PHP. Shell, configuration, and templates remain integration boundaries,
   not alternate places for domain rules.
+- When a PHP server shares a wire boundary with a non-PHP client, treat it as a cross-language
+  contract: define the normative shape once as described in
+  [contracts](../architecture/CONTRACTS.md), then make each language implementation conform to it.
 
 ## Layering and dependency direction
 
@@ -27,9 +30,9 @@ route → controller → form request/action → model or repository → infrast
 - Routes declare HTTP shape and middleware only.
 - Controllers are thin: they select an action, pass validated input, and choose a response. They do
   not contain authorization rules, persistence mutations, or query-specific business decisions.
-- Form Requests normalize and validate untrusted input before an action runs. `authorize()` must
-  enforce the use-case boundary, not return `true` for sensitive operations without an explicit
-  reason.
+- Form Requests normalize and validate untrusted input before an action runs, reject unexpected
+  fields, and expose only validated values. `authorize()` must enforce the use-case boundary, not
+  return `true` for sensitive operations without an explicit reason.
 - Actions are single-purpose application use cases. They receive collaborators through constructors
   and return named domain results. Reusable rules belong in models or domain services, not in views.
 - Eloquent models own relationships, casts, scopes, and invariants; repositories are appropriate when
@@ -51,9 +54,17 @@ route → controller → form request/action → model or repository → infrast
   persist one canonical representation. Return catalog-backed validation errors in the active locale.
 - Keep provider credentials in environment-backed secret management. Production logs omit OTP codes,
   full phone numbers, credentials, and provider response bodies. A local-development delivery logger
-  is an explicit composition, never a production fallback or authentication bypass.
+  is an explicit composition, never a production fallback or authentication bypass. Production
+  adapters own a bounded transport timeout, and authentication responses containing challenge state
+  use `Cache-Control: no-store`.
 - Put related canonical writes in a transaction or define an idempotent recovery protocol. Lock rows
   when a check-then-write operation must be safe under concurrent requests.
+- Keep external delivery and HTTP calls outside database transactions. Use an outbox, idempotent
+  recovery, or a narrow compensating write when provider success determines whether local state may
+  remain.
+- Failure counters are canonical state: commit an OTP or similar attempt increment before returning
+  the validation failure. Throwing inside the same transaction must not silently roll that increment
+  back. Bound paid-provider work per principal/source and with an explicit application-wide ceiling.
 
 ## Determinism and tests
 
@@ -61,19 +72,25 @@ route → controller → form request/action → model or repository → infrast
   never sleep, call paid providers, or depend on wall-clock time.
 - Add deterministic unit tests for each action rule and boundary. Feature tests prove middleware,
   authorization, tenant isolation, exact request validation, transaction behavior, and localized
-  responses. Use the repository's container runner for repeatable execution.
+  responses. Authentication tests also prove non-cacheable challenge responses, persisted attempt
+  exhaustion, issuance bounds, and provider-failure cleanup. Use the repository's container runner
+  for repeatable execution.
 - Validate content and configuration at construction/startup where possible. A missing required
   production adapter fails clearly instead of silently selecting a permissive fallback.
 
 ## Tooling and delivery
 
-- Keep Composer dependencies locked and run dependency audits as part of the repository check.
+- Keep Composer dependencies locked and run dependency audits as part of the repository check. When
+  the application builds frontend assets, commit the JavaScript lockfile and install with its frozen
+  mode (`npm ci` or the package-manager equivalent).
 - Run Laravel Pint on changed PHP files and the narrowest relevant PHPUnit tests while iterating; run
   the repository-wide check before handoff. In containerized projects, use the committed `bin/`
   runners rather than bypassing the project runtime.
 - Keep `lang/fa` and `lang/en` (or the project's declared locale set) in exact key parity. UI strings
   live in catalogs; templates contain no user-facing literals. Use logical CSS properties and local,
   licensed fonts with recorded provenance.
+- Pin container toolchain versions, avoid unverified installer pipes and workstation-specific network
+  settings, and make committed runners rebuild when their toolchain definition changes.
 
 ## Rules
 
