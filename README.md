@@ -19,6 +19,10 @@ visual code exists once, platform code is a thin edge, and a physical device is 
 Everything lives in an npm-workspaces monorepo with a shared strict toolchain, deterministic testing,
 and an owner-directed / agent-executed workflow.
 
+A standalone server-rendered PHP product, or a PHP server behind non-PHP clients, uses the documented
+Laravel adaptation and cross-language contract rules; it does not import TypeScript implementations
+across the language boundary.
+
 These documents use `@app/*` as a placeholder scope; each implementing project supplies its own
 domain vocabulary and package scope.
 
@@ -59,6 +63,7 @@ domain vocabulary and package scope.
 - [components/WEB_CLIENT.md](components/WEB_CLIENT.md) — Vite + HTTP/browser adapters
 - [components/ANDROID_CLIENT.md](components/ANDROID_CLIENT.md) — Capacitor + HTTP/native adapters
 - [components/SERVER.md](components/SERVER.md) — Fastify, canonical persistence, background work, device twin
+- [components/PHP_LARAVEL.md](components/PHP_LARAVEL.md) — PHP 8.4/Laravel layering, boundaries, and delivery
 - [components/FIRMWARE.md](components/FIRMWARE.md) — ESP-IDF / C++17, semantic engine
 
 **Practices** — cross-cutting concerns
