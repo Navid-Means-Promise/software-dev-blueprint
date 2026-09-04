@@ -24,7 +24,10 @@ Every rule is tested by **injecting** its non-deterministic collaborators
   takes microseconds.
 - **Repository / bounded transport / platform / audio / device** → explicit in-memory, fixed, or
   recording doubles, so persistence, effects, and device intent are asserted without a real
-  backend. These are test constructions, never runtime fallbacks.
+  backend. These are test constructions, never runtime fallbacks. The explicit local-development SMS
+  delivery decorator described in [server](../components/SERVER.md) is a runtime adapter, not a test
+  double; it still runs the normal challenge and session path, is never installed in staging or
+  production, and is covered by composition tests.
 
 If a rule cannot be tested this way, that is a design signal: a hidden dependency needs lifting into a
 port. The test difficulty is diagnosing the architecture, doing its job.
