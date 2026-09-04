@@ -17,9 +17,10 @@ Where the single source lives depends on who shares it:
   web/mobile/server) are types in `@app/shared`, imported by their consumers. A server-persistence
   record used only inside `@app/server` is defined once there; sharing a wire contract does not make
   the physical database schema public to clients.
-- **Cross-language contracts** (anything firmware in C++ must also honor) are specified in a `docs/`
-  contract file that is the normative source; the TypeScript twin and the firmware implementation
-  both conform to that document, and the document — not either implementation — is authoritative.
+- **Cross-language contracts** (anything shared by implementations in different languages, such as
+  PHP/TypeScript wire shapes or a contract that C++ firmware must honor) are specified in a `docs/`
+  contract file that is the normative source. Every language implementation conforms to that
+  document, and the document — not any implementation — is authoritative.
 
 ## Content is a contract too
 
