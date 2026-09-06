@@ -21,9 +21,11 @@ _how code is designed_; this document governs _how a task is run and landed_. Bo
   re-run its checks, and present it for review unprompted. The request stays open until every branch
   is merged or explicitly dropped.
 
-This rule is mechanically guarded across every available mutation path, including direct edit tools,
-shell-based writes, and commits. A guard that covers only one editor is incomplete. Treat enforcement
-as a backstop, not a reminder. See [AI agent workflow](../practices/AI_AGENT_WORKFLOW.md).
+Enforce this rule in depth wherever the current environment exposes reliable controls: direct-editor
+hooks, classified shell-command hooks, versioned commit hooks, and remote branch protection. Record
+any mutation path the environment cannot intercept; no single local guard covers every client or
+intentional bypass. Treat enforcement as a backstop, not a reminder. See
+[AI agent workflow](../practices/AI_AGENT_WORKFLOW.md).
 
 ---
 
@@ -48,9 +50,11 @@ Email: <owner email>
 
 ### Temporary checkpoints
 
-Before leaving an unfinished branch for another task, inspect its status and commit **all**
-uncommitted changes on that branch as a local temporary checkpoint. Do not create a linked worktree
-merely to avoid a dirty workspace. Use this commit message:
+Before leaving an unfinished branch for another task, inspect its status. If every uncommitted change
+belongs to the current task and owner, commit them as a local temporary checkpoint. Never commit,
+stash, move, or rewrite another contributor's unexplained changes merely to clean the workspace; keep
+working without overlap when safe, or ask the owner how to preserve them. Do not create a linked
+worktree merely to avoid a dirty workspace. Use this commit message for an owned checkpoint:
 
 ```text
 TEMP: Checkpoint unfinished work to keep the workspace clean
@@ -85,6 +89,8 @@ A task is landable when:
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
 - The repository-wide check passes; shared UI changes also pass the browser acceptance flow, and
   Android shell/bridge/adapter changes pass the relevant Android host tests.
+- Toolchain/container changes pass a clean all-target build and the isolation checks defined by
+  [containerized toolchains](../practices/CONTAINERIZED_TOOLCHAINS.md).
 - The merge into `main` waits for the owner's explicit confirmation.
 
 ---

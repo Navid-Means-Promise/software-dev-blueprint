@@ -6,12 +6,13 @@ rules are verified as fast, deterministic unit tests with no environment at all.
 
 ## The layers
 
-| Layer                        | Scope                                                         | How                                                                                                |
-| ---------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Domain unit tests**        | Every rule, transition, and boundary in `@app/shared`         | Construct the class with test doubles; assert exact outcomes. No DOM, network, or real time.       |
-| **Server tests**             | Route → service behavior, contract responses, the device twin | Exercise the server with in-memory adapters; assert responses and twin state.                      |
-| **Browser acceptance (E2E)** | Shared UI plus web/server integration                         | Drive the built web app against the real server composition in a browser.                          |
-| **Android host tests**       | Native shell, bridge, permissions, and adapters               | Run focused smoke/instrumented tests on the packaged client and real-device checks where required. |
+| Layer                         | Scope                                                         | How                                                                                                |
+| ----------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Domain unit tests**         | Every rule, transition, and boundary in `@app/shared`         | Construct the class with test doubles; assert exact outcomes. No DOM, network, or real time.       |
+| **Server tests**              | Route → service behavior, contract responses, the device twin | Exercise the server with in-memory adapters; assert responses and twin state.                      |
+| **Browser acceptance (E2E)**  | Shared UI plus web/server integration                         | Drive the built web app against the real server composition in a browser.                          |
+| **Android host tests**        | Native shell, bridge, permissions, and adapters               | Run focused smoke/instrumented tests on the packaged client and real-device checks where required. |
+| **Toolchain/firmware builds** | Container runner and every declared hardware target           | Build from locked inputs; test isolation guards and collect checksummed artifacts.                 |
 
 ## Determinism is the whole game
 
@@ -74,6 +75,8 @@ cannot pass unnoticed.
   [`check`](../components/MONOREPO.md) before calling a broad change done.
 - Shared UI changes additionally pass the browser acceptance flow in every locale; Android
   shell/bridge/adapter changes also pass the relevant Android host tests.
+- Firmware or container changes pass the host-safe workflow's clean all-target build and guardrail
+  tests. See [containerized toolchains](CONTAINERIZED_TOOLCHAINS.md).
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 - Report real results — a failing or skipped test is stated, never rounded up to "passing."
 

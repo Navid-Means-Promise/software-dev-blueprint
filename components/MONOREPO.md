@@ -26,6 +26,7 @@ a change to the core is visible to every consumer immediately.
     web/                  @app/web
     mobile/               @app/mobile
     server/               @app/server
+  containers/             isolated definitions for invasive or platform-specific toolchains
   firmware/               ESP-IDF / C++17 (outside the npm workspace)
   e2e/                    @app/e2e — Playwright acceptance
   tooling/                shared build config + content generators
@@ -42,9 +43,14 @@ DRY applied to configuration.
 
 - **`tsconfig.base.json`** — strict TypeScript baseline: `strict`, `noUnusedLocals`,
   `noUnusedParameters`, `noImplicitReturns`, `noImplicitOverride`, `noFallthroughCasesInSwitch`,
-  `isolatedModules`, `forceConsistentCasingInFileNames`, a modern `ES` target and `bundler`
-  resolution. Each workspace's `tsconfig.json` extends it and adds only what it must.
+  `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `isolatedModules`,
+  `verbatimModuleSyntax`, `noUncheckedSideEffectImports`, `forceConsistentCasingInFileNames`, a modern
+  `ES` target and `bundler` resolution. Each workspace's `tsconfig.json` extends it and adds only what
+  it must.
 - **ESLint + Prettier** — one config each at the root. No `any`, no unchecked casts (principles §4).
+- **Runtime and package-manager baseline** — version one LTS Node selector (for example `.nvmrc` or
+  `.node-version`), declare the compatible runtime range and exact package-manager release in the
+  root manifest, and use the lockfile's frozen install mode in automation.
 - **Shared bundler-config factory** — a `tooling/` function returns the base client bundler config
   (build target, output layout, chunk budget); each client calls it and overrides only its
   differences. This keeps build behavior identical across clients and is a prime candidate to propose
@@ -52,6 +58,10 @@ DRY applied to configuration.
 - **Build/chunk budgets** — a single declared budget threshold that the bundler warns against. A
   deliberately split large chunk (e.g. a 3D engine shared by two renderers) has its budget set
   consciously as a review guardrail, not silenced. See [UI performance](../practices/UI_PERFORMANCE.md).
+- **Isolated specialized toolchains** — committed OCI-compatible definitions and root runners expose
+  stable npm verbs for firmware or another invasive SDK. The host keeps only the selected container
+  engine; compilers and SDK packages stay inside images or declared caches. See
+  [containerized toolchains](../practices/CONTAINERIZED_TOOLCHAINS.md).
 
 ## Root scripts
 
@@ -59,6 +69,15 @@ Root `package.json` exposes the repo-wide verbs; per-workspace scripts do the ac
 `--workspace`. The important composite is a single **`check`** that runs, in order: typecheck, unit
 tests, server tests, lint, and builds. `check` passing is the bar for a broad change in the
 [definition of done](../principles/WORKING_AGREEMENT.md).
+
+Firmware exposes `firmware:build:<target>` and `firmware:build:all` through the root even though it is
+not an npm workspace. Keep long cross-compilation out of an ordinary UI-only inner loop when needed,
+but make the all-target container build a required CI/release gate and a required local check for
+firmware, container, lockfile, or toolchain changes.
+
+The mobile workspace similarly exposes the isolated Android package build at the root. Capacitor's
+web build remains part of the ordinary workspace check; native APK/AAB compilation is an additional
+gate for Android shell, bridge, Gradle, SDK, permission, or container changes.
 
 ```jsonc
 // root package.json — illustrative
@@ -82,4 +101,6 @@ product, names the package — so the layout reads the same across every project
 - Dependency direction (overview) is a build-time invariant: `@app/shared` depends on no other
   workspace.
 - Firmware stays outside the npm workspace with its own CMake build.
+- Invasive and platform-sensitive tools follow the host-safe container practice; root npm scripts
+  remain the public interface.
 - `check` is the single composite gate; keep it honest — a skipped step is a failed check.

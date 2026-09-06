@@ -89,8 +89,9 @@ route → controller → form request/action → model or repository → infrast
 - Keep `lang/fa` and `lang/en` (or the project's declared locale set) in exact key parity. UI strings
   live in catalogs; templates contain no user-facing literals. Use logical CSS properties and local,
   licensed fonts with recorded provenance.
-- Pin container toolchain versions, avoid unverified installer pipes and workstation-specific network
-  settings, and make committed runners rebuild when their toolchain definition changes.
+- Run invasive PHP/system dependencies through the shared
+  [containerized-toolchain practice](../practices/CONTAINERIZED_TOOLCHAINS.md); keep the committed
+  runner as the public interface rather than duplicating its rules here.
 
 ## Rules
 
