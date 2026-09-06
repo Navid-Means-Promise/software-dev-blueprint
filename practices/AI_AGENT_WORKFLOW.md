@@ -21,16 +21,14 @@ normative document is the project's development-rules file (modeled on
 
 ## Branch guards
 
-The branch-first rule ([working agreement](../principles/WORKING_AGREEMENT.md) §1) requires guards for
-every mutation path available to the agent: direct edit/write tools, shell commands that can write,
-and Git commits. A direct-editor hook alone is not complete enforcement because a shell or another
-tool could still change files. Install tool-specific guards at the agent boundary and a repository
-commit guard as defense in depth; both reject mutation while `HEAD` is `main`.
+The branch-first rule ([working agreement](../principles/WORKING_AGREEMENT.md) §1) uses defense in
+depth: guard mutating tools at each supported agent boundary, reject commits on `main` in repository
+hooks, and protect the remote default branch. A direct-editor hook alone cannot cover shell writes or
+another client, while a commit hook cannot prevent working-tree edits and can be bypassed. Document
+the residual limits instead of claiming one hook makes every local mutation impossible.
 
-The following is the minimum direct-editor portion for an environment with these named tools. It
-must be extended for every other mutating tool that environment exposes. A complete installation
-also guards shell-based writes and commits at the repository boundary; showing only an editor hook
-without those guards is an incomplete setup.
+The following is the direct-editor portion for an environment with these named tools. Extend it to
+other mutating tools when that environment provides a reliable pre-tool hook.
 
 ```jsonc
 // .claude/settings.json
@@ -58,7 +56,7 @@ The direct-editor hook denies the edit when on `main`, and stays silent otherwis
 #!/usr/bin/env bash
 # Blocks edits while HEAD is on main.
 set -euo pipefail
-branch=$(git -C "${CLAUDE_PROJECT_DIR:-.}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')
+branch=$(git -C "${CLAUDE_PROJECT_DIR:-.}" symbolic-ref --quiet --short HEAD 2>/dev/null || echo '')
 if [[ "$branch" == "main" ]]; then
   cat <<'JSON'
 { "hookSpecificOutput": {
@@ -69,14 +67,13 @@ JSON
 fi
 ```
 
-Treat guards as backstops, not reminders: the agent still branches first by rule. Test the installed
-guard set by proving that each mutating path and a commit are rejected on `main` while read-only
-inspection remains available.
+Treat guards as backstops, not reminders: the agent still branches first by rule. Test each installed
+guard independently and verify that read-only inspection remains available.
 
-For shell and Git entry points, use the same branch check before commands that can write, and add a
-`pre-commit`/`commit-msg` guard that rejects commits while `HEAD` is `main` (while still validating the
-required commit subject on feature branches). The exact hook mechanism is environment-specific; the
-invariant is not: no available mutation path may bypass the branch rule.
+When an agent runtime can classify shell commands before execution, apply the same branch check to
+commands it identifies as mutating. Add a versioned hook installer for `pre-commit`/`commit-msg`
+checks that reject commits on `main` and validate subjects on feature branches; local `.git/hooks`
+alone are not cloned. Remote branch protection remains the authoritative merge backstop.
 
 ## The answer-summary rule
 
@@ -96,7 +93,7 @@ summary to act; burying a decision in prose above it hides the thing they need.
 ## Rules
 
 - One normative rules document; `CLAUDE.md` and `AGENTS.md` point to it and stay in sync.
-- Guards cover every available mutation path and commits; branch-first is still a rule, not just a
-  tool hook.
+- Layer tool hooks, versioned commit-hook installation, and remote branch protection; state which
+  mutation paths the current environment can and cannot intercept.
 - Answers with findings or decisions end in a standalone `## Summary`.
 - The agent executes; the owner merges and directs.

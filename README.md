@@ -3,9 +3,9 @@
 The reusable blueprint for our application stack — architecture, patterns, development principles, and
 reusable concepts — captured as documentation so a new project can be built from it.
 
-**This repository is documentation only.** It contains `.md` files: no npm packages, no runnable code,
-no dependencies. It is the _specification_ a human or an AI agent reads before scaffolding a real
-project on the stack.
+**This repository is documentation only.** It contains prose and local documentation assets: no
+application packages, runtime dependencies, or runnable product code. It is the _specification_ a
+human or an AI agent reads before scaffolding a real project on the stack.
 
 ## The stack in one paragraph
 
@@ -74,6 +74,10 @@ domain vocabulary and package scope.
 - [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — compositor + GPU-canvas budgets
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
+- [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
+  host-safe compiler and SDK environments
+- [security/README.md](security/README.md) — isolated image/repository audits,
+  vulnerability policy, and SBOM evidence
 - [practices/AI_AGENT_WORKFLOW.md](practices/AI_AGENT_WORKFLOW.md) — rulebook, branch-guard hook, summaries
 
 **Reuse** — building more projects on the stack

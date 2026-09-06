@@ -1,13 +1,14 @@
 # Server
 
 Authoritative for `apps/server`. A **Fastify** service whose routes are thin and whose business logic
-lives in classes — and which imports the same domain contracts as the clients, never the UI.
+lives in domain services and pure validated transformations — and which imports the same domain
+contracts as the clients, never the UI.
 
 ## Layering
 
 ```text
 route  →  controller  →  service  →  repository
-(HTTP)     (validate)     (rules)     (persistence)
+(HTTP)        (map)       (rules)     (persistence)
 ```
 
 - A **route** parses and validates the HTTP request and delegates. It contains no business rule.
@@ -19,6 +20,11 @@ route  →  controller  →  service  →  repository
 
 Business rules never live in a route closure. As the server grows (accounts, sessions, telemetry,
 fleet management), new capability follows these same four layers rather than thickening the routes.
+
+Register cohesive route groups as encapsulated Fastify plugins. Every untrusted request part and
+every public response has a trusted static runtime schema or an equivalent exact decoder owned with
+the shared contract; TypeScript types alone do not validate runtime data. Never compile a schema
+supplied by a requester, and keep database/provider work out of schema validation.
 
 ## What it imports — and what it must not
 

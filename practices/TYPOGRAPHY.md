@@ -27,10 +27,11 @@ Never hotlink runtime fonts. Vendor them from an authoritative HTTPS source at a
 retain the redistribution license, source URL, version or revision, and checksums. Follow the common
 asset provenance policy in [assets and content](ASSETS_AND_CONTENT.md).
 
-Ship WOFF2 first, with WOFF and TTF fallbacks unless the project's documented compatibility matrix
-is deliberately narrower. Prefer a variable font when it replaces several static files without
-shipping unused axes or styles. Use `font-display: swap`; load only the language and roles a screen
-actually renders.
+Choose webfont formats from the project's documented browser/WebView compatibility matrix. WOFF2 is
+the default for modern targets; add WOFF or TTF only when a supported runtime requires it, because
+redundant formats increase build and cache surface even when the browser downloads one. Prefer a
+variable font when it replaces several static files without shipping unused axes or styles. Use
+`font-display: swap`; load only the language and roles a screen actually renders.
 
 ## Fit constrained text from rendered geometry
 

@@ -27,6 +27,9 @@ first, because they shape the domain, the ports, and the contracts:
    bounded use cases before wiring any networked client data flow
    ([server](components/SERVER.md)).
 7. **The package scope** (e.g. `@yourproject/*`).
+8. **Specialized toolchains.** Identify SDKs or compilers that must be isolated from the host and the
+   exact target matrix they support
+   ([containerized toolchains](practices/CONTAINERIZED_TOOLCHAINS.md)).
 
 The project conforms to **this blueprint** as its single source of stack rules and architecture, and
 records that relationship in a [blueprint-sync ledger](reuse/CROSS_PROJECT_SYNC.md) — it does not pair
@@ -42,6 +45,10 @@ exists.
    [monorepo](components/MONOREPO.md). Also install the agent workflow: the single-source rulebook,
    `CLAUDE.md` / `AGENTS.md` pointers, and the branch-guard hook
    ([AI agent workflow](practices/AI_AGENT_WORKFLOW.md)).
+
+   If a specialized toolchain was identified, add its committed container definition and root runner
+   now. Pin external inputs before product code depends on them; expose image/setup/build scripts and
+   test the runner's host-isolation guards.
 
 2. **The domain core (`@app/shared`).** In dependency order:
    - the **ports** required by pure rules and client presentation; only genuinely optional
@@ -86,7 +93,9 @@ exists.
 
 8. **Firmware (`firmware/`)**, if there is a device. ESP-IDF / C++17, an allocation-free engine that
    renders the [semantic contract](architecture/CONTRACTS.md) locally with a physical safety ceiling
-   ([firmware](components/FIRMWARE.md)).
+   ([firmware](components/FIRMWARE.md)). Compile every supported target through the committed
+   [container workflow](practices/CONTAINERIZED_TOOLCHAINS.md), with target-specific configuration,
+   dependency locks, and output directories.
 
 9. **Acceptance.** Playwright over the shared UI in every locale and both text directions; isolate any
    real-GPU measurement into a run that rejects software rendering ([testing](practices/TESTING.md)).

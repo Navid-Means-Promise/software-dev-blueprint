@@ -41,12 +41,12 @@ A second independently maintained representation of the same behavior, contract,
 string, or documented fact is a signal to establish one source and derive or reuse it. Superficially
 similar code with different reasons to change is not duplication merely because its syntax matches.
 
-- **Code:** the second time a behavior appears, it becomes a reusable module that _owns_ that
-  concern, and both callers depend on it. Platform bootstraps, build configuration, and error
-  handling differ only in the values they inject — never in duplicated logic. A concrete recurring
-  example: a single thrown-value normalizer turns any caught `unknown` into a typed message, so the
-  `instanceof Error` check is written once in the shared core rather than at every catch site in the
-  UI and the server.
+- **Code:** when multiple callers encode the same behavior and have the same reason to change, a
+  reusable module owns that concern and both callers depend on it. Do not abstract coincidental
+  similarity or speculate about reuse; a premature shared abstraction couples unrelated changes as
+  surely as duplication can drift. Platform bootstraps, build configuration, and error handling
+  differ only in the values they inject — never in duplicated policy. A recurring example is one
+  thrown-value normalizer that turns any caught `unknown` into a typed message for both UI and server.
 - **Contracts:** a wire, storage, or content shape is defined **once** and consumed from that one
   place by every client, the server, and firmware. See [contracts](../architecture/CONTRACTS.md).
 - **User-facing strings:** every string outside content lives once in the typed message catalog,
@@ -60,8 +60,9 @@ DRY is not "avoid typing twice." It is "there is exactly one place the truth abo
 
 ## 2. Object-oriented design
 
-Model behavior as small, role-based classes: one responsibility, an intention-revealing name,
-composition preferred over inheritance.
+Model stateful or collaborative behavior as small, role-based classes: one responsibility, an
+intention-revealing name, composition preferred over inheritance. Keep stateless transformations as
+pure functions and immutable values; wrapping them in classes adds ceremony without encapsulation.
 
 - **Depend on abstractions.** Domain services receive their collaborators as constructor parameters
   (ports) and are resolved from the DI container. No module-level singletons, no global lookups, no
@@ -106,6 +107,9 @@ Design so that every rule can be proven without a DOM, a network, or real time.
   boundary value has a named, checked type in its implementation language.
 - The shared strict compiler baseline (`tsconfig.base.json`) and lint/format config live once at the
   monorepo root and every workspace extends them. See [monorepo](../components/MONOREPO.md).
+- Indexed access is checked and optional properties distinguish omission from an explicit
+  `undefined`; the baseline enables `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `verbatimModuleSyntax`, and `noUncheckedSideEffectImports`.
 
 ---
 
@@ -184,7 +188,15 @@ scope it touches and reconcile the addition with the repository as a whole.
 - Review is semantic, not merely textual: different wording is inconsistent when it prescribes
   incompatible architecture, behavior, workflow, responsibility, or constraints.
 
-## 9. Definition of done
+## 9. Host-safe toolchains
+
+A compiler or SDK that would install system packages, conflicting runtimes, legacy dependencies, or
+platform-specific state is a host boundary. Run it through the project's committed, pinned
+container workflow; do not repair a build by changing the workstation globally. The source tree is a
+read-only input and only declared output/cache paths are writable. See
+[containerized toolchains](../practices/CONTAINERIZED_TOOLCHAINS.md).
+
+## 10. Definition of done
 
 A change is done when all of the following are true — see [working agreement](WORKING_AGREEMENT.md)
 for the workflow that enforces them:
@@ -198,6 +210,8 @@ for the workflow that enforces them:
   normative source.
 - Any cross-project reuse it introduced or adopted is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
+- Any invasive or platform-sensitive toolchain runs through the committed host-safe workflow, and
+  its claimed repeatability level was actually verified.
 - The result — including failures and skipped steps — is reported honestly, and `main` is not
   advanced without the owner's explicit confirmation.
 
