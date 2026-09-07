@@ -1,14 +1,16 @@
 # UI performance
 
-Authoritative for animation and rendering budgets. On this stack these are **acceptance criteria**
-enforced from the first commit of any animated surface, not a later optimization pass
+Authoritative for animation continuity and rendering budgets. On this stack these are **acceptance
+criteria** enforced from the first commit of any animated surface, not a later optimization pass
 ([development principles](../principles/DEVELOPMENT_PRINCIPLES.md) §6).
 
 ## The rule
 
 Perpetual HTML effects may animate **only `transform` and/or `opacity`.** A GPU canvas
 (WebGL/WebGPU) is the explicit exception: it must own its render loop, adapt its pixel and frame
-budgets, and stop whenever it is not visible or motion has been reduced.
+budgets, and stop whenever it is not visible or motion has been reduced. State-driven animation
+passes through one transition gate and hands off from the rendered pose without exposing a wrong or
+stale frame.
 
 ## Requirements for compositor (HTML/CSS) effects
 
@@ -26,6 +28,36 @@ budgets, and stop whenever it is not visible or motion has been reduced.
    targets, so it never moves a button under the user's finger.
 7. Respect `prefers-reduced-motion`: remove ambient movement while preserving meaning (a state
    change, a result) that the user still needs.
+
+## State-transition continuity
+
+State-driven GUI animation is a handoff between visual timelines, not a reason to replace one
+animation abruptly. Every animated surface has one shared, typed transition gate/coordinator for
+state changes. Renderers and CSS selectors do not independently switch timelines around it.
+
+The gate must:
+
+1. Capture the rendered transform/opacity of every coordinated layer immediately before the state
+   update is rendered.
+2. Cancel any older handoff and invalidate its completion callback when a newer state arrives.
+3. Pause the destination timeline at its known first frame, then interpolate from the captured pose
+   using compositor-safe properties (`transform` and/or `opacity`) with a deliberate, bounded
+   easing and duration.
+4. Resume the destination timeline only after all coordinated handoff animations reach their target;
+   restart it from that same first frame so the completion cannot flash or jump to a different frame.
+5. Treat the initial render as a static baseline, and bypass the handoff while reduced motion is
+   enabled. The destination state still renders and remains understandable.
+6. Distinguish destination timelines from the gate's own handoff animations. Pause, resume, cancel,
+   and clean up only animations the coordinator owns; unrelated animation lifecycles stay intact.
+
+No state change may expose a stale frame, jump to an unrelated point in a cycle, or leave parallel
+layers out of phase. Rapid state changes are expected input and must converge to the latest state.
+The coordinator owns cancellation and cleanup so an abandoned transition cannot resume an obsolete
+timeline or retain an animation object.
+
+Acceptance tests exercise every state edge (including rapid reversals), verify that the transition
+uses only the compositor budget, assert that the latest state wins, and confirm a static/reduced-
+motion path without waiting on wall-clock sleeps.
 
 ## Requirements for a GPU canvas
 
@@ -107,6 +139,9 @@ controls onto a raycast 3D bookcase, and paint book titles into spine textures f
 
 - Perpetual HTML animation is `transform`/`opacity` only; a GPU canvas is the adaptive, pausable
   exception with a static fallback.
+- State-driven animation passes through one transition gate per animated surface; it captures the
+  current pose, cancels stale handoffs, synchronizes coordinated layers, and never jumps to an
+  unrelated frame.
 - Reduced motion removes ambience while preserving meaning.
 - Cosmetic animation stays inside its renderer and never triggers re-renders or store writes.
 - Every animated surface has a dated, condition-labelled performance baseline.

@@ -83,8 +83,8 @@ A task is landable when:
   passed a semantic review across every affected document.
 - Deterministic tests cover every domain rule and boundary the change touches. See
   [testing](../practices/TESTING.md).
-- Animations obey the [UI performance](../practices/UI_PERFORMANCE.md) budget, including reduced
-  motion.
+- Animations obey the [UI performance](../practices/UI_PERFORMANCE.md) budget and state-transition
+  continuity requirements, including reduced motion.
 - Any improvement worth proposing upstream to the blueprint is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
 - The repository-wide check passes; shared UI changes also pass the browser acceptance flow, and

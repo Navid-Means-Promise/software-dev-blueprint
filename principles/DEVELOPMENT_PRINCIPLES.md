@@ -125,12 +125,13 @@ Design so that every rule can be proven without a DOM, a network, or real time.
 
 ---
 
-## 6. Visual performance is a rule, not a polish step
+## 6. Visual performance and continuity are rules, not polish steps
 
-Perpetual visual effects follow a hard budget from the first commit, not a later optimization pass.
-Compositor-only animation, respect for reduced motion, and an adaptive lifecycle for any GPU canvas
-are acceptance criteria. The full budget and its verification method are in
-[UI performance](../practices/UI_PERFORMANCE.md).
+Animated state changes preserve the currently rendered pose and hand off through one coordinator;
+they never flash a stale or unrelated frame. Perpetual visual effects follow a hard budget from the
+first commit, not a later optimization pass. Compositor-only animation, respect for reduced motion,
+state-transition continuity, and an adaptive lifecycle for any GPU canvas are acceptance criteria.
+The full budget and verification method are in [UI performance](../practices/UI_PERFORMANCE.md).
 
 ---
 
