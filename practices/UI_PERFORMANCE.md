@@ -118,6 +118,28 @@ _Reference implementation:_ Mystery's crystal-orb and library-bookcase renderers
 material and one hoisted 3D-engine chunk, take typed settings rather than scene objects, project HTML
 controls onto a raycast 3D bookcase, and paint book titles into spine textures from localized text.
 
+## Automated compositor-budget enforcement
+
+Every addition or change to a perpetual HTML animation carries a browser acceptance audit in the
+same change. Run the audit from the animated surface's top-level host after each relevant state has
+settled so state-specific descendants and pseudo-elements stay inside the inspected boundary.
+
+The audit must:
+
+1. Exercise every reachable state that mounts different animations, including transient loading,
+   recording, thinking, offline, and error states rather than only the default state.
+2. Inspect all perpetual CSS animations in the host subtree and reject SVG targets or keyframes that
+   contain properties other than `transform` and `opacity`.
+3. Assert the expected animation names or bounded counts in each state, so an empty, hidden, or
+   incorrectly scoped audit cannot pass vacuously.
+4. Run whenever an infinite animation is introduced or changed, as part of the regular browser CI
+   acceptance flow.
+
+This deterministic property audit complements profiling; it does not replace it. Run paint-flashing
+and frame-pacing inspection whenever an animated surface changes and periodically refresh its dated
+performance baseline. Keep trace-based measurements out of the ordinary correctness gate when their
+platform timing would make that gate nondeterministic.
+
 ## Acceptance method
 
 - Test at real mobile widths (e.g. ~393 px and ~320 px) in **every supported locale** and both text
