@@ -76,13 +76,29 @@ or symmetrical badges), employ the `PersianAligner` pattern:
    active computed font (`window.getComputedStyle`) after `document.fonts.ready` resolves. Measure the
    widest reference line and calculate the exact pixel deficit for shorter lines.
 
-4. **Progressive enhancement and semantic accessibility**:
-   Never degrade search indexing, screen readers, or user copy-paste behavior with raw injected tatweels:
-   - Provide an unadorned semantic string in the container's `aria-label` or `title`.
-   - Provide pre-balanced static markup with baseline Keshides so first-paint renders without layout shifts
-     even before JavaScript evaluates.
-   - Attach runtime equalization via a declarative data attribute (`[data-persian-align]`).
-   - Debounce window resize handlers to recalculate when viewport or font scaling changes.
+4. **SEO integrity, screen readers, and semantic text preservation**:
+   Never expose elongated tatweel glyphs as the primary semantic text nodes to search engines, web crawlers,
+   or assistive technologies. Injected tatweels (`ـ`) alter raw string tokens, which can distort search indexing,
+   keyword extraction, and text-to-speech pronunciation if left unprotected. Follow the four-fold semantic
+   preservation standard:
+   - **Dual DOM architecture**: The container must encapsulate clean, unadorned Persian text inside an accessible
+     screen-reader element (`.sr-only` / `.visually-hidden`) and/or `aria-label`. The visually equalized Keshide
+     lines must be isolated inside an `aria-hidden="true"` presentation container so web crawlers and screen readers
+     process only the canonical, unelongated wording.
+   - **Data-attribute provenance**: Each line element must store its original unelongated string in a
+     `data-original-text` attribute. This guarantees the runtime engine can re-evaluate layout geometry without
+     compounding tatweel counts across viewport resizes.
+   - **Clipboard normalization**: Intercept clipboard `copy` events across Keshide elements to strip Unicode `U+0640`
+     from `clipboardData`. When users copy aligned titles or phrases, their clipboard receives authentic, clean
+     Persian text suitable for search inputs and external documents.
+   - **Metadata and structured data immunity**: Page `<title>`, `<meta name="description">`, OpenGraph tags,
+     and Schema.org JSON-LD must strictly contain canonical, tatweel-free Persian strings.
+
+5. **Progressive enhancement**:
+   - Provide pre-balanced static markup with baseline Keshides so initial render paints symmetrically without layout
+     shifts (CLS) before JavaScript executes.
+   - Attach runtime equalization declaratively via `[data-persian-align]`.
+   - Debounce window resize handlers to recalculate when viewport dimensions or font scale factors change.
 
 ## Acceptance
 
@@ -93,6 +109,8 @@ or symmetrical badges), employ the `PersianAligner` pattern:
   RTL and LTR.
 - Persian and Arabic line equalization uses baseline Keshide extension rather than exaggerated inter-word
   whitespace gaps (`space-between`).
-- Dynamic Keshide insertion runs only after `document.fonts.ready` and preserves semantic accessibility
-  via unadorned `aria-label` attributes.
+- SEO and crawler indexing remain unaffected: canonical text is preserved via `.sr-only` / `aria-label` and visual
+  Keshide lines are isolated behind `aria-hidden="true"`.
+- User clipboard operations strip tatweels so copied text pastes cleanly into external applications.
+- Dynamic Keshide insertion runs only after `document.fonts.ready` and preserves `data-original-text` attributes.
 
