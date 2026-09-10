@@ -72,7 +72,7 @@ domain vocabulary and package scope.
 - [practices/TYPOGRAPHY.md](practices/TYPOGRAPHY.md) — language-aware font roles, local delivery,
   responsive fitting
 - [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — compositor + GPU-canvas budgets
-- [practices/MOBILE_RESPONSIVENESS.md](practices/MOBILE_RESPONSIVENESS.md) — small-screen viewports, zero-overflow principle, touch ergonomics
+- [practices/MOBILE_RESPONSIVENESS.md](practices/MOBILE_RESPONSIVENESS.md) — small-screen viewports, zero-overflow principle, multi-column vertical alignment, touch ergonomics
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
 - [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
