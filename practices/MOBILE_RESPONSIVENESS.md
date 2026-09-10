@@ -279,4 +279,5 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Both LTR and RTL directions maintain zero horizontal overflow.
 - [ ] Adjacent inputs, action buttons, and metric values in multi-column rows maintain identical vertical alignment (locked baseline) regardless of label line wrapping.
 - [ ] Child elements, cards, and grid columns maintain zero internal overflow (`scrollWidth <= clientWidth`) and do not bleed into adjacent siblings.
+- [ ] Multi-line labels and badges break at intentional semantic boundaries without fractured parentheticals or orphan words (see [typography](TYPOGRAPHY.md#enforce-semantic-line-breaking-and-inspect-wrap-boundaries)).
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.

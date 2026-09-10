@@ -101,6 +101,21 @@ or symmetrical badges), employ the `PersianAligner` pattern:
    - Attach runtime equalization declaratively via `[data-persian-align]`.
    - Debounce window resize handlers to recalculate when viewport dimensions or font scale factors change.
 
+## Enforce semantic line breaking and inspect wrap boundaries
+
+Never allow arbitrary browser wrapping to split syntactic units, compound phrases, or parenthetical qualifiers in constrained UI components (such as stat cards, badges, table cells, or form hints).
+
+When a label or title wraps across lines:
+
+1. **Protect atomic syntactic units**:
+   Enclose parentheticals (e.g. `(ودیعه ثابت)`), value-unit pairings, or compound nouns in a non-breaking wrapper (`.text-nowrap` or non-breaking spaces `&nbsp;`). When width constrains the line, the entire syntactic unit must wrap together to the subsequent line rather than fracturing into dangling fragments or orphan words (e.g. `سقف جدید اجاره (ودیعه` / `ثابت)` is unacceptable; `سقف جدید اجاره` / `(ودیعه ثابت)` is correct).
+
+2. **Deliberate structural line breaks**:
+   Where a two-line layout is expected in compact containers, structure the break deliberately at the natural semantic boundary (e.g. `<span class="text-nowrap">عنوان اول</span><span class="text-nowrap">توضیح تکمیلی</span>`) and enforce uniform vertical line-box height (`min-height`) with centered alignment so adjacent sibling cards maintain a level baseline. Use CSS `text-wrap: balance` on headings to prevent single-word orphans.
+
+3. **Mandatory visual inspection in rendered browser**:
+   Automated overflow tests (`scrollWidth <= clientWidth`) only detect physical container bleed; they cannot evaluate syntactic line-break aesthetics. Every multi-line text container must be visually inspected across desktop, tablet, and mobile viewports to verify that line breaks occur at logical syntactic boundaries and produce balanced, legible layouts.
+
 ## Acceptance
 
 - Computed styles resolve to the intended interface and display families in every supported locale.
@@ -115,3 +130,5 @@ or symmetrical badges), employ the `PersianAligner` pattern:
 - User clipboard operations strip tatweels so copied text pastes cleanly into external applications.
 - Dynamic Keshide insertion runs only after `document.fonts.ready` and preserves `data-original-text` attributes.
 
+- Constrained multi-line titles, badges, and labels break only at intentional semantic boundaries; parentheticals and compound units never fracture across lines.
+- Visual browser inspection verifies that no typographic orphans or awkwardly broken phrases exist across supported viewports.
