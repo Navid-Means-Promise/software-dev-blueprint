@@ -42,7 +42,8 @@ Recalculate after locale, font, or container-size changes. A one-line label may 
 size; a wrapped label keeps the smaller size and centers its complete line block. If the preferred
 single-line size wraps, fit downward only to the largest size that remains one line. The semantic
 text and accessible control stay real HTML even when the surrounding surface is image-backed or
-rendered.
+rendered. When wrapped labels appear in multi-column rows, prevent staggered adjacent controls by applying
+the baseline-lock rules in [mobile responsiveness](MOBILE_RESPONSIVENESS.md#4-multi-column-vertical-alignment-and-baseline-lock).
 
 ## Equalize Persian and Arabic lines with Keshide (PersianAligner)
 

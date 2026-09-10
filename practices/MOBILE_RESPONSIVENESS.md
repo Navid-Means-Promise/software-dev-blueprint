@@ -126,6 +126,58 @@ generous padding consumes scarce screen real estate.
 }
 ```
 
+### 4. Multi-column vertical alignment and baseline lock
+
+In multi-column grid or flex layouts (such as adjacent form fields, metric cards, or pricing tiers),
+child elements (labels, titles, captions) often vary in text length across localized strings or descriptive
+phrasing. A multi-line label pushes adjacent inputs or primary values downward, creating jagged,
+staggered baselines that disrupt visual rhythm and order.
+
+**Rule**: Primary interactive controls (inputs, buttons) and key metric values across adjacent columns
+must maintain locked vertical alignment regardless of label or header line counts. Apply one of three
+canonical patterns:
+
+1. **Flex column with anchored controls (`margin-top: auto`)**:
+   Set `.form-group` or the column card to a flex column (`display: flex; flex-direction: column;`).
+   Apply `min-height` on the label to accommodate the maximum expected line count, or apply `margin-top: auto`
+   to the control wrapper. This anchors inputs or actions to a shared horizontal baseline across the row:
+
+   ```css
+   .form-group {
+     display: flex;
+     flex-direction: column;
+     height: 100%;
+   }
+   .form-group .form-label {
+     min-height: 2.8rem; /* Accommodates up to 2 lines of text */
+   }
+   .form-group .input-wrapper {
+     margin-top: auto;
+   }
+   ```
+
+2. **CSS Subgrid (`grid-template-rows: subgrid`)**:
+   For multi-track components where labels, inputs, and hints must align independently across
+   sibling columns:
+
+   ```css
+   .form-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+     grid-template-rows: auto auto auto;
+   }
+   .form-grid > .form-group {
+     display: grid;
+     grid-row: span 3;
+     grid-template-rows: subgrid;
+   }
+   ```
+
+3. **Stat and metric cards header lock**:
+   In multi-column stat or metric summary strips, wrap titles in an explicit header container with a
+   consistent `min-height`, or push the metric value down via `margin-top: auto`, so that primary numbers
+   sit on an identical horizontal baseline across every card.
+
 ## Navigation and interactive ergonomics
 
 Small-screen usability requires thumb-friendly touch targets and clean navigational state transitions.
@@ -187,6 +239,8 @@ Executed during unit tests (`./bin/test`):
 2. **No Rigid Minmax**: Scans templates and CSS for rigid wide column declarations (`minmax(3[0-9]{2}px, ...)`)
    that lack `min(100%, ...)`.
 3. **Flexbox Containment**: Verifies that primary navigation and content flex items declare `min-width: 0`.
+4. **Multi-Column Alignment Invariant**: Verifies that adjacent `.form-group` or metric card classes in
+   multi-column layouts define flex-column anchoring, subgrid, or label min-height constraints.
 
 ### Layer 2: Headless browser overflow audit (`bin/test-mobile`)
 
@@ -197,6 +251,8 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
   - Asserts `document.documentElement.scrollWidth === window.innerWidth`.
   - Scans all visible DOM elements and asserts **0 elements** have `rect.left < -1` or `rect.right > window.innerWidth + 1`.
   - Verifies interactive states (e.g. mobile navigation drawer open/closed) maintain zero-overflow invariants.
+  - Asserts vertical baseline alignment for multi-column form controls: adjacent inputs in the same row
+    share identical top coordinates (`Math.abs(rectA.top - rectB.top) < 2`).
 - Fails the build (Exit code 1) with precise DOM element selectors and pixel amounts if any regression is introduced.
 
 ## Acceptance
@@ -208,4 +264,5 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Touch targets meet the 44 × 44 px minimum threshold.
 - [ ] Grid layouts utilize defensive minmax rules (`minmax(min(100%, 280px), 1fr)`).
 - [ ] Both LTR and RTL directions maintain zero horizontal overflow.
+- [ ] Adjacent inputs, action buttons, and metric values in multi-column rows maintain identical vertical alignment (locked baseline) regardless of label line wrapping.
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.
