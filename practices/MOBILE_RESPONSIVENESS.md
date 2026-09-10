@@ -178,6 +178,17 @@ canonical patterns:
    consistent `min-height`, or push the metric value down via `margin-top: auto`, so that primary numbers
    sit on an identical horizontal baseline across every card.
 
+### 5. Container containment and internal element bleed
+
+Zero-overflow applies at the **component and container level**, not merely the viewport root (`window.innerWidth`).
+Dynamic numeric outputs, localized strings, or badge clusters within cards, grid tracks, and table cells
+frequently exceed their parent column width if unconstrained:
+- Multi-column cells and metric cards must declare defensive containment (`min-width: 0; overflow: hidden;`
+  or explicit flex wrapping) so dynamic content cannot bleed across column dividers into adjacent sibling content.
+- Never apply global or rigid `white-space: nowrap` to containers holding multi-part text or translated strings.
+  When content cannot fit on a single line within narrow tracks, stack sub-values vertically via flex columns
+  or apply fluid typography (`clamp()`).
+
 ## Navigation and interactive ergonomics
 
 Small-screen usability requires thumb-friendly touch targets and clean navigational state transitions.
@@ -253,6 +264,8 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
   - Verifies interactive states (e.g. mobile navigation drawer open/closed) maintain zero-overflow invariants.
   - Asserts vertical baseline alignment for multi-column form controls: adjacent inputs in the same row
     share identical top coordinates (`Math.abs(rectA.top - rectB.top) < 2`).
+  - Asserts zero internal container overflow: all multi-column cards, grid tracks, and data cells maintain
+    `scrollWidth <= clientWidth + 1` with 0 bounding-box collisions across adjacent siblings.
 - Fails the build (Exit code 1) with precise DOM element selectors and pixel amounts if any regression is introduced.
 
 ## Acceptance
@@ -265,4 +278,5 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Grid layouts utilize defensive minmax rules (`minmax(min(100%, 280px), 1fr)`).
 - [ ] Both LTR and RTL directions maintain zero horizontal overflow.
 - [ ] Adjacent inputs, action buttons, and metric values in multi-column rows maintain identical vertical alignment (locked baseline) regardless of label line wrapping.
+- [ ] Child elements, cards, and grid columns maintain zero internal overflow (`scrollWidth <= clientWidth`) and do not bleed into adjacent siblings.
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.
