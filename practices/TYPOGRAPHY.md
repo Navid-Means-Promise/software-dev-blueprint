@@ -64,10 +64,10 @@ or symmetrical badges), employ the `PersianAligner` pattern:
    Enforce an explicit two-sided character whitelist. A negative blacklist of non-connecting letters is strictly prohibited because it falsely classifies digits, punctuation, mathematical symbols, and abbreviations as connecting letterforms. A Keshide may ONLY be inserted between two genuinely connecting Persian/Arabic letters:
    - `c1` must strictly belong to the cursive connecting set (`ب`, `پ`, `ت`, `ث`, `ج`, `چ`, `ح`, `خ`, `س`, `ش`, `ص`, `ض`, `ط`, `ظ`, `ع`, `غ`, `ف`, `ق`, `ک`, `گ`, `ل`, `م`, `ن`, `ه`, `ی`, `ئ`).
    - `c2` must strictly belong to the set of letters accepting connection from the right (`آ`, `ا`, `ب`, `پ`, `ت`, `ث`, `ج`, `چ`, `ح`, `خ`, `د`, `ذ`, `ر`, `ز`, `ژ`, `س`, `ش`, `ص`, `ض`, `ط`, `ظ`, `ع`, `غ`, `ف`, `ق`, `ک`, `گ`, `ل`, `م`, `ن`, `و`, `ه`, `ی`, `ئ`).
-   Never insert Keshide adjacent to digits (`۰-۹`, `0-9`), math operators (`+`, `-`), punctuation, dots (such as abbreviations like `م.ت`), or whitespace.
+   Never insert Keshide adjacent to digits (`۰-۹`, `0-9`), math operators (`+`, `-`), punctuation, dots (e.g. abbreviations), or whitespace.
 
-2. **Exclusion of numerical, algebraic, and financial data**:
-   Keshide line equalization applies exclusively to calligraphic display text, brand lockups, epigraphs, and decorative banners. Never apply Keshide equalization to numerical figures, financial metrics, currency units, algebraic outputs, or dynamic calculator results. Numbers and units must remain clean, legible, and unelongated to prevent floating dash artifacts (e.g. `+۲.۱ـ`).
+2. **Exclusion of numerical, algebraic, and quantitative data**:
+   Keshide line equalization applies exclusively to calligraphic display text, brand lockups, epigraphs, and decorative banners. Never apply Keshide equalization to numerical values, tabular metrics, currency units, algebraic outputs, or dynamic calculated counters. Numbers and units must remain clean, legible, and unelongated to prevent floating dash artifacts (e.g. `2.1ـ`).
 
 3. **Calligraphic priority scoring**:
    Prioritize elongation points according to classical aesthetic hierarchy:
@@ -107,7 +107,7 @@ or symmetrical badges), employ the `PersianAligner` pattern:
 
 ## Typographic justification for Persian and Arabic body copy
 
-When formal prose, legal stipulations, FAQ answers, or editorial body copy requires edge justification, apply CSS justification paired with explicit right-alignment for the terminal line:
+When formal prose, multi-line documentation, articles, or editorial body copy requires edge justification, apply CSS justification paired with explicit right-alignment for the terminal line:
 
 ```css
 .persian-justified,
@@ -129,7 +129,7 @@ Never allow arbitrary browser wrapping to split syntactic units, compound phrase
 When a label or title wraps across lines:
 
 1. **Protect atomic syntactic units**:
-   Enclose parentheticals (e.g. `(ودیعه ثابت)`), value-unit pairings, or compound nouns in a non-breaking wrapper (`.text-nowrap` or non-breaking spaces `&nbsp;`). When width constrains the line, the entire syntactic unit must wrap together to the subsequent line rather than fracturing into dangling fragments or orphan words (e.g. `سقف جدید اجاره (ودیعه` / `ثابت)` is unacceptable; `سقف جدید اجاره` / `(ودیعه ثابت)` is correct).
+   Enclose parentheticals (e.g. `(نسخه پشتیبان)`), value-unit pairings, or compound nouns in a non-breaking wrapper (`.text-nowrap` or non-breaking spaces `&nbsp;`). When width constrains the line, the entire syntactic unit must wrap together to the subsequent line rather than fracturing into dangling fragments or orphan words (e.g. `خلاصه وضعیت عملکرد (نسخه` / `پشتیبان)` is unacceptable; `خلاصه وضعیت عملکرد` / `(نسخه پشتیبان)` is correct).
 
 2. **Deliberate structural line breaks**:
    Where a two-line layout is expected in compact containers, structure the break deliberately at the natural semantic boundary (e.g. `<span class="text-nowrap">عنوان اول</span><span class="text-nowrap">توضیح تکمیلی</span>`) and enforce uniform vertical line-box height (`min-height`) with centered alignment so adjacent sibling cards maintain a level baseline. Use CSS `text-wrap: balance` on headings to prevent single-word orphans.
@@ -147,7 +147,7 @@ When a label or title wraps across lines:
 - Persian and Arabic line equalization uses baseline Keshide extension rather than exaggerated inter-word
   whitespace gaps (`space-between`).
 - Keshide line equalization enforces a strict two-sided cursive letter whitelist; digits, punctuation, abbreviations, and math operators never receive tatweels.
-- Numerical, financial, and algebraic data values are strictly excluded from Keshide elongation.
+- Numerical, tabular, and algebraic data values are strictly excluded from Keshide elongation.
 - Persian and Arabic body copy requiring edge justification enforces `text-align-last: right` to protect terminal lines.
 - SEO and crawler indexing remain unaffected: canonical text is preserved via `.sr-only` / `aria-label` and visual
   Keshide lines are isolated behind `aria-hidden="true"`.
