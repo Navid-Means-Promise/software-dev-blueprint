@@ -60,24 +60,27 @@ cursive letterforms rather than widening the spaces between words.
 When an application requires equal-width multi-line blocks (such as branding lockups, poetic couplets,
 or symmetrical badges), employ the `PersianAligner` pattern:
 
-1. **Identification of valid cursive join points**:
-   Insert Keshide only after characters that naturally connect to the following letter in Arabic/Persian
-   script. Never insert Keshide after non-connecting characters (`ا`, `د`, `ذ`, `ر`, `ز`, `ژ`, `و`, `آ`)
-   or whitespace.
+1. **Strict cursive letter whitelist (Never blacklist)**:
+   Enforce an explicit two-sided character whitelist. A negative blacklist of non-connecting letters is strictly prohibited because it falsely classifies digits, punctuation, mathematical symbols, and abbreviations as connecting letterforms. A Keshide may ONLY be inserted between two genuinely connecting Persian/Arabic letters:
+   - `c1` must strictly belong to the cursive connecting set (`ب`, `پ`, `ت`, `ث`, `ج`, `چ`, `ح`, `خ`, `س`, `ش`, `ص`, `ض`, `ط`, `ظ`, `ع`, `غ`, `ف`, `ق`, `ک`, `گ`, `ل`, `م`, `ن`, `ه`, `ی`, `ئ`).
+   - `c2` must strictly belong to the set of letters accepting connection from the right (`آ`, `ا`, `ب`, `پ`, `ت`, `ث`, `ج`, `چ`, `ح`, `خ`, `د`, `ذ`, `ر`, `ز`, `ژ`, `س`, `ش`, `ص`, `ض`, `ط`, `ظ`, `ع`, `غ`, `ف`, `ق`, `ک`, `گ`, `ل`, `م`, `ن`, `و`, `ه`, `ی`, `ئ`).
+   Never insert Keshide adjacent to digits (`۰-۹`, `0-9`), math operators (`+`, `-`), punctuation, dots (such as abbreviations like `م.ت`), or whitespace.
 
-2. **Calligraphic priority scoring**:
+2. **Exclusion of numerical, algebraic, and financial data**:
+   Keshide line equalization applies exclusively to calligraphic display text, brand lockups, epigraphs, and decorative banners. Never apply Keshide equalization to numerical figures, financial metrics, currency units, algebraic outputs, or dynamic calculator results. Numbers and units must remain clean, legible, and unelongated to prevent floating dash artifacts (e.g. `+۲.۱ـ`).
+
+3. **Calligraphic priority scoring**:
    Prioritize elongation points according to classical aesthetic hierarchy:
    - High priority: Medial and initial `ش` and `س` before final or middle characters (e.g. `مشـاوره`, `توسـط`).
-   - Medium priority: Connecting ascenders and descenders like `قـ`, `کـ`, `گـ`, `پـ`, `تـ`, `بـ`.
-   - Balanced distribution: Distribute multiple tatweels across eligible words rather than concentrating
-     extreme elongation on a single glyph.
+   - Medium priority: Connecting ascenders and descenders like `قـ`, `کـ`, `گـ`, `پـ`, `تـ`, `بـ`, `ثـ`, `حـ`, `جـ`, `چـ`, `خـ`.
+   - Balanced distribution: Distribute multiple tatweels across eligible words rather than concentrating extreme elongation on a single glyph.
 
-3. **Rendered geometry measurement**:
+4. **Rendered geometry measurement**:
    Do not guess character counts. Use an offscreen canvas context (`ctx.measureText`) configured with the
    active computed font (`window.getComputedStyle`) after `document.fonts.ready` resolves. Measure the
    widest reference line and calculate the exact pixel deficit for shorter lines.
 
-4. **SEO integrity, screen readers, and semantic text preservation**:
+5. **SEO integrity, screen readers, and semantic text preservation**:
    Never expose elongated tatweel glyphs as the primary semantic text nodes to search engines, web crawlers,
    or assistive technologies. Injected tatweels (`ـ`) alter raw string tokens, which can distort search indexing,
    keyword extraction, and text-to-speech pronunciation if left unprotected. Follow the four-fold semantic
@@ -95,11 +98,29 @@ or symmetrical badges), employ the `PersianAligner` pattern:
    - **Metadata and structured data immunity**: Page `<title>`, `<meta name="description">`, OpenGraph tags,
      and Schema.org JSON-LD must strictly contain canonical, tatweel-free Persian strings.
 
-5. **Progressive enhancement**:
+6. **Progressive enhancement and generic line selectors**:
    - Provide pre-balanced static markup with baseline Keshides so initial render paints symmetrically without layout
      shifts (CLS) before JavaScript executes.
-   - Attach runtime equalization declaratively via `[data-persian-align]`.
-   - Debounce window resize handlers to recalculate when viewport dimensions or font scale factors change.
+   - Attach runtime equalization declaratively via `[data-persian-align]`, `.persian-align`, or `[data-keshide-equalize]`.
+   - Target generic line selectors (`.persian-align-line`, `[data-align-line]`, `.align-line`, or direct semantic child lines) rather than coupling the engine to hardcoded component classes.
+   - Re-sync dynamically (`window.PersianAligner.run()`) when child DOM contents update at runtime, and debounce window resize handlers.
+
+## Typographic justification for Persian and Arabic body copy
+
+When formal prose, legal stipulations, FAQ answers, or editorial body copy requires edge justification, apply CSS justification paired with explicit right-alignment for the terminal line:
+
+```css
+.persian-justified,
+.text-justify-fa {
+  text-align: justify;
+  text-justify: inter-word;
+  text-align-last: right;
+  -webkit-text-align-last: right;
+  text-wrap: pretty;
+}
+```
+
+This eliminates ragged outer margins across multi-line paragraphs while preventing the terminal line from stretching unnaturally across the column.
 
 ## Enforce semantic line breaking and inspect wrap boundaries
 
@@ -125,10 +146,13 @@ When a label or title wraps across lines:
   RTL and LTR.
 - Persian and Arabic line equalization uses baseline Keshide extension rather than exaggerated inter-word
   whitespace gaps (`space-between`).
+- Keshide line equalization enforces a strict two-sided cursive letter whitelist; digits, punctuation, abbreviations, and math operators never receive tatweels.
+- Numerical, financial, and algebraic data values are strictly excluded from Keshide elongation.
+- Persian and Arabic body copy requiring edge justification enforces `text-align-last: right` to protect terminal lines.
 - SEO and crawler indexing remain unaffected: canonical text is preserved via `.sr-only` / `aria-label` and visual
   Keshide lines are isolated behind `aria-hidden="true"`.
 - User clipboard operations strip tatweels so copied text pastes cleanly into external applications.
-- Dynamic Keshide insertion runs only after `document.fonts.ready` and preserves `data-original-text` attributes.
+- Dynamic Keshide insertion runs only after `document.fonts.ready`, supports generic line selectors, and preserves `data-original-text` attributes.
 
 - Constrained multi-line titles, badges, and labels break only at intentional semantic boundaries; parentheticals and compound units never fracture across lines.
 - Visual browser inspection verifies that no typographic orphans or awkwardly broken phrases exist across supported viewports.
