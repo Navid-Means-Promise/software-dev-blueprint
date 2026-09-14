@@ -104,6 +104,30 @@ is for _startup-critical_ assets only — it is not a license to download an unb
 content prefetches later, after the first interaction. Detail and rationale:
 [assets & content](../practices/ASSETS_AND_CONTENT.md) and [UI performance](../practices/UI_PERFORMANCE.md).
 
+## Authentication and OTP input ergonomics
+
+The client complements the server's passwordless phone authentication contract
+([server](SERVER.md#passwordless-phone-authentication)) with accessible, mobile-first input ergonomics:
+
+- **Autofill attributes:** The telephone input must declare `autocomplete="tel"` and `inputmode="tel"`.
+  The OTP verification input must declare `autocomplete="one-time-code"`, `inputmode="numeric"`, and
+  `pattern="[0-9]*"` so mobile operating systems present a dedicated numeric keypad and suggest incoming
+  verification codes directly above the keyboard.
+- **WebOTP API integration:** On supported mobile browsers, listen for incoming SMS OTP codes via the
+  standard WebOTP API (`navigator.credentials.get({ otp: { transport: ['sms'] }, signal })`). Pair the
+  request with an `AbortController` signal to abort listening cleanly when the user navigates away,
+  cancels, or when the countdown timer expires.
+- **Localized digit normalization & smart paste:** Paste handlers and input listeners must immediately
+  strip non-digit formatting characters and normalize non-Latin digits (Persian/Arabic Unicode numerals
+  `۰-۹` and `٠-٩`) to ASCII digits (`0-9`) before validation.
+- **Auto-submission on completion:** When all expected OTP digits are entered (either via manual entry,
+  smart paste, or WebOTP autofill), validate and submit the verification request automatically without
+  forcing the user to tap a redundant confirmation button.
+- **Modal containment:** When authentication renders inside a modal dialog rather than a standalone
+  route, adhere to [mobile responsiveness](../practices/MOBILE_RESPONSIVENESS.md) dialog ergonomics
+  (`max-height: calc(100dvh - 2rem)`, `overflow-y: auto`, no `overflow: hidden`) so the soft keyboard
+  does not obscure input fields or status messages.
+
 ## Rendering discipline
 
 Any rich or animated visual (a GPU canvas, an SVG scene, layered ambience) obeys the
@@ -122,3 +146,4 @@ or component re-renders.
 - All user-facing strings come from the i18n catalog.
 - Startup goes through the shared readiness gate; platform behavior varies only through the adapter
   set.
+- OTP and phone inputs declare standard autofill and numeric inputmode semantics, normalize localized numerals on input/paste, and abort WebOTP listeners on unmount.
