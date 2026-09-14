@@ -290,6 +290,8 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
   - Asserts `document.documentElement.scrollWidth === window.innerWidth`.
   - Scans all visible DOM elements and asserts **0 elements** have `rect.left < -1` or `rect.right > window.innerWidth + 1`.
   - Verifies interactive states (e.g. mobile navigation drawer open/closed) maintain zero-overflow invariants.
+  - Verifies modal open states (where applicable) maintain zero horizontal overflow, stay within dynamic
+    viewport height bounds (`calc(100dvh - ...)`), and remain vertically scrollable.
   - Asserts vertical baseline alignment for multi-column form controls: adjacent inputs in the same row
     share identical top coordinates (`Math.abs(rectA.top - rectB.top) < 2`).
   - Asserts zero internal container overflow: all multi-column cards, grid tracks, and data cells maintain
