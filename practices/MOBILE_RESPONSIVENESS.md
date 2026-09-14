@@ -229,6 +229,31 @@ Stack primary and secondary call-to-action buttons vertically at `width: 100%` o
 }
 ```
 
+### 4. Modals, dialog sheets, and virtual keyboard ergonomics
+
+Modal dialogs, popovers, and bottom sheets on mobile viewports must never trap or clip content:
+- **No rigid overflow hidden:** Never place `overflow: hidden` on a modal's primary content container
+  or decorative frame on mobile viewports (`< 640px`). Doing so locks touch scrolling and cuts off
+  action buttons or form inputs when the on-screen virtual keyboard (IME) expands.
+- **Dynamic viewport bounds:** Constrain the dialog's maximum height defensively using dynamic viewport
+  units: `max-height: calc(100dvh - 2rem);` (with fallback to `calc(100vh - 2rem)`).
+- **Momentum scrolling:** Enable native momentum scrolling on the dialog container:
+  `overflow-y: auto; -webkit-overflow-scrolling: touch;`.
+- **Soft keyboard visibility:** Form inputs inside modals must remain reachable when focused. Avoid
+  fixed vertical centering that forces the top or bottom of a tall dialog out of view when the
+  viewport shrinks.
+- **Defensive decorative borders:** Remove rigid or unscalable border ornaments (e.g. decorative frames
+  with fixed borders) on mobile viewports to preserve critical vertical reading area.
+
+### 5. Drawer-to-modal transition coordination
+
+When an interactive control inside a collapsible mobile navigation drawer triggers a modal dialog
+(such as an authentication or profile dialog):
+- The mobile navigation drawer must immediately dismiss/close itself before or concurrently with the
+  modal opening.
+- Never leave a mobile navigation drawer open beneath an active modal backdrop; doing so traps keyboard
+  focus, causes stacking-context conflicts, and intercepts touch events intended for the modal.
+
 ## Bidirectional layout (RTL / LTR) parity
 
 Small-screen overflow issues often manifest differently in RTL scripts than in LTR scripts:
@@ -265,6 +290,8 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
   - Asserts `document.documentElement.scrollWidth === window.innerWidth`.
   - Scans all visible DOM elements and asserts **0 elements** have `rect.left < -1` or `rect.right > window.innerWidth + 1`.
   - Verifies interactive states (e.g. mobile navigation drawer open/closed) maintain zero-overflow invariants.
+  - Verifies modal open states (where applicable) maintain zero horizontal overflow, stay within dynamic
+    viewport height bounds (`calc(100dvh - ...)`), and remain vertically scrollable.
   - Asserts vertical baseline alignment for multi-column form controls: adjacent inputs in the same row
     share identical top coordinates (`Math.abs(rectA.top - rectB.top) < 2`).
   - Asserts zero internal container overflow: all multi-column cards, grid tracks, and data cells maintain
@@ -283,5 +310,7 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Adjacent inputs, action buttons, and metric values in multi-column rows maintain identical vertical alignment (locked baseline) regardless of label line wrapping.
 - [ ] Child elements, cards, and grid columns maintain zero internal overflow (`scrollWidth <= clientWidth`) and do not bleed into adjacent siblings.
 - [ ] Multi-line labels and badges break at intentional semantic boundaries without fractured parentheticals or orphan words (see [typography](TYPOGRAPHY.md#enforce-semantic-line-breaking-and-inspect-wrap-boundaries)).
+- [ ] Modals and dialog sheets on mobile use dynamic viewport bounds (`100dvh`) with vertical scrolling and zero `overflow: hidden` clipping during virtual keyboard activation.
+- [ ] Triggering a modal from a mobile navigation drawer automatically dismisses the drawer.
 - [ ] All HTML/template files pass the static asset cache-busting invariant check.
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.
