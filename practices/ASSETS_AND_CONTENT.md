@@ -45,6 +45,23 @@ its load-failure fallback and applies both through the same material/style owner
 texture must not remove the object, change its interaction boundary, or create a second independently
 maintained rendering path. The fetched asset improves detail; it does not become structural truth.
 
+### Defensive presentation attributes on vector markup
+
+Inline and embedded SVG icons must declare explicit geometric and color defaults directly on the `<svg>`
+element in markup (`width`, `height`, `viewBox`, `fill`, `stroke`) rather than relying entirely on external
+CSS classes:
+
+```html
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  ...
+</svg>
+```
+
+When external stylesheets are delayed, fail to load, or lag behind cached markup, unconstrained SVGs default
+to natural `viewBox` coordinates (or 100% parent width) and black fills (`#000000`), producing massive unstyled
+black blobs and severe Cumulative Layout Shift (CLS). Defensive presentation attributes ensure the icon
+maintains its physical dimensions and color inheritance before CSS executes.
+
 ## The readiness gate is bounded
 
 The shared [readiness gate](../components/SHARED_UI.md) preloads **startup-critical** assets only —
@@ -72,4 +89,5 @@ and templates are authoritative in [deployment and HTTP caching](DEPLOYMENT_AND_
 - Generate placeholders from the contract so real loading/timing paths run before final media exists.
 - Prefer code-native visuals; keep every asset local; record each asset's provenance.
 - The readiness gate loads only startup-critical assets; larger content prefetches after first use.
+- Inline SVG icons define explicit defensive dimensions and fill/stroke fallbacks in markup.
 - Web asset delivery obeys the HTTP caching and versioning matrix in deployment and HTTP caching.
