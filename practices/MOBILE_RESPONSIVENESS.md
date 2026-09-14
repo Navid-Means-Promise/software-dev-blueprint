@@ -252,6 +252,9 @@ Executed during unit tests (`./bin/test`):
 3. **Flexbox Containment**: Verifies that primary navigation and content flex items declare `min-width: 0`.
 4. **Multi-Column Alignment Invariant**: Verifies that adjacent `.form-group` or metric card classes in
    multi-column layouts define flex-column anchoring, subgrid, or label min-height constraints.
+5. **Asset Cache-Busting Invariant**: Scans layout templates and asserts that all `<link rel="stylesheet">`
+   and `<script src>` tags referencing local assets include deterministic cache-busting tokens
+   (`?v=<hash>` or content-hashed filenames) to prevent stale asset retention on mobile browsers.
 
 ### Layer 2: Headless browser overflow audit (`bin/test-mobile`)
 
@@ -280,4 +283,5 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Adjacent inputs, action buttons, and metric values in multi-column rows maintain identical vertical alignment (locked baseline) regardless of label line wrapping.
 - [ ] Child elements, cards, and grid columns maintain zero internal overflow (`scrollWidth <= clientWidth`) and do not bleed into adjacent siblings.
 - [ ] Multi-line labels and badges break at intentional semantic boundaries without fractured parentheticals or orphan words (see [typography](TYPOGRAPHY.md#enforce-semantic-line-breaking-and-inspect-wrap-boundaries)).
+- [ ] All HTML/template files pass the static asset cache-busting invariant check.
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.
