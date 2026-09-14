@@ -75,6 +75,7 @@ domain vocabulary and package scope.
 - [practices/MOBILE_RESPONSIVENESS.md](practices/MOBILE_RESPONSIVENESS.md) — small-screen viewports, zero-overflow principle, multi-column vertical alignment, touch ergonomics
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
+- [practices/DEPLOYMENT_AND_CACHING.md](practices/DEPLOYMENT_AND_CACHING.md) — HTTP cache matrix, asset versioning, post-deploy healthchecks
 - [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
   host-safe compiler and SDK environments
 - [security/README.md](security/README.md) — isolated image/repository audits,

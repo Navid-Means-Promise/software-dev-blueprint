@@ -92,6 +92,10 @@ route → controller → form request/action → model or repository → infrast
 - Run invasive PHP/system dependencies through the shared
   [containerized-toolchain practice](../practices/CONTAINERIZED_TOOLCHAINS.md); keep the committed
   runner as the public interface rather than duplicating its rules here.
+- In server-rendered templates, emit deterministic cache-busting tokens on all static CSS and JS references
+  using the deployment commit hash (`?v=<hash>`), falling back to `filemtime` in local development. Configure
+  server headers (`.htaccess` or web server configuration) to serve HTML as `no-cache, must-revalidate` and
+  static assets with controlled revalidation. See [deployment and HTTP caching](../practices/DEPLOYMENT_AND_CACHING.md).
 
 ## Rules
 
@@ -103,3 +107,4 @@ route → controller → form request/action → model or repository → infrast
   of the first usable slice.
 - Production adapters are explicit and fail clearly when missing; local fallbacks are opt-in and
   cannot bypass the normal security path.
+- Server-rendered templates emit versioned static assets, and web server configuration enforces explicit HTTP cache-control policies.

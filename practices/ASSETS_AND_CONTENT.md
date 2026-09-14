@@ -60,6 +60,11 @@ provenance lives in a project `docs/` pipeline file so an asset's right-to-use a
 clear later. Font-specific formats, licensing, and delivery rules live in
 [typography](TYPOGRAPHY.md).
 
+## Web asset caching and delivery
+
+Asset delivery, HTTP `Cache-Control` headers, and deterministic cache-busting protocols for web assets
+and templates are authoritative in [deployment and HTTP caching](DEPLOYMENT_AND_CACHING.md).
+
 ## Rules
 
 - Content is schema-validated data, validated at construction, referred to by one name.
@@ -67,3 +72,4 @@ clear later. Font-specific formats, licensing, and delivery rules live in
 - Generate placeholders from the contract so real loading/timing paths run before final media exists.
 - Prefer code-native visuals; keep every asset local; record each asset's provenance.
 - The readiness gate loads only startup-critical assets; larger content prefetches after first use.
+- Web asset delivery obeys the HTTP caching and versioning matrix in deployment and HTTP caching.

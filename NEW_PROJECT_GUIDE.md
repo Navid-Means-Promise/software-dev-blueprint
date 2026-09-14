@@ -100,6 +100,10 @@ exists.
 9. **Acceptance.** Playwright over the shared UI in every locale and both text directions; isolate any
    real-GPU measurement into a run that rejects software rendering ([testing](practices/TESTING.md)).
 
+10. **Delivery and caching.** Configure web server `Cache-Control` policies, verify deterministic asset
+   cache-busting tokens in HTML templates, record deployment revisions, and run automated post-deploy
+   healthchecks ([deployment and HTTP caching](practices/DEPLOYMENT_AND_CACHING.md)).
+
 ## The vertical slice as the milestone
 
 Aim first for a **thin end-to-end slice**, not a complete product: the smallest real flow that
