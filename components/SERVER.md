@@ -71,9 +71,16 @@ In server-owned relational schemas, a table normally names its own primary key `
 name the referenced role, such as `otp_challenge_id`. Domain and wire identifiers remain explicit
 (`otpChallengeId`) even when the private row key is `otp_challenges.id`. Schema changes use
 data-preserving, restart-safe migrations, with tests that open the previous schema and prove both its
-records and constraints survive.
+records and constraints survive. Repositories do not create, alter, seed, or silently repair schema
+at runtime; startup verifies the required migration version and fails clearly when it is absent.
+Embedded databases explicitly enable the foreign-key semantics their schema relies on.
 
 ## Identity, authority, and tenant isolation
+
+The complete decision model for RBAC, ABAC, relationship scope, dynamic policy administration,
+cache invalidation, and authorization tests is authoritative in
+[authorization and policy decisions](../architecture/AUTHORIZATION.md). The rules below specialize
+that model for the server.
 
 The server derives the principal from an authenticated session or token and derives ownership,
 tenant scope, server time, and policy limits itself. Client- or model-supplied versions of those
@@ -84,9 +91,11 @@ Use a maintained authentication implementation and document credential issuance,
 revocation, and recovery. Password authentication uses a current password-hashing construction and
 never stores recoverable passwords. Session/token secrets remain server-side. Browser cookie
 sessions use `Secure`, `HttpOnly`, and suitable `SameSite` settings plus CSRF and origin defenses.
-Validate exact request shapes at the HTTP boundary, authorize again at the use-case boundary, and
-execute related canonical mutations in one transaction or through an explicitly idempotent recovery
-protocol. Apply per-principal resource and rate limits before expensive provider work.
+Apply these defenses to every state-changing browser route, including administrative forms,
+assignment actions, uploads, deletes, and alternate endpoints. Validate exact request shapes at the
+HTTP boundary, authorize again at the use-case boundary, and execute related canonical mutations in
+one transaction or through an explicitly idempotent recovery protocol. Apply per-principal resource
+and rate limits before expensive provider work.
 
 ### Passwordless phone authentication
 

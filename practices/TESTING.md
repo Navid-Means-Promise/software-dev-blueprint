@@ -66,8 +66,13 @@ prove unauthenticated rejection, forged identity/scope rejection, cross-tenant r
 isolation, exact request decoding, stale-revision handling, transactional rollback, retry
 convergence, and rate/resource bounds. Prove generic storage/internal-provider routes are absent or
 inaccessible in production composition. Browser-session deployments also test origin and CSRF
-defenses. Use at least two principals with colliding record identifiers so accidental global lookup
-cannot pass unnoticed.
+defenses on every state-changing route, including administrative and alternate representations. For
+RBAC/ABAC use cases, cover role capability plus resource/relationship predicates, policy revocation
+and cache invalidation, protected bootstrap/last-administrator invariants, and equivalent
+authorization for HTML, JSON, attachments, exports, and background jobs. Use at least two principals
+with colliding record identifiers so accidental global lookup cannot pass unnoticed. Migration tests
+open the previous schema, verify records and foreign-key constraints, restart the adapter, and prove
+seed/idempotency behavior.
 
 ## Definition of done, restated for tests
 
