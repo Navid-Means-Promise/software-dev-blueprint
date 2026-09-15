@@ -23,9 +23,10 @@ first, because they shape the domain, the ports, and the contracts:
    ([ports & adapters](architecture/PORTS_AND_ADAPTERS.md)).
 5. **Whether there is a physical device**, and if so, its **semantic contract** — the modes and
    parameters, meaning only, no frames ([contracts](architecture/CONTRACTS.md)).
-6. **Identity and data authority.** Define the principal/tenant model, canonical server store, and
-   bounded use cases before wiring any networked client data flow
-   ([server](components/SERVER.md)).
+6. **Identity and data authority.** Define the principal/tenant model, canonical server store,
+   authorization policy (RBAC plus any ABAC/relationship predicates), dynamic-policy bootstrap and
+   recovery path, and bounded use cases before wiring any networked client data flow
+   ([authorization](architecture/AUTHORIZATION.md), [server](components/SERVER.md)).
 7. **The package scope** (e.g. `@yourproject/*`).
 8. **Specialized toolchains.** Identify SDKs or compilers that must be isolated from the host and the
    exact target matrix they support
@@ -73,9 +74,10 @@ exists.
 4. **The server.** Use Fastify in `@app/server`, importing TypeScript-only shared contracts, or use
    the [PHP/Laravel adaptation](components/PHP_LARAVEL.md), conforming to a normative cross-language
    contract when non-PHP clients share a wire boundary. Keep thin routes → controller →
-   service/action → repository; authentication, authorization, tenant-scoped durable persistence,
-   transaction/concurrency policy, bounded use cases, a health endpoint, content/catalog endpoints,
-   and—if there is a device—the in-memory semantic twin ([server](components/SERVER.md)). Use
+   service/action → repository; authentication, [authorization policy](architecture/AUTHORIZATION.md),
+   tenant-scoped durable persistence, transaction/concurrency policy, bounded use cases, a health
+   endpoint, content/catalog endpoints, and—if there is a device—the in-memory semantic twin
+   ([server](components/SERVER.md)). Use
    in-memory repositories only as explicit doubles in isolated tests. Every runnable networked
    composition, including local development and E2E, already obeys the trust boundary in
    [development principles §7](principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).

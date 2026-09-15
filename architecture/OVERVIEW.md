@@ -86,6 +86,7 @@ diagram contradictory; a compile-time violation remains an architecture bug even
 ## Where each layer's detail lives
 
 - Domain core internals: [shared domain](SHARED_DOMAIN.md)
+- Server-side authority, RBAC, ABAC, and resource policies: [authorization and policy decisions](AUTHORIZATION.md)
 - Assistant orchestration, durable user context, domain tools, and speech:
   [AI subsystem](AI_SUBSYSTEM.md)
 - The clients, server, and firmware as concrete hosts: the [components](../components/) set

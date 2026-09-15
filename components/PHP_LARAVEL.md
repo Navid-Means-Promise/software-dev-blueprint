@@ -44,11 +44,16 @@ route → controller → form request/action → model or repository → infrast
 
 ## Boundaries, identity, and data safety
 
+Use [authorization and policy decisions](../architecture/AUTHORIZATION.md) as the authoritative
+model for RBAC, ABAC, relationship scope, dynamic-policy administration, and policy-cache safety.
+
 - Every networked composition uses authenticated principals and authorization on every read, search,
   ranking, and write that can expose or change user data. Apply owner/tenant scope inside the action or
   repository query, not only in a controller or view.
 - Use Laravel's session/CSRF protections for browser flows and explicit request authentication for
-  APIs. Configure cookies as `Secure`, `HttpOnly`, and an appropriate `SameSite` value in deployed
+  APIs. Apply CSRF and origin defenses to every state-changing browser route, including admin/RBAC
+  forms, fetch/XHR mutations, assignment actions, uploads, deletes, and alternate endpoints.
+  Configure cookies as `Secure`, `HttpOnly`, and an appropriate `SameSite` value in deployed
   environments.
 - Normalize localized digits, accepted separators, and locale-specific phone forms before validation;
   persist one canonical representation. Return catalog-backed validation errors in the active locale.
@@ -59,6 +64,10 @@ route → controller → form request/action → model or repository → infrast
   use `Cache-Control: no-store`.
 - Put related canonical writes in a transaction or define an idempotent recovery protocol. Lock rows
   when a check-then-write operation must be safe under concurrent requests.
+- Versioned migrations own tables, indexes, ownership columns, foreign keys, and policy seeds.
+  Repositories and request constructors do not mutate schema at runtime or swallow migration errors;
+  startup verifies the required migration version and fails clearly when it is absent. Enable the
+  database's foreign-key enforcement explicitly when the schema depends on it.
 - Keep external delivery and HTTP calls outside database transactions. Use an outbox, idempotent
   recovery, or a narrow compensating write when provider success determines whether local state may
   remain.

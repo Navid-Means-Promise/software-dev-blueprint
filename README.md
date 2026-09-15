@@ -46,6 +46,8 @@ domain vocabulary and package scope.
 **Architecture** — how modules are arranged
 
 - [architecture/OVERVIEW.md](architecture/OVERVIEW.md) — topology, dependency direction, module map
+- [architecture/AUTHORIZATION.md](architecture/AUTHORIZATION.md) — authenticated policy decisions,
+  RBAC, ABAC, relationship scope, and dynamic-policy safety
 - [architecture/SHARED_DOMAIN.md](architecture/SHARED_DOMAIN.md) — the pure `@app/shared` core
 - [architecture/PORTS_AND_ADAPTERS.md](architecture/PORTS_AND_ADAPTERS.md) — the host seam
 - [architecture/DEPENDENCY_INJECTION.md](architecture/DEPENDENCY_INJECTION.md) — container, tokens, lifetimes

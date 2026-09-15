@@ -142,7 +142,8 @@ externally usable slice. Feature scope may be reduced; the trust boundary may no
 
 - Every request resolves an authenticated principal on the server. Authorization and owner/tenant
   scope are enforced inside every read, search, ranking, and write path before data is returned or
-  changed.
+  changed. The decision model and dynamic-policy invariants live in
+  [authorization and policy decisions](../architecture/AUTHORIZATION.md).
 - Untrusted clients call bounded application use cases. They never choose ownership, server time,
   authorization scope, raw storage keys/queries, or whether a proposed effect is valid. The server
   validates the complete request and executes authoritative domain rules.

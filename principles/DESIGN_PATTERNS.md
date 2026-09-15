@@ -18,6 +18,7 @@ Architecture documents show where each lives; this file is the _why each exists_
 | **Mediator**                        | Turn one declared intent into a set of coordinated port calls | [shared domain](../architecture/SHARED_DOMAIN.md)               |
 | **Observer**                        | Propagate state to the UI without a reactive framework        | [state management](../architecture/STATE_MANAGEMENT.md)         |
 | **Repository**                      | Keep persistence swappable behind a domain-shaped interface   | [ports & adapters](../architecture/PORTS_AND_ADAPTERS.md)       |
+| **Authorization Policy**             | Decide capability and resource scope from server-owned context | [authorization](../architecture/AUTHORIZATION.md)               |
 | **Strategy**                        | Replace one behavior without touching its callers             | below                                                           |
 | **Factory (behind a token)**        | Create per-entity services without a global lookup            | [dependency injection](../architecture/DEPENDENCY_INJECTION.md) |
 | **Semantic Device Model**           | Send meaning to hardware; let firmware render frames          | [contracts](../architecture/CONTRACTS.md)                       |
@@ -55,6 +56,12 @@ canonical repository interfaces implemented in the server composition. Networked
 bounded application-use-case transports instead of implementing those repositories. A separate
 narrow client repository is appropriate only for state that is inherently device-local, never as a
 second canonical store.
+
+**Authorization Policy** turns an authenticated principal, bounded action, domain resource, and
+server-derived context into an explicit allow/deny decision. RBAC supplies coarse capability while
+ABAC and relationship predicates constrain that capability to the resource. Policy evaluation stays
+inside the server boundary and is reused by every representation of the use case. See
+[authorization and policy decisions](../architecture/AUTHORIZATION.md).
 
 **Strategy** is how interchangeable behaviors are selected — a randomness source, an effect
 implementation, a scheduler. The caller depends on the interface; the concrete strategy is injected.

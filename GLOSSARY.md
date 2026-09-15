@@ -17,6 +17,13 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   API.
 - **Repository** — a port whose interface is expressed in domain terms; the domain-shaped face of
   persistence.
+- **Authorization policy** — the server-side decision over a principal, action, resource, and
+  server-derived context. See [authorization and policy decisions](architecture/AUTHORIZATION.md).
+- **RBAC** — role-based access control: named roles bundle stable capability permissions. It supplies
+  coarse capability; it does not replace resource ownership or tenant predicates.
+- **ABAC** — attribute-based access control: typed, server-derived attributes and predicates constrain
+  a capability to a resource and context. Relationship-aware ownership and assignment checks are
+  resource predicates within this policy model.
 - **Container / token** — the DI container maps a typed token to a factory that builds an
   implementation. See [dependency injection](architecture/DEPENDENCY_INJECTION.md).
 - **Store** — the in-memory observable UI projection (`AppState`) one client instance subscribes to;
