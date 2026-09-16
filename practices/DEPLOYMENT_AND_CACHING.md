@@ -5,6 +5,68 @@ deployment environments. The governing idea: **HTML responses revalidate immedia
 assets cache immutably; unhashed assets carry deterministic cache-busting tokens; and deployments verify
 synchronization before handoff.**
 
+## Maintenance-gated release handoff
+
+A release that can make application code and persistence temporarily incompatible uses an explicit
+**maintenance lock** as its fail-closed handoff boundary:
+
+1. Activate the lock before publishing the first incompatible file. The normal application entry
+   point checks one local marker before loading application dependencies or opening persistence and
+   returns a small `503 Service Unavailable` response with `Cache-Control: no-store` and a bounded
+   `Retry-After` value.
+2. Publish the release while the lock blocks normal dynamic requests. Static maintenance assets, if
+   any, remain independent of the changing application bundle.
+3. Apply versioned migrations and deployment-managed records through the deployment control plane,
+   then verify the required migration version and integrity constraints.
+4. Record the live revision, release the lock, and run exact public healthchecks. If verification
+   fails, restore the lock and fail the deployment; do not declare a degraded release successful.
+
+A failed or interrupted release leaves the lock active when compatibility is uncertain. A documented
+rerun/recovery operation resumes the deployment; deleting a stale lock manually is not the normal
+repair path. Concurrent deployers must not allow one release to clear another release's lock.
+
+## Migration control on hosts without remote command execution
+
+Migrations remain deployment operations, never ordinary page-request work. When a hosting platform
+cannot execute a remote CLI command, deployment automation may call a narrow HTTPS **deployment
+update hook** after activating maintenance mode. This is a control-plane transport, not application
+routing:
+
+- accept `POST` only over HTTPS and authenticate a high-entropy deployment credential with a
+  constant-time comparison;
+- reject unknown fields, bound the request/response size and execution time, emit `no-store`, and
+  return generic failures for unauthenticated callers;
+- expose only the fixed update use case—never SQL, filenames, generic commands, or storage CRUD;
+- make migration and deployment-managed seed operations restart-safe and idempotent, with explicit
+  concurrency behavior;
+- keep the hook reachable while the maintenance lock blocks the normal application, and cover the
+  credential independently from browser sessions, CSRF tokens, and user authorization;
+- keep request-path startup read-only: it verifies the migration version and fails clearly rather
+  than invoking the hook or repairing schema.
+
+The deployer invokes the hook automatically, so restricted hosting does not turn a manual migration
+step into an easy-to-forget release prerequisite.
+
+## Fresh initialization and destructive reset
+
+Fresh installation may provision deployment-configured principals and other required records after
+schema migration. Creating a principal and assigning authority does not authenticate a browser
+session; the normal identity-verification flow still gates login. Deployment-managed records use a
+stable logical key or UUID. Numeric surrogate IDs remain private relational details: even if a fresh
+database intentionally reserves a deterministic row ID, dependent seeds resolve the logical key
+rather than hard-coding that number.
+
+Never infer that a database is disposable from an unexpected ID, migration version, environment
+name, or record shape. A destructive reset is a separate, explicit operation with all of these
+guards:
+
+- an unmistakable command flag and exact confirmation value;
+- an independently configured server-side enable switch that defaults off;
+- a verified, consistent backup created before removal and retained outside version control;
+- maintenance mode for the whole backup/reset/reinitialize interval; and
+- deterministic tests proving normal deployment preserves existing records and reset recovery can
+  open the backup.
+
 ## The HTTP cache-control matrix
 
 Browsers and intermediate caches (CDNs, edge proxies, shared-hosting web servers) follow `Cache-Control`
@@ -76,3 +138,9 @@ Automated deployment tools must run a post-deployment healthcheck:
   assets.
 - Deployments record the active revision on the host and run an automated live healthcheck before
   declaring completion.
+- Releases with compatibility-sensitive writes use a fail-closed maintenance lock and restore it
+  when post-release verification fails.
+- Hosts without remote command execution use a narrow authenticated HTTPS deployment update hook;
+  normal application requests never migrate or repair schema.
+- Normal deployment never infers permission to erase persistence; destructive reset is explicit,
+  independently enabled, confirmation-gated, and backup-first.

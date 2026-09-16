@@ -87,6 +87,13 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   it does not fall back silently.
 - **Manual test clock** — the injected clock that drives the scheduler port in tests, so timed effects
   are asserted without waiting. See [testing](practices/TESTING.md).
+- **Maintenance lock** — a deployment-owned, fail-closed marker checked before normal application
+  composition; while active, dynamic requests receive a minimal `503` response. See
+  [deployment and HTTP caching](practices/DEPLOYMENT_AND_CACHING.md).
+- **Deployment update hook** — a narrow authenticated HTTPS control-plane endpoint used by deployment
+  automation when the host cannot execute remote commands; it applies only fixed versioned updates
+  and is never a general application or persistence route. See
+  [deployment and HTTP caching](practices/DEPLOYMENT_AND_CACHING.md).
 
 ## Workflow
 

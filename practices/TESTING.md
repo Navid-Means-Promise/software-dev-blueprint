@@ -74,6 +74,12 @@ with colliding record identifiers so accidental global lookup cannot pass unnoti
 open the previous schema, verify records and foreign-key constraints, restart the adapter, and prove
 seed/idempotency behavior.
 
+Deployment-control tests prove the maintenance lock fails closed before application composition,
+unauthenticated or malformed update-hook requests cannot mutate state, fresh initialization is
+idempotent, and a failed update does not publish a healthy revision marker. Destructive-reset tests
+use an isolated database, require every confirmation gate, open and verify the pre-reset backup, and
+prove the ordinary deployment path never erases unexpected records.
+
 ## Definition of done, restated for tests
 
 - Run the **narrowest** relevant tests while iterating; run the repository-wide
