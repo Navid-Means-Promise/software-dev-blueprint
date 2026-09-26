@@ -69,29 +69,24 @@ only when the owner explicitly requests concurrent working trees.
 
 ---
 
-## 3. Definition of done (the checklist)
+## 3. Definition of done (single authoritative checklist)
 
-A task is landable when:
+This section is the one checklist for deciding whether a task is landable. Area documents own their
+detailed requirements and verification methods; they link here when they mention completion rather
+than restating this checklist.
 
-- It lives on its dedicated branch, created before the first edit.
-- Every supported locale is in parity and both text directions are verified, if UI changed. See
-  [i18n](../practices/I18N.md).
-- Domain behavior stayed out of components; platform APIs stayed behind ports.
-- Any shared contract was updated in its single source **before** the code that depends on it. See
-  [contracts](../architecture/CONTRACTS.md).
+- The [branch and merge-authority requirements](#1-branching-and-merge-authority) are satisfied.
+- The result satisfies the [development principles](DEVELOPMENT_PRINCIPLES.md) and every applicable
+  requirement in each affected authoritative area document.
+- The [contract-change ordering requirement](../architecture/CONTRACTS.md#the-single-source-rule) is
+  satisfied for every affected shared contract.
 - The [repository-wide consistency invariant](DEVELOPMENT_PRINCIPLES.md#8-repository-wide-consistency-is-mandatory)
   passed a semantic review across every affected document.
-- Deterministic tests cover every domain rule and boundary the change touches. See
-  [testing](../practices/TESTING.md).
-- Animations obey the [UI performance](../practices/UI_PERFORMANCE.md) budget and state-transition
-  continuity requirements, including reduced motion.
+- Every applicable [change-specific verification gate](../practices/TESTING.md#change-specific-verification-gates)
+  passed; no required check was silently skipped.
 - Any improvement worth proposing upstream to the blueprint is recorded in the same change. See
   [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
-- The repository-wide check passes; shared UI changes also pass the browser acceptance flow, and
-  Android shell/bridge/adapter changes pass the relevant Android host tests.
-- Toolchain/container changes pass a clean all-target build and the isolation checks defined by
-  [containerized toolchains](../practices/CONTAINERIZED_TOOLCHAINS.md).
-- The merge into `main` waits for the owner's explicit confirmation.
+- The [reporting requirements](#4-reporting-and-answering-the-owner) are satisfied.
 
 ---
 
