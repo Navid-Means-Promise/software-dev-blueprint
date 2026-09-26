@@ -97,7 +97,7 @@ timeouts, and retries without a live call. The opt-in smoke check proves only th
 network, and provider integration it actually exercised. Report a skipped live check as skipped,
 never as passing coverage.
 
-## Definition of done, restated for tests
+## Change-specific verification gates
 
 - Run the **narrowest** relevant tests while iterating; run the repository-wide
   [`check`](../components/MONOREPO.md) before calling a broad change done.
@@ -106,7 +106,6 @@ never as passing coverage.
 - Firmware or container changes pass the host-safe workflow's clean all-target build and guardrail
   tests. See [containerized toolchains](CONTAINERIZED_TOOLCHAINS.md).
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
-- Report real results — a failing or skipped test is stated, never rounded up to "passing."
 
 ## Rules
 

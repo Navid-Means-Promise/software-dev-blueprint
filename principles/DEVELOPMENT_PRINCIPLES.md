@@ -206,29 +206,12 @@ container workflow; do not repair a build by changing the workstation globally. 
 read-only input and only declared output/cache paths are writable. See
 [containerized toolchains](../practices/CONTAINERIZED_TOOLCHAINS.md).
 
-## 10. Definition of done
-
-A change is done when all of the following are true — see [working agreement](WORKING_AGREEMENT.md)
-for the workflow that enforces them:
-
-- It was developed on its own branch, created **before** the first edit.
-- The narrowest relevant tests pass while iterating, and the repository-wide check passes for a
-  broad change. Shared UI changes additionally pass the browser acceptance flow in every supported
-  locale; Android shell/bridge/adapter changes pass the relevant Android host tests.
-- Any contract it touched was updated in the single source _before_ the code that depends on it.
-- The repository-wide consistency review passed, and every affected area document agrees with this
-  normative source.
-- Any cross-project reuse it introduced or adopted is recorded in the same change. See
-  [cross-project sync](../reuse/CROSS_PROJECT_SYNC.md).
-- Any invasive or platform-sensitive toolchain runs through the committed host-safe workflow, and
-  its claimed repeatability level was actually verified.
-- The result — including failures and skipped steps — is reported honestly, and `main` is not
-  advanced without the owner's explicit confirmation.
-
 ---
 
 ## How an agent should use this file
 
 Read it before the first edit of every task. It is short by design. The area documents assume you
 have; they describe _where_ things go and _how_ they are shaped, and rely on this file for _why_ and
-_whether_.
+_whether_. After applying these principles and the affected area documents, use the
+[working agreement](WORKING_AGREEMENT.md#3-definition-of-done-single-authoritative-checklist) as the
+single authoritative completion checklist.

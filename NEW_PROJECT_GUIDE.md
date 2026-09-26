@@ -128,7 +128,9 @@ recording the blueprint commit this project was built from as its conformance ba
 new project participates in the same hub exchange as every other project — conforming to the blueprint
 and proposing its own reusable improvements upstream.
 
-## Definition of done applies throughout
+## Completion workflow applies throughout
 
-Every step obeys the [working agreement](principles/WORKING_AGREEMENT.md): branch first, deterministic
-tests with each rule, contracts updated in their source first, honest reporting, and the owner merges.
+Every step uses the
+[working agreement's single completion checklist](principles/WORKING_AGREEMENT.md#3-definition-of-done-single-authoritative-checklist).
+Area documents define the applicable requirements and verification methods; this guide does not
+create a phase-specific copy of that checklist.
