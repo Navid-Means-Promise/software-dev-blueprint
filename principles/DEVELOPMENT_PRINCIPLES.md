@@ -53,6 +53,14 @@ similar code with different reasons to change is not duplication merely because 
   with each supported locale in parity. No inline literals in components. See [i18n](../practices/I18N.md).
 - **Facts:** one fact, one document. This is why the normative rules live only here and every entry
   point _links_ rather than restating.
+- **Topic ownership:** when a coherent topic grows beyond a concise subsection and needs its own
+  scope, rules, or acceptance guidance, create one dedicated authoritative document. Move all
+  shared normative content for that topic out of other files and reconcile it there as one
+  concentrated, internally consistent treatment; never copy the old text into a new second source.
+  Other documents retain only the minimum local context or area-specific adaptation needed to
+  explain why the topic applies, followed by a link to its authoritative document. Update document
+  maps and every affected inbound reference in the same change. Choose the boundary by one reason
+  to change, not an arbitrary line count, and do not fragment a small topic prematurely.
 
 DRY is not "avoid typing twice." It is "there is exactly one place the truth about X can change."
 

@@ -72,7 +72,8 @@ The server re-evaluates authority for every request and never trusts a client-vi
 Session-cookie browser flows use `Secure`, `HttpOnly`, and suitable `SameSite` cookies plus CSRF and
 origin defenses for every state-changing request. This includes administrative and RBAC forms,
 fetch/XHR mutations, assignment actions, deletes, uploads, and alternate action endpoints—not only
-the primary user form.
+the primary user form. Server-enforced idle/absolute expiry, identifier rotation, store isolation,
+and invalidation follow [session management](../security/SESSION_MANAGEMENT.md).
 
 Token/API flows authenticate explicitly and apply their CORS, origin, replay, and rate/resource
 limits at the API boundary. Both flows use an exact decoder: malformed JSON, unexpected fields,

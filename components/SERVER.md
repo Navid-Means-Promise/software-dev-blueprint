@@ -95,7 +95,9 @@ Apply these defenses to every state-changing browser route, including administra
 assignment actions, uploads, deletes, and alternate endpoints. Validate exact request shapes at the
 HTTP boundary, authorize again at the use-case boundary, and execute related canonical mutations in
 one transaction or through an explicitly idempotent recovery protocol. Apply per-principal resource
-and rate limits before expensive provider work.
+and rate limits before expensive provider work. Browser-session lifetime and backing stores follow
+[session management](../security/SESSION_MANAGEMENT.md). User-supplied files and media follow
+[untrusted file handling](../security/UNTRUSTED_FILE_HANDLING.md).
 
 ### Passwordless phone authentication
 

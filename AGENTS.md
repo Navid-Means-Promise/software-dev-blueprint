@@ -13,8 +13,10 @@ Do not restate those rules here.
 - Pattern vocabulary: [design patterns](principles/DESIGN_PATTERNS.md)
 - Module boundaries and domain architecture: [architecture](architecture/OVERVIEW.md)
 - Client, server, firmware, and monorepo structure: [components](components/MONOREPO.md)
-- Testing, i18n, assets, performance, isolated toolchains, and workflow:
+- Testing, rendered UI integrity, i18n, assets, performance, isolated toolchains, and workflow:
   [practices](practices/TESTING.md)
+- Runtime and supply-chain security: [sessions](security/SESSION_MANAGEMENT.md),
+  [untrusted files](security/UNTRUSTED_FILE_HANDLING.md), and [scanning](security/README.md)
 - Project conformance: [cross-project sync](reuse/CROSS_PROJECT_SYNC.md)
 - New-project sequence: [new project guide](NEW_PROJECT_GUIDE.md)
 

@@ -136,6 +136,11 @@ perpetual animation, an adaptive and pausable lifecycle for a GPU canvas, and a 
 the capability is absent. Cosmetic animation stays inside its renderer and never drives store updates
 or component re-renders.
 
+Every materially different route, principal, data, and interaction composition obeys the contrast,
+occlusion, clipping, focus reachability, and startup-critical visually-hidden rules in
+[rendered UI integrity](../practices/RENDERED_UI_INTEGRITY.md). A default guest screenshot is not
+evidence that privileged, populated, expanded, or error states remain usable.
+
 ## Rules
 
 - One screen implementation per route, shared by all clients; it may compose smaller components, and

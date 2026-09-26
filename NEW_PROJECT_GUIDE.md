@@ -75,10 +75,12 @@ exists.
    the [PHP/Laravel adaptation](components/PHP_LARAVEL.md), conforming to a normative cross-language
    contract when non-PHP clients share a wire boundary. Keep thin routes → controller →
    service/action → repository; authentication, [authorization policy](architecture/AUTHORIZATION.md),
-   tenant-scoped durable persistence, transaction/concurrency policy, bounded use cases, a health
+   [session lifecycle](security/SESSION_MANAGEMENT.md), tenant-scoped durable persistence,
+   transaction/concurrency policy, bounded use cases, an
+   [untrusted-file boundary](security/UNTRUSTED_FILE_HANDLING.md) when uploads exist, a health
    endpoint, content/catalog endpoints, and—if there is a device—the in-memory semantic twin
-   ([server](components/SERVER.md)). Use
-   in-memory repositories only as explicit doubles in isolated tests. Every runnable networked
+   ([server](components/SERVER.md)). Use in-memory repositories only as explicit doubles in isolated
+   tests. Every runnable networked
    composition, including local development and E2E, already obeys the trust boundary in
    [development principles §7](principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).
 
@@ -99,8 +101,10 @@ exists.
    [container workflow](practices/CONTAINERIZED_TOOLCHAINS.md), with target-specific configuration,
    dependency locks, and output directories.
 
-9. **Acceptance.** Playwright over the shared UI in every locale and both text directions; isolate any
-   real-GPU measurement into a run that rejects software rendering ([testing](practices/TESTING.md)).
+9. **Acceptance.** Playwright over the shared UI in every locale and both text directions; exercise
+   the declared principal/data/interaction matrix for rendered contrast, occlusion, clipping, and
+   reachability; isolate any real-GPU measurement into a run that rejects software rendering
+   ([testing](practices/TESTING.md), [rendered UI integrity](practices/RENDERED_UI_INTEGRITY.md)).
 
 10. **Delivery and caching.** Configure web server `Cache-Control` policies, verify deterministic asset
    cache-busting tokens in HTML templates, record deployment revisions, and run automated post-deploy

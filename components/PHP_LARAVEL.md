@@ -54,7 +54,10 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
   APIs. Apply CSRF and origin defenses to every state-changing browser route, including admin/RBAC
   forms, fetch/XHR mutations, assignment actions, uploads, deletes, and alternate endpoints.
   Configure cookies as `Secure`, `HttpOnly`, and an appropriate `SameSite` value in deployed
-  environments.
+  environments. Define idle, absolute, and renewal behavior according to the authoritative
+  [session-management practice](../security/SESSION_MANAGEMENT.md); namespace the cookie/store per
+  application, use a production-capable shared handler where concurrency requires it, and fail
+  clearly instead of falling back when the configured store is unavailable.
 - Normalize localized digits, accepted separators, and locale-specific phone forms before validation;
   persist one canonical representation. Return catalog-backed validation errors in the active locale.
 - Keep provider credentials in environment-backed secret management. Production logs omit OTP codes,
@@ -71,6 +74,9 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
 - Keep external delivery and HTTP calls outside database transactions. Use an outbox, idempotent
   recovery, or a narrow compensating write when provider success determines whether local state may
   remain.
+- Apply [untrusted file handling](../security/UNTRUSTED_FILE_HANDLING.md) to Laravel uploads:
+  framework validation is the request boundary, not permission to trust the client filename,
+  extension, MIME claim, storage path, or later download request.
 - Failure counters are canonical state: commit an OTP or similar attempt increment before returning
   the validation failure. Throwing inside the same transaction must not silently roll that increment
   back. Bound paid-provider work per principal/source and with an explicit application-wide ceiling.
