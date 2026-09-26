@@ -75,14 +75,23 @@ domain vocabulary and package scope.
   responsive fitting
 - [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — compositor + GPU-canvas budgets
 - [practices/MOBILE_RESPONSIVENESS.md](practices/MOBILE_RESPONSIVENESS.md) — small-screen viewports, zero-overflow principle, multi-column vertical alignment, touch ergonomics
+- [practices/RENDERED_UI_INTEGRITY.md](practices/RENDERED_UI_INTEGRITY.md) — rendered contrast,
+  occlusion, clipping, and state-matrix audits
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
 - [practices/DEPLOYMENT_AND_CACHING.md](practices/DEPLOYMENT_AND_CACHING.md) — HTTP cache matrix, asset versioning, post-deploy healthchecks
 - [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
   host-safe compiler and SDK environments
-- [security/README.md](security/README.md) — isolated image/repository audits,
-  vulnerability policy, and SBOM evidence
 - [practices/AI_AGENT_WORKFLOW.md](practices/AI_AGENT_WORKFLOW.md) — rulebook, branch-guard hook, summaries
+
+**Security** — runtime and supply-chain boundaries
+
+- [security/SESSION_MANAGEMENT.md](security/SESSION_MANAGEMENT.md) — server-enforced lifetime,
+  rotation, principal freshness, and backing-store isolation
+- [security/UNTRUSTED_FILE_HANDLING.md](security/UNTRUSTED_FILE_HANDLING.md) — upload validation,
+  private storage, authorized retrieval, and failure consistency
+- [security/README.md](security/README.md) — isolated image/repository audits, vulnerability policy,
+  and SBOM evidence
 
 **Reuse** — building more projects on the stack
 

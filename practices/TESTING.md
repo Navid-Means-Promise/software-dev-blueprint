@@ -48,13 +48,16 @@ as test failures, not as an unlucky play in production.
 
 The E2E layer drives the real UI in every supported locale and both text directions at mobile widths,
 covering the shared web-rendered behavior, [i18n](I18N.md), and browser-side
-[UI performance](UI_PERFORMANCE.md) acceptance criteria. It does not prove Capacitor packaging,
-native bridge behavior, Android permissions, or device-specific performance; focused Android tests
-cover those boundaries. Isolate any measurement that needs real GPU hardware into its own run that
-**rejects a software renderer**, so a software-fallback result is never mistaken for animated-shader
-performance. Localized-form acceptance enters every supported digit/format representation, proves
-canonical values reach the boundary, and asserts that invalid input produces a catalog message in
-the active locale rather than browser-native text in another language.
+[UI performance](UI_PERFORMANCE.md) acceptance criteria. It also exercises the risk-based principal,
+data, interaction, and viewport matrix from [rendered UI integrity](RENDERED_UI_INTEGRITY.md), using
+standards-based accessibility tooling plus bounded application-specific geometry checks. It does not
+prove Capacitor packaging, native bridge behavior, Android permissions, or device-specific
+performance; focused Android tests cover those boundaries. Isolate any measurement that needs real
+GPU hardware into its own run that **rejects a software renderer**, so a software-fallback result is
+never mistaken for animated-shader performance. Localized-form acceptance enters every supported
+digit/format representation, proves canonical values reach the boundary, and asserts that invalid
+input produces a catalog message in the active locale rather than browser-native text in another
+language.
 
 When the server owns canonical state, browser tests assert through server-visible records and reset
 or namespace that state explicitly. Do not mistake a fresh browser context for data isolation. Add
@@ -80,6 +83,20 @@ idempotent, and a failed update does not publish a healthy revision marker. Dest
 use an isolated database, require every confirmation gate, open and verify the pre-reset backup, and
 prove the ordinary deployment path never erases unexpected records.
 
+## Live provider smoke checks
+
+A test that spends money, contacts a real person, mutates a third-party account, or produces another
+externally visible effect is an operational smoke check, not part of the deterministic suite. Expose
+it through a separately named runner that refuses to act unless it receives both an explicit
+confirmation value and an explicit bounded target. Keep it out of the normal `test`/`check` path and
+ordinary CI; use least-privilege test credentials, cap the number and cost of operations, and redact
+credentials and personal data from output.
+
+Provider contract tests still use recording/fake transports to prove request mapping, errors,
+timeouts, and retries without a live call. The opt-in smoke check proves only the deployed credential,
+network, and provider integration it actually exercised. Report a skipped live check as skipped,
+never as passing coverage.
+
 ## Definition of done, restated for tests
 
 - Run the **narrowest** relevant tests while iterating; run the repository-wide
@@ -97,3 +114,4 @@ prove the ordinary deployment path never erases unexpected records.
 - Use a manual clock for timed effects; never wait in a test.
 - Validate content/contracts at construction and cover each bundle with a construction test.
 - Keep hardware-GPU measurements in a run that rejects software rendering.
+- Keep externally visible or billable provider checks in explicit, confirmation-gated runners.

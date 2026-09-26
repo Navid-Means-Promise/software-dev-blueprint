@@ -4,6 +4,14 @@ Authoritative for repository, dependency, and project-owned container-image secu
 Security tooling is itself a supply-chain input and follows the same immutable, host-safe rules as
 every other [containerized toolchain](../practices/CONTAINERIZED_TOOLCHAINS.md).
 
+## Security document map
+
+- [Session management](SESSION_MANAGEMENT.md) — lifetime, rotation, principal freshness, and backing
+  stores
+- [Untrusted file handling](UNTRUSTED_FILE_HANDLING.md) — upload validation, private storage,
+  authorized retrieval, and failure consistency
+- This document — repository, dependency, image, secret, and SBOM inspection
+
 ## Module boundary
 
 Keep a project's security implementation under one dedicated directory such as

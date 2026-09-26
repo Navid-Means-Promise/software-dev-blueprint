@@ -67,6 +67,32 @@ guards:
 - deterministic tests proving normal deployment preserves existing records and reset recovery can
   open the backup.
 
+## Deployment-managed runtime configuration
+
+When deployment automation manages runtime environment values on a host, define an explicit
+allowlist of keys owned by that release workflow. Read those values from a dedicated untracked
+deployment input or secret manager; never upload a developer `.env`, serialize the deployer's whole
+process environment, or let a prefix/glob choose production keys. Deployment transport credentials
+are control-plane inputs and are not copied into application configuration unless the application
+contract explicitly requires the same secret.
+
+Merge only the allowlisted keys and preserve every unmanaged remote value. Define absence semantics
+per key: omitted normally means "leave unchanged," while clearing a value requires a distinct,
+intentional operation. Validate required keys and value shape before changing the host, never print
+secret values, and report only safe key names or counts.
+
+Apply configuration while the maintenance lock is active. Write a permission-restricted staging
+file, preserve a recoverable previous version, replace the live file atomically where the host
+permits it, and restore the previous version if replacement or subsequent release verification
+fails. Clean local and remote staging artifacts through a bounded recovery path. Concurrent
+deployers use the same release ownership/locking rule as schema and code publication. Configuration
+backups inherit secret-grade access controls, stay outside the public document root, and have a
+bounded retention policy.
+
+Tests prove that unknown keys survive unchanged, omitted managed keys are preserved, explicitly
+changed keys converge idempotently, secret values never enter diagnostics, and failure before or
+after replacement restores one complete valid configuration rather than a partial file.
+
 ## The HTTP cache-control matrix
 
 Browsers and intermediate caches (CDNs, edge proxies, shared-hosting web servers) follow `Cache-Control`
@@ -144,3 +170,5 @@ Automated deployment tools must run a post-deployment healthcheck:
   normal application requests never migrate or repair schema.
 - Normal deployment never infers permission to erase persistence; destructive reset is explicit,
   independently enabled, confirmation-gated, and backup-first.
+- Deployment-managed runtime configuration changes only explicit keys through a staged,
+  rollback-capable update; ambient local environment values never become production configuration.
