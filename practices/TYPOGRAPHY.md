@@ -137,6 +137,22 @@ When a label or title wraps across lines:
 3. **Mandatory visual inspection in rendered browser**:
    Automated overflow tests (`scrollWidth <= clientWidth`) only detect physical container bleed; they cannot evaluate syntactic line-break aesthetics. Every multi-line text container must be visually inspected across desktop, tablet, and mobile viewports to verify that line breaks occur at logical syntactic boundaries and produce balanced, legible layouts.
 
+## Optical vertical centering in constrained single-line boxes
+
+In single-line UI containers (such as badges, tags, chip filters, and inline key-value rows), non-Latin
+scripts (Persian, Arabic) exhibit an inherent font metric asymmetry:
+- Web fonts allocate significant space beneath the font baseline in their em-box to safeguard deep, rare
+  descenders (e.g. isolated `ی`, `ع`).
+- Because standard Persian text sits directly on the baseline with ascenders extending upward, mathematically
+  symmetric padding (`padding-top == padding-bottom`) causes text to appear displaced upward (`کمی بالاتره`),
+  leaving noticeably more visual clearance at the bottom of the container than at the top.
+- Apply **asymmetric optical vertical padding** (`padding-top > padding-bottom`, e.g.
+  `padding: 0.54rem 0.75rem 0.38rem 0.75rem`) so the visual distance from the top border to the glyph
+  crown matches the distance from the bottom border to the glyph base.
+- In composite inline rows (`[icon] [label:] [value]`), harmonize label and value font sizes and enforce
+  uniform `line-height: 1.5` to prevent staggered, disjointed horizontal baselines. For complete field
+  organization standards, see [structured data presentation](STRUCTURED_DATA_PRESENTATION.md).
+
 ## Acceptance
 
 - Computed styles resolve to the intended interface and display families in every supported locale.
@@ -156,3 +172,4 @@ When a label or title wraps across lines:
 
 - Constrained multi-line titles, badges, and labels break only at intentional semantic boundaries; parentheticals and compound units never fracture across lines.
 - Visual browser inspection verifies that no typographic orphans or awkwardly broken phrases exist across supported viewports.
+- Single-line bordered items and inline key-value rows apply asymmetric optical padding to counter font descender reserves and achieve true visual vertical centering.

@@ -141,6 +141,11 @@ occlusion, clipping, focus reachability, and startup-critical visually-hidden ru
 [rendered UI integrity](../practices/RENDERED_UI_INTEGRITY.md). A default guest screenshot is not
 evidence that privileged, populated, expanded, or error states remain usable.
 
+Structured record summaries, dynamic field sets, and dense entity detail panels must adhere to
+[structured data presentation](../practices/STRUCTURED_DATA_PRESENTATION.md): responsive auto-fitting
+columns, stacked label-value layout in standard tracks, dynamic full-width row promotion for long or
+narrative fields, and asymmetric optical padding for single-line bounded elements.
+
 ## Rules
 
 - One screen implementation per route, shared by all clients; it may compose smaller components, and
@@ -152,3 +157,4 @@ evidence that privileged, populated, expanded, or error states remain usable.
 - Startup goes through the shared readiness gate; platform behavior varies only through the adapter
   set.
 - OTP and phone inputs declare standard autofill and numeric inputmode semantics, normalize localized numerals on input/paste, and abort WebOTP listeners on unmount.
+- Entity summaries and record detail panels organize attributes into dense key-value grids adhering to adaptive row spanning and optical vertical centering rules.

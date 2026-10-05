@@ -189,6 +189,22 @@ frequently exceed their parent column width if unconstrained:
   When content cannot fit on a single line within narrow tracks, stack sub-values vertically via flex columns
   or apply fluid typography (`clamp()`).
 
+### 6. Adaptive key-value grids and entity detail panels
+
+Complex entity summaries and key-value panels (`.data-grid`) must organize attributes without
+sacrificing vertical space or causing awkward text fracturing:
+- **Stacked in narrow columns:** Inside auto-fitting multi-column tracks (`minmax(min(100%, 240px), 1fr)`),
+  always stack labels above values (`flex-direction: column`) so descriptive labels do not compress values
+  into narrow, broken text fragments.
+- **Dynamic full-width row promotion:** Multi-line narrative fields (e.g. `textarea`, notes, reasoning)
+  or scalar fields whose formatted content exceeds 40–45 characters must dynamically span the full
+  row width (`grid-column: 1 / -1`).
+- **Inline full-width layout with mobile collapse:** On desktop and tablet, full-width items arrange
+  icon, label, and value inline (`flex-direction: row`). On mobile viewports (`≤ 640px`), they collapse
+  gracefully back to column stacking (`flex-direction: column; gap: 0.25rem`).
+- For complete specification on adaptive row spanning and optical vertical alignment, see
+  [structured data presentation](STRUCTURED_DATA_PRESENTATION.md).
+
 ## Navigation and interactive ergonomics
 
 Small-screen usability requires thumb-friendly touch targets and clean navigational state transitions.
@@ -310,6 +326,7 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Adjacent inputs, action buttons, and metric values in multi-column rows maintain identical vertical alignment (locked baseline) regardless of label line wrapping.
 - [ ] Child elements, cards, and grid columns maintain zero internal overflow (`scrollWidth <= clientWidth`) and do not bleed into adjacent siblings.
 - [ ] Multi-line labels and badges break at intentional semantic boundaries without fractured parentheticals or orphan words (see [typography](TYPOGRAPHY.md#enforce-semantic-line-breaking-and-inspect-wrap-boundaries)).
+- [ ] Dense key-value data panels stack labels in standard grid columns and promote long or narrative fields to full-width rows with responsive mobile collapse (see [structured data presentation](STRUCTURED_DATA_PRESENTATION.md)).
 - [ ] Modals and dialog sheets on mobile use dynamic viewport bounds (`100dvh`) with vertical scrolling and zero `overflow: hidden` clipping during virtual keyboard activation.
 - [ ] Triggering a modal from a mobile navigation drawer automatically dismisses the drawer.
 - [ ] All HTML/template files pass the static asset cache-busting invariant check.

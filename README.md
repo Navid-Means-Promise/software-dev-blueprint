@@ -75,6 +75,8 @@ domain vocabulary and package scope.
   responsive fitting
 - [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — compositor + GPU-canvas budgets
 - [practices/MOBILE_RESPONSIVENESS.md](practices/MOBILE_RESPONSIVENESS.md) — small-screen viewports, zero-overflow principle, multi-column vertical alignment, touch ergonomics
+- [practices/STRUCTURED_DATA_PRESENTATION.md](practices/STRUCTURED_DATA_PRESENTATION.md) — compact
+  key-value panels, adaptive row spanning, and optical alignment
 - [practices/RENDERED_UI_INTEGRITY.md](practices/RENDERED_UI_INTEGRITY.md) — rendered contrast,
   occlusion, clipping, and state-matrix audits
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
