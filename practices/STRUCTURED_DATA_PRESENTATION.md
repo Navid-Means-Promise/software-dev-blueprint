@@ -2,251 +2,170 @@
 
 Authoritative for dense key-value lists, entity summaries, dynamic schema records, and record detail
 panels across web and mobile clients. It complements [mobile responsiveness](MOBILE_RESPONSIVENESS.md),
-[typography](TYPOGRAPHY.md), and [rendered UI integrity](RENDERED_UI_INTEGRITY.md).
+[typography](TYPOGRAPHY.md), [internationalization](I18N.md), and
+[rendered UI integrity](RENDERED_UI_INTEGRITY.md).
 
-## Compact density vs. visual bloat
+## Typed fields and presentation ownership
 
-Complex domain records—such as legal cases, financial transactions, user accounts, and CRM profiles—contain
-many interdependent attributes. Rendering each attribute as an oversized metric card with massive typography
-rapidly exhausts vertical screen real estate, forcing users to scroll excessively to assemble a mental
-model of the record.
+A field descriptor supplies a stable key, a localized label, a checked type discriminator, and a value
+validated against that type. One presentation mapping selects the localized formatter, optional unit
+and semantic icon, text direction, and narrative/multiline layout hint. The renderer consumes that
+projection; it does not infer a field's type from its contents or change canonical values to fit a box.
+Formatting and layout policy belong in presentation code, outside the domain core.
 
-Group related record attributes inside a compact **structured data panel** (`.data-summary-panel` or
-`.entity-data-grid`) with subtle background framing, unified borders, and high contrast. Dense
-presentation must enhance, not compromise, scannability:
-- maintain clear visual hierarchy between field labels and field values;
-- avoid unnecessary whitespace gaps between adjacent data pairs;
-- lock typography to legible, compact scales (`0.74rem`–`0.85rem`);
-- support optional semantic icons to accelerate visual indexing.
+- Define field variants and their value types through the project's
+  [single-source contract](../architecture/CONTRACTS.md). Presentation metadata does not create a
+  parallel schema or replace authoritative validation.
+- When forward compatibility permits an unknown type, decode it into an explicit checked fallback
+  variant. Render its safe text representation or a localized unsupported-value message. Invalid data
+  still follows the boundary's validation policy; do not silently cast it to a known field type.
+- Keep missing, empty, zero, and false values distinct. Select fields display the localized option label;
+  numbers, amounts, units, and dates use the active locale and the field's semantic type.
+- Labels and ordinary values remain text: use escaped template output or text nodes. Optional icons
+  resolve through the established UI icon system; record-supplied strings do not become raw SVG/HTML.
+  Decorative icons are hidden from assistive technology.
+- UI labels and content localization follow [internationalization](I18N.md).
+- Read-only label-value pairs use semantic `<dl>/<dt>/<dd>` markup or an equivalent accessible
+  relationship. Grouping each pair in a direct `<div>` child preserves description-list semantics.
+  See the [HTML description-list specification](https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element).
 
-## Adaptive row spanning (Full-width vs. Grid-column)
+## Density and adaptive layout
 
-Data panels organize attributes within a responsive grid:
+Group related attributes in a compact panel with clear label-value hierarchy. Use the project's
+semantic typography, spacing, and foreground/background tokens with usable literal fallbacks as
+specified in [rendered UI integrity](RENDERED_UI_INTEGRITY.md#contrast-and-non-color-information).
+Choose density for the supported scripts and text scaling; the blueprint prescribes no universal font
+size, track width, or padding.
+
+Standard grid tracks stack labels above values so each receives the track's available width. Narrative
+or multiline fields span the panel's full row. Scalars may also span when their formatted label or
+value cannot fit the standard track legibly. Character counts and word counts are only optional,
+documented heuristics calibrated for the project's locales, fonts, and track widths; they cannot
+guarantee fit.
+
+When adjacent primary values must line up, apply the
+[multi-column baseline-lock patterns](MOBILE_RESPONSIVENESS.md#4-multi-column-vertical-alignment-and-baseline-lock).
+
+When runtime measurement drives promotion, measure the label and formatted value with their active
+fonts against the intended standard track, including icons, gaps, and padding. Follow the
+[font-ready fitting lifecycle](TYPOGRAPHY.md#fit-constrained-text-from-rendered-geometry) after changes
+to locale, content, fonts, or container size. Measure against a stable standard-track reference so a
+promoted row does not repeatedly demote and promote itself.
+
+A full-width item uses an inline label and value only while its container provides enough width;
+narrow containers stack them regardless of the viewport's device category. For multiline content,
+align the label with the start of the value block or its first text baseline. Preserve meaningful
+paragraphs and line breaks rather than collapsing narrative text into one line.
+
+## Containment and complete information
+
+Text-bearing grid and flex children remain shrinkable. Labels also need a bounded width: an
+unrestricted `flex-shrink: 0` label can consume the entire inline row. Allow prose to wrap at semantic
+boundaries; use emergency wrapping for otherwise unbreakable tokens. CSS
+[`overflow-wrap: anywhere`](https://www.w3.org/TR/css-text-3/#overflow-wrap-property) preserves normal
+break opportunities and supplies additional ones when a token cannot fit.
+
+This example illustrates the containment mechanics. Class names, spacing, label-width limits, and
+responsive thresholds are project choices:
 
 ```css
 .data-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 0.45rem 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.5rem;
+  margin: 0;
 }
-```
 
-Never force every field into identical column widths. Apply **adaptive row spanning** (`grid-column: 1 / -1`)
-whenever a field's semantic type or rendered content exceeds normal column capacity.
-
-### Promotion criteria
-
-Promote an item to a full-width row (`.data-item--full` or `grid-column: 1 / -1`) when either condition is met:
-
-1. **Semantic type condition:**
-   The field's schema or domain definition denotes multi-line narrative text (e.g. `textarea`, structured
-   notes, legal arguments, user comments, or multiline addresses). Constraining narrative prose inside a
-   `240px` column produces an uneven, vertically bloated layout that misaligns adjacent grid rows.
-
-2. **Content length threshold (dynamic promotion):**
-   Even when typed as scalar text or a single-choice option, promote any field whose formatted display
-   string exceeds **40–45 characters** (or approximately 3–4 average words) to a full-width row.
-   This guarantees long titles or unexpected data lengths do not cause awkward mid-word breaks or
-   excessive line wrapping in narrow grid tracks.
-
-Standard scalar fields (numbers, currencies, dates, booleans, short status badges, and compact codes)
-remain in the standard auto-fitting grid columns.
-
-## Layout hierarchy: Stacked vs. Inline
-
-The spatial relationship between a field's label and its value must change depending on available width.
-
-### 1. Stacked layout in standard grid columns (`flex-direction: column`)
-
-Inside standard multi-column tracks (`240px`–`320px`), always stack the label above the value:
-
-```html
-<div class="data-item">
-  <div class="data-label">
-    <svg class="data-icon">...</svg>
-    <span>Current Monthly Rent</span>
-  </div>
-  <div class="data-val text-tabular">12,000,000 IRR</div>
-</div>
-```
-
-```css
 .data-item {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
-  gap: 0.22rem;
-  padding: 0.4rem 0.65rem;
   min-width: 0;
+  gap: 0.25rem;
 }
 
-.data-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.74rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.data-label,
+.data-val,
+.data-label > span {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
 }
 
-.data-val {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-```
-
-**Rationale:** Placing label and value side-by-side (inline) in a `240px` column starves the value of
-horizontal space. A descriptive label like "Current Monthly Rent:" consumes over 60% of the column width,
-leaving inadequate space for the value and triggering premature wrapping or truncation. Stacking provides
-100% of the column width to the label and 100% to the value.
-
-### 2. Inline layout in full-width rows (`flex-direction: row`)
-
-In full-width rows spanning the entire container (`grid-column: 1 / -1`), arrange the icon, label, and value
-horizontally on a single line on desktop and tablet viewports:
-
-```html
-<div class="data-item data-item--full">
-  <div class="data-label">
-    <svg class="data-icon">...</svg>
-    <span>Claimed Eviction Reason:</span>
-  </div>
-  <div class="data-val">Other non-statutory justifications outside Article 7</div>
-</div>
-```
-
-```css
 .data-item--full {
   grid-column: 1 / -1;
-  display: flex;
   flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 0.5rem;
-  text-align: start;
+  align-items: flex-start;
 }
 
-.data-item--full .data-label {
-  flex-shrink: 0;
-  font-size: 0.82rem;
-  display: inline-flex;
-  align-items: center;
-  line-height: 1.5;
+.data-item--full > .data-label {
+  flex: 0 1 auto;
+  max-inline-size: 40%;
 }
 
-.data-item--full .data-val {
-  flex-grow: 1;
-  text-align: start;
-  white-space: normal;
-  line-height: 1.5;
-  overflow: visible;
+.data-item--full > .data-val {
+  flex: 1 1 0%;
 }
 ```
 
-**Rationale:** Stacking a label and value across a full-width row wastes an entire vertical line merely
-for a short heading. An inline layout preserves vertical compactness while providing high narrative
-flow.
+The project's responsive rule switches the inline composition to a column, stretches both children,
+and resets their flex basis and label-width limit. Do not hide structural overflow with clipping.
 
-On small mobile viewports (`≤ 640px`), full-width items collapse gracefully back to a stacked column:
+Prefer wrapping or expansion to truncation. If a summary intentionally truncates a label or value,
+provide a visible disclosure that reveals the complete text and works with keyboard, touch, and
+assistive technology. Keep the full semantic text available to assistive technology. A browser
+`title` attribute or screen-reader-only text alone does not give every user access to the hidden part.
 
-```css
-@media (max-width: 640px) {
-  .data-item--full {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.25rem;
-  }
-}
-```
+## Direction and alignment
 
-## Bidirectional alignment and flex sizing
+Use logical start alignment and keep punctuation within its localized label. Label placement alone
+does not resolve mixed-direction text; isolate the value. For unknown-direction text use
+`<bdi dir="auto">`; for a field with a known direction, such as a telephone number or machine code,
+use an explicit `dir="ltr"` or `dir="rtl"` on the isolated value. Auto direction follows the first
+strong character, so digit-only values may need the field's explicit policy. See
+[W3C guidance on inline bidi markup](https://www.w3.org/International/articles/inline-bidi-markup/).
 
-In bidirectional layouts (RTL and LTR):
+Single-line inline rows may use visual centering; multiline rows retain their start alignment.
+Compatible font sizes and line-heights alone do not guarantee matching text baselines:
+[`align-items: baseline`](https://www.w3.org/TR/css-flexbox-1/#align-items-property) aligns baselines,
+whereas `center` aligns boxes. Choose the alignment for the composition and verify text and icons
+together. Optical padding follows the one
+[typography calibration rule](TYPOGRAPHY.md#optical-alignment-in-bounded-single-line-elements).
 
-1. **Explicit start alignment:**
-   Declare CSS logical alignment (`text-align: start; justify-content: flex-start;`). Avoid default centered
-   flex alignment on inline rows, which creates awkward gaps or misplaced colons when localized text direction
-   changes.
-2. **Defensive flex sizing:**
-   - The label must declare `flex-shrink: 0;` so long narrative values do not crush or shrink the label text.
-   - The value container must declare `flex-grow: 1; min-width: 0;` to allow proper wrapping without
-     bleeding outside the container.
-3. **Punctuation and colon placement:**
-   Render the colon (`:`) as part of the label container (e.g. `<span>Label:</span>`) rather than a floating
-   sibling node. In RTL languages (Persian, Arabic), appending the colon directly to the label string ensures
-   it stays anchored to the end of the phrase rather than flipping incorrectly to the right side of the value.
+## Verification
 
-## Optical vertical centering and font metrics
+Extend the risk-based matrix in [rendered UI integrity](RENDERED_UI_INTEGRITY.md#test-architecture)
+with authenticated populated record views where applicable and isolated component fixtures for the
+field variants. Assert that the intended panel and representative fields are present; a guest view or
+empty panel cannot prove data-layout behavior. Cover:
 
-When an inline row contains icons, labels, and text values within a bordered box, mathematical CSS centering
-(`align-items: center` with equal top and bottom padding) frequently fails the human eye.
+- missing, empty, zero, false, and ordinary populated values;
+- every supported type, option-label and unit formatting, and permitted unknown-type fallbacks;
+- short and long localized labels and values, multiline narratives, URLs, and unbroken tokens;
+- RTL, LTR, and mixed-script values, including numbers with signs or punctuation;
+- narrow, tablet, and desktop baseline viewports, plus narrow containers inside wider viewports;
+- stacked and inline compositions, text scaling, content/locale updates, and container resizing.
 
-### 1. The non-Latin / Persian font metric anomaly
-
-Non-Latin web fonts (e.g. Vazirmatn, IRANSans, Arabic display faces) allocate substantial descender reserve
-space at the bottom of their em-box to accommodate rare, deep descenders (e.g. isolated `ی`, `ع`, `ل`).
-However, typical field labels and headings consist predominantly of glyphs that sit flat on the baseline
-with ascenders rising upward (e.g. `د`, `ل`, `ا`, `ت`, `خ`, `ه`).
-
-When rendered with mathematically symmetric padding (`padding: 0.45rem` top and bottom):
-- The physical ink/glyph mass sits **1.5px to 2px higher** than the box's true visual center.
-- The gap between the top border and the text appears visibly smaller than the gap between the text and
-  the bottom border.
-- The human eye perceives the label as awkwardly "floating high" (`کمی بالاتره`).
-
-### 2. Asymmetric optical padding
-
-Compensate for font descender reserves by applying **asymmetric optical vertical padding**:
-
-```css
-/* WRONG: mathematically equal, but visually biased towards the top border */
-.data-item--full {
-  padding: 0.45rem 0.75rem;
-}
-
-/* CORRECT: optical padding balances top and bottom visual clearance equally */
-.data-item--full {
-  padding: 0.54rem 0.75rem 0.38rem 0.75rem;
-}
-```
-
-Measure the rendered bounding boxes in a headless browser audit: the distance from the top border to the
-highest glyph peak must equal the distance from the lowest glyph base to the bottom border (within ±1px).
-
-### 3. Inline font size harmonization
-
-In an inline row (`[icon] [label:] [value]`), do not use widely disparate font sizes (e.g. label at
-`0.74rem` and value at `0.85rem`). Because flexbox aligns child bounding boxes, disparate font sizes
-displace their baselines, making the smaller label sit noticeably higher than the adjacent value.
-
-**Rule:** In full-width inline rows, harmonize the label font size (e.g. `0.82rem`) with the value font size
-(`0.85rem`) and enforce uniform `line-height: 1.5` across both elements so text flows across an unbroken
-horizontal baseline.
-
-## General applicability
-
-These presentation rules apply universally across:
-- **Dynamic schema entities:** EAV models, generic case files, configurable consultation wizards, and dynamic
-  attribute builders where field types (`CaseFieldType`) and lengths vary at runtime.
-- **Static / hardcoded entity cards:** User profiles, invoice summaries, shipping status panels, and KYC
-  compliance screens.
+After fonts and styles are ready, automate panel/item containment, absence of sibling collisions,
+and disclosure reachability. Check the full text after activating disclosure and verify promotion
+updates without oscillation. Intentional truncation may have a larger text `scrollWidth`; it is a
+narrow documented exception only when the painted content remains contained and disclosure works.
+Inspect semantic wrapping and optical balance visually or through a documented pixel-aware check.
+Report state, selector, viewport/container dimensions, locale, direction, and measurements; retain a
+screenshot for a visual failure. Choose actual application routes in each project's audit setup.
 
 ## Acceptance
 
-- [ ] Attribute grids use responsive auto-fit columns (`repeat(auto-fit, minmax(min(100%, 240px), 1fr))`).
-- [ ] Multi-line narrative fields (e.g. `textarea`, descriptions) dynamically span the full width (`grid-column: 1 / -1`).
-- [ ] Scalar fields whose formatted content exceeds 40–45 characters dynamically promote to full-width rows.
-- [ ] Multi-column items stack label above value (`flex-direction: column`), avoiding cramped side-by-side wrapping.
-- [ ] Full-width rows display icon, label, and value inline on desktop and tablet, collapsing to column on mobile (`≤ 640px`).
-- [ ] Inline items declare explicit start alignment (`text-align: start`, `justify-content: flex-start`).
-- [ ] Colons anchor to the label element to preserve correct punctuation in RTL scripts.
-- [ ] Single-line bordered items apply asymmetric optical padding to ensure text sits in the exact visual vertical center.
-- [ ] Label and value in inline rows share harmonized font sizes and matching line-heights for level baseline alignment.
-- [ ] Automated rendered browser checks verify zero overflow and optical vertical clearance balance across supported viewports.
+- [ ] Field types and value formatting have one checked presentation mapping with explicit fallback
+      behavior; canonical values and validation remain intact.
+- [ ] Read-only pairs retain semantic relationships, safe text rendering, and localized labels/values.
+- [ ] Compact tracks stack label and value; narrative fields span, and scalar promotion considers both
+      rendered label and value with a stable measurement reference.
+- [ ] Inline rows stack when their container becomes narrow; text children shrink and long tokens
+      remain contained without concealing overflow.
+- [ ] Full information is available through a visible, keyboard/touch accessible disclosure wherever
+      truncation is intentional.
+- [ ] Direction isolation, paragraph preservation, semantic wrapping, and font-specific optical
+      alignment pass the declared rendered matrix.
+- [ ] Tests enter populated states, assert panel presence, and cover every distinct type and layout;
+      guest-only route checks are insufficient.

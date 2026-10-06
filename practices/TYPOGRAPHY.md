@@ -1,6 +1,6 @@
 # Typography
 
-Authoritative for typeface selection, semantic font roles, delivery, and responsive text fitting.
+Authoritative for typeface selection, semantic font roles, delivery, responsive text fitting, and optical alignment.
 Typography is application infrastructure: it must be consistent across the shared UI, correct for
 every supported script, locally available, and testable.
 
@@ -137,21 +137,28 @@ When a label or title wraps across lines:
 3. **Mandatory visual inspection in rendered browser**:
    Automated overflow tests (`scrollWidth <= clientWidth`) only detect physical container bleed; they cannot evaluate syntactic line-break aesthetics. Every multi-line text container must be visually inspected across desktop, tablet, and mobile viewports to verify that line breaks occur at logical syntactic boundaries and produce balanced, legible layouts.
 
-## Optical vertical centering in constrained single-line boxes
+## Optical alignment in bounded single-line elements
 
-In single-line UI containers (such as badges, tags, chip filters, and inline key-value rows), non-Latin
-scripts (Persian, Arabic) exhibit an inherent font metric asymmetry:
-- Web fonts allocate significant space beneath the font baseline in their em-box to safeguard deep, rare
-  descenders (e.g. isolated `ی`, `ع`).
-- Because standard Persian text sits directly on the baseline with ascenders extending upward, mathematically
-  symmetric padding (`padding-top == padding-bottom`) causes text to appear displaced upward (`کمی بالاتره`),
-  leaving noticeably more visual clearance at the bottom of the container than at the top.
-- Apply **asymmetric optical vertical padding** (`padding-top > padding-bottom`, e.g.
-  `padding: 0.54rem 0.75rem 0.38rem 0.75rem`) so the visual distance from the top border to the glyph
-  crown matches the distance from the bottom border to the glyph base.
-- In composite inline rows (`[icon] [label:] [value]`), harmonize label and value font sizes and enforce
-  uniform `line-height: 1.5` to prevent staggered, disjointed horizontal baselines. For complete field
-  organization standards, see [structured data presentation](STRUCTURED_DATA_PRESENTATION.md).
+Badges, tags, labels, and inline data rows may need optical correction because equal CSS padding
+centers their boxes rather than their perceived glyph mass. The required direction and amount depend
+on the font, script, weight, size, line-height, and icons; symmetric padding remains valid when it
+passes rendered inspection. Typeface-specific observations do not establish a universal script rule.
+
+After the active fonts load, inspect representative strings with ascenders, descenders, accents,
+numbers, and mixed scripts in each supported locale. When correction is needed, calibrate logical
+`padding-block-start` and `padding-block-end` through shared design tokens for that text role, with
+symmetric defaults. Record the tested font configuration and screenshots in the project's design
+documentation. Preserve legibility and the control's required hit region.
+
+A [DOM bounding rectangle](https://www.w3.org/TR/cssom-view-1/#dom-element-getboundingclientrect)
+describes element boxes, not the painted glyph outline. Assess optical balance through rendered
+screenshots and documented visual inspection or a pixel-aware measurement with a declared tolerance;
+DOM overflow measurements alone cannot prove it. Verify representative supported rendering
+environments and retain artifacts for regressions.
+
+Apply the calibrated correction to the single-line composition. When content wraps, changes font
+role, or stacks, use that composition's spacing and re-evaluate its alignment. For label-value rows,
+the layout and direction rules belong to [structured data presentation](STRUCTURED_DATA_PRESENTATION.md).
 
 ## Acceptance
 
@@ -172,4 +179,5 @@ scripts (Persian, Arabic) exhibit an inherent font metric asymmetry:
 
 - Constrained multi-line titles, badges, and labels break only at intentional semantic boundaries; parentheticals and compound units never fracture across lines.
 - Visual browser inspection verifies that no typographic orphans or awkwardly broken phrases exist across supported viewports.
-- Single-line bordered items and inline key-value rows apply asymmetric optical padding to counter font descender reserves and achieve true visual vertical centering.
+- Bounded single-line elements pass font-ready optical inspection; any correction uses calibrated
+  role tokens and is re-evaluated for wrapped or stacked compositions.
