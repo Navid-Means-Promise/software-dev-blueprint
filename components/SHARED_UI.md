@@ -141,6 +141,10 @@ occlusion, clipping, focus reachability, and startup-critical visually-hidden ru
 [rendered UI integrity](../practices/RENDERED_UI_INTEGRITY.md). A default guest screenshot is not
 evidence that privileged, populated, expanded, or error states remain usable.
 
+Structured record summaries, dynamic field sets, and dense entity detail panels follow the
+[structured data presentation](../practices/STRUCTURED_DATA_PRESENTATION.md) contract for typed values,
+semantic relationships, responsive layout, bidi isolation, containment, and rendered verification.
+
 ## Rules
 
 - One screen implementation per route, shared by all clients; it may compose smaller components, and

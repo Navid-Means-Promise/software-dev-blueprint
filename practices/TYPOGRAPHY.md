@@ -1,6 +1,6 @@
 # Typography
 
-Authoritative for typeface selection, semantic font roles, delivery, and responsive text fitting.
+Authoritative for typeface selection, semantic font roles, delivery, responsive text fitting, and optical alignment.
 Typography is application infrastructure: it must be consistent across the shared UI, correct for
 every supported script, locally available, and testable.
 
@@ -137,6 +137,29 @@ When a label or title wraps across lines:
 3. **Mandatory visual inspection in rendered browser**:
    Automated overflow tests (`scrollWidth <= clientWidth`) only detect physical container bleed; they cannot evaluate syntactic line-break aesthetics. Every multi-line text container must be visually inspected across desktop, tablet, and mobile viewports to verify that line breaks occur at logical syntactic boundaries and produce balanced, legible layouts.
 
+## Optical alignment in bounded single-line elements
+
+Badges, tags, labels, and inline data rows may need optical correction because equal CSS padding
+centers their boxes rather than their perceived glyph mass. The required direction and amount depend
+on the font, script, weight, size, line-height, and icons; symmetric padding remains valid when it
+passes rendered inspection. Typeface-specific observations do not establish a universal script rule.
+
+After the active fonts load, inspect representative strings with ascenders, descenders, accents,
+numbers, and mixed scripts in each supported locale. When correction is needed, calibrate logical
+`padding-block-start` and `padding-block-end` through shared design tokens for that text role, with
+symmetric defaults. Record the tested font configuration and screenshots in the project's design
+documentation. Preserve legibility and the control's required hit region.
+
+A [DOM bounding rectangle](https://www.w3.org/TR/cssom-view-1/#dom-element-getboundingclientrect)
+describes element boxes, not the painted glyph outline. Assess optical balance through rendered
+screenshots and documented visual inspection or a pixel-aware measurement with a declared tolerance;
+DOM overflow measurements alone cannot prove it. Verify representative supported rendering
+environments and retain artifacts for regressions.
+
+Apply the calibrated correction to the single-line composition. When content wraps, changes font
+role, or stacks, use that composition's spacing and re-evaluate its alignment. For label-value rows,
+the layout and direction rules belong to [structured data presentation](STRUCTURED_DATA_PRESENTATION.md).
+
 ## Acceptance
 
 - Computed styles resolve to the intended interface and display families in every supported locale.
@@ -156,3 +179,5 @@ When a label or title wraps across lines:
 
 - Constrained multi-line titles, badges, and labels break only at intentional semantic boundaries; parentheticals and compound units never fracture across lines.
 - Visual browser inspection verifies that no typographic orphans or awkwardly broken phrases exist across supported viewports.
+- Bounded single-line elements pass font-ready optical inspection; any correction uses calibrated
+  role tokens and is re-evaluated for wrapped or stacked compositions.

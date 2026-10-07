@@ -59,6 +59,9 @@ digit/format representation, proves canonical values reach the boundary, and ass
 input produces a catalog message in the active locale rather than browser-native text in another
 language.
 
+Structured data panels also pass [structured data verification](STRUCTURED_DATA_PRESENTATION.md#verification).
+The audit must reach the populated composition and assert that representative fields actually render.
+
 When the server owns canonical state, browser tests assert through server-visible records and reset
 or namespace that state explicitly. Do not mistake a fresh browser context for data isolation. Add
 restart tests for the durable adapter, concurrent-mutation tests, migration precedence/idempotency,
