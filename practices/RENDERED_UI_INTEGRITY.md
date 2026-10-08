@@ -49,18 +49,23 @@ content disappear.
 
 ### Token hygiene and silent fallback defense
 
-CSS custom properties fail silently at computed-value time: an unregistered, misspelled, or missing
-property reference degrades to `inherit`. On elevated, inverted, or dark-surface containers (such as
-chat bubbles, drawers, and status banners) rendered against a light application canvas, an invalid
-variable reference silently inherits the root dark text color, collapsing the contrast ratio to near
-`1:1` without generating a browser warning or runtime error.
+A missing or cyclic custom property without a usable `var()` fallback can invalidate the consuming
+declaration at computed-value time. That declaration behaves as `unset`: inherited properties such
+as `color` inherit, while non-inherited properties use their initial value. A defined variable can
+also invalidate a declaration when its substituted value is incompatible with the consuming
+property; a `var()` fallback does not repair that case. Custom properties do not require `@property`
+registration. On a dark surface, invalid `color` can inherit dark canvas text and erase contrast
+without a runtime error.
 
 Guard against silent fallback failures:
 
-- enforce a canonical token prefix (e.g. `--c-*` or `--color-*`) repository-wide;
+- use the project's canonical design-token names, allowing distinct namespaces for colors, spacing,
+  typography, component-local values, and external libraries;
 - provide explicit, accessible literal fallbacks on inverted or dark-mode surfaces where inherited
   canvas text colors would be imperceptible; and
-- catch unregistered custom property references during build-time linting or startup token audits.
+- check that required token references resolve in their intended scope during build-time linting or
+  rendered token audits; distinguish an undefined token from an intentionally optional variable with
+  a tested fallback.
 
 ## Occlusion, clipping, and reachability
 
@@ -85,11 +90,14 @@ Intentional clipping and truncation require an accessible way to obtain the comp
 
 Distinguish between true layer occlusion (unintended headers, sticky bars, or active dialogs blocking
 a control) and **ancestor scroll clipping**. In scrollable streams, message feeds, and tall tables,
-controls scrolled outside the visible client rect of an overflow ancestor (`overflow: auto`,
-`overflow: scroll`, or `overflow: hidden`) naturally yield a hit on sibling or parent containers at
-their viewport coordinates. An occlusion audit must check whether the hit test point lies within the
-bounding rectangle of all clipping ancestors before asserting an occlusion failure, and scroll
-targets into their visible container window before testing interactive reachability.
+controls outside an ancestor's clipping region can yield a hit on sibling or parent containers at
+their viewport coordinates. Intersect the control with the viewport and every ancestor's actual
+clipping region on each clipped axis, accounting for `auto`, `scroll`, `hidden`, and `clip` as well as
+borders and scrollbars. Hit-test the surviving visible region, including partially visible controls;
+a clipped center is not permission to skip the whole control. Scroll declared targets into view and
+prove actionability or focus reachability separately. Fully clipped content is not an occlusion
+failure, but it cannot pass reachability solely because it was skipped; `hidden` or `clip` can leave
+a control permanently inaccessible.
 
 Use one canonical visually-hidden utility in the startup-critical stylesheet. It hides assistive
 text visually without removing it from the accessibility tree and restores any focusable skip link
@@ -111,8 +119,10 @@ The audit must:
    silent skips (e.g. `.catch(() => null)` without assertion) is prohibited; an unreachable state is
    a hard failure;
 2. **wait on concrete dynamic data hydration:** in client-rendered feeds, chat logs, and paginated
-   views, wait explicitly for domain data nodes (e.g. messages of each sender type, populated list
-   cards) before measuring contrast or geometry, preventing empty-DOM false negatives;
+   views, assert the readiness and data expected by that matrix entry before measuring contrast or
+   geometry. Populated fixtures assert representative domain nodes; intentional empty, loading, and
+   error states assert their own state markers. Use application readiness and state assertions rather
+   than arbitrary sleeps;
 3. inspect computed/rendered state after fonts and startup-critical styles are ready;
 4. report the route, principal capability, UI state, viewport, locale, selector, measured values,
    and occluding or clipping element;
@@ -129,10 +139,10 @@ reported as evidence that the other passed.
 
 - Audit distinct rendered states across principals, data, interactions, viewports, locales, and
   directions—not merely one screenshot per route.
-- Execute audit runners fail-closed: assert navigation targets, triggers, and dynamic data hydration
+- Execute audit runners fail-closed: assert navigation targets, triggers, and state-specific readiness
   explicitly; never swallow errors to skip states silently.
-- Guard against silent custom-property fallback: enforce token namespace hygiene and provide
-  accessible fallbacks on inverted or elevated surfaces.
+- Guard against silent custom-property failures: use canonical token names and verify required
+  references and accessible fallbacks in their intended scope.
 - Apply WCAG text and non-text contrast thresholds to the correct kind of content and measure the
   actual rendered background.
 - Prove controls are visible, reachable, and not unintentionally occluded; distinguish ancestor scroll
@@ -147,3 +157,6 @@ reported as evidence that the other passed.
   color, focus, reflow, and content visibility requirements
 - [Understanding SC 1.4.11: Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
   — control and state-indicator contrast against adjacent colors
+- [CSS Custom Properties](https://www.w3.org/TR/css-variables-1/) — substitution, fallbacks, and
+  invalid declarations at computed-value time
+- [CSS Overflow](https://www.w3.org/TR/css-overflow-3/) — scrollports and axis-specific clipping
