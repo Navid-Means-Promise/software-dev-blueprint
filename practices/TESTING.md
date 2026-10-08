@@ -50,7 +50,11 @@ The E2E layer drives the real UI in every supported locale and both text directi
 covering the shared web-rendered behavior, [i18n](I18N.md), and browser-side
 [UI performance](UI_PERFORMANCE.md) acceptance criteria. It also exercises the risk-based principal,
 data, interaction, and viewport matrix from [rendered UI integrity](RENDERED_UI_INTEGRITY.md), using
-standards-based accessibility tooling plus bounded application-specific geometry checks. It does not
+standards-based accessibility tooling plus bounded application-specific geometry checks.
+Visual and contrast audits in browser acceptance must execute fail-closed: every declared view, modal,
+and drawer must strictly assert its trigger, navigation target, and dynamic data hydration before
+inspection. Swallowing navigation errors to bypass an audit step silently is prohibited; an
+unreachable state is an immediate test failure. It does not
 prove Capacitor packaging, native bridge behavior, Android permissions, or device-specific
 performance; focused Android tests cover those boundaries. Isolate any measurement that needs real
 GPU hardware into its own run that **rejects a software renderer**, so a software-fallback result is

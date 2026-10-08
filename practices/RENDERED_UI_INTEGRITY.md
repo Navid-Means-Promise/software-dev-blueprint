@@ -47,6 +47,21 @@ When they depend on custom properties supplied elsewhere, include usable literal
 `var(--control-text, #172033)` so a delayed, missing, or stale secondary stylesheet does not make
 content disappear.
 
+### Token hygiene and silent fallback defense
+
+CSS custom properties fail silently at computed-value time: an unregistered, misspelled, or missing
+property reference degrades to `inherit`. On elevated, inverted, or dark-surface containers (such as
+chat bubbles, drawers, and status banners) rendered against a light application canvas, an invalid
+variable reference silently inherits the root dark text color, collapsing the contrast ratio to near
+`1:1` without generating a browser warning or runtime error.
+
+Guard against silent fallback failures:
+
+- enforce a canonical token prefix (e.g. `--c-*` or `--color-*`) repository-wide;
+- provide explicit, accessible literal fallbacks on inverted or dark-mode surfaces where inherited
+  canvas text colors would be imperceptible; and
+- catch unregistered custom property references during build-time linting or startup token audits.
+
 ## Occlusion, clipping, and reachability
 
 Every visible interactive control must retain a usable hit region and keyboard focus target. A
@@ -68,6 +83,14 @@ Positive width and height do not prove visibility. Check clipping ancestors, vie
 text truncation, scroll-container reachability, and whether another painted layer hides the target.
 Intentional clipping and truncation require an accessible way to obtain the complete information.
 
+Distinguish between true layer occlusion (unintended headers, sticky bars, or active dialogs blocking
+a control) and **ancestor scroll clipping**. In scrollable streams, message feeds, and tall tables,
+controls scrolled outside the visible client rect of an overflow ancestor (`overflow: auto`,
+`overflow: scroll`, or `overflow: hidden`) naturally yield a hit on sibling or parent containers at
+their viewport coordinates. An occlusion audit must check whether the hit test point lies within the
+bounding rectangle of all clipping ancestors before asserting an occlusion failure, and scroll
+targets into their visible container window before testing interactive reachability.
+
 Use one canonical visually-hidden utility in the startup-critical stylesheet. It hides assistive
 text visually without removing it from the accessibility tree and restores any focusable skip link
 when focused. Do not wait for a secondary theme stylesheet to hide screen-reader-only content, and
@@ -83,13 +106,19 @@ technology review.
 
 The audit must:
 
-1. wait on explicit application readiness and state assertions rather than arbitrary sleeps;
-2. inspect computed/rendered state after fonts and startup-critical styles are ready;
-3. report the route, principal capability, UI state, viewport, locale, selector, measured values,
+1. **fail closed on state discovery:** assert the presence and resolution of every declared route,
+   navigation trigger, modal, or drawer in the matrix. Swallowing locator or navigation errors with
+   silent skips (e.g. `.catch(() => null)` without assertion) is prohibited; an unreachable state is
+   a hard failure;
+2. **wait on concrete dynamic data hydration:** in client-rendered feeds, chat logs, and paginated
+   views, wait explicitly for domain data nodes (e.g. messages of each sender type, populated list
+   cards) before measuring contrast or geometry, preventing empty-DOM false negatives;
+3. inspect computed/rendered state after fonts and startup-critical styles are ready;
+4. report the route, principal capability, UI state, viewport, locale, selector, measured values,
    and occluding or clipping element;
-4. retain a screenshot or equivalent artifact for a failure that cannot be understood from numbers;
-5. fail on unexpected violations, while keeping any exception narrow, justified, and owned; and
-6. run the smallest high-risk state set during normal checks and the complete declared matrix in its
+5. retain a screenshot or equivalent artifact for a failure that cannot be understood from numbers;
+6. fail on unexpected violations, while keeping any exception narrow, justified, and owned; and
+7. run the smallest high-risk state set during normal checks and the complete declared matrix in its
    dedicated acceptance runner.
 
 Static template and CSS checks remain useful for required attributes, canonical utilities, token
@@ -100,9 +129,14 @@ reported as evidence that the other passed.
 
 - Audit distinct rendered states across principals, data, interactions, viewports, locales, and
   directions—not merely one screenshot per route.
+- Execute audit runners fail-closed: assert navigation targets, triggers, and dynamic data hydration
+  explicitly; never swallow errors to skip states silently.
+- Guard against silent custom-property fallback: enforce token namespace hygiene and provide
+  accessible fallbacks on inverted or elevated surfaces.
 - Apply WCAG text and non-text contrast thresholds to the correct kind of content and measure the
   actual rendered background.
-- Prove controls are visible, reachable, and not unintentionally occluded or clipped.
+- Prove controls are visible, reachable, and not unintentionally occluded; distinguish ancestor scroll
+  clipping from layer occlusion.
 - Keep screen-reader-only behavior in one startup-critical utility.
 - Use standards-based accessibility tooling first; describe custom geometry checks as bounded
   regression evidence, never complete conformance.
