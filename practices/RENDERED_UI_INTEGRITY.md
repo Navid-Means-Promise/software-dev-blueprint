@@ -47,6 +47,26 @@ When they depend on custom properties supplied elsewhere, include usable literal
 `var(--control-text, #172033)` so a delayed, missing, or stale secondary stylesheet does not make
 content disappear.
 
+### Token hygiene and silent fallback defense
+
+A missing or cyclic custom property without a usable `var()` fallback can invalidate the consuming
+declaration at computed-value time. That declaration behaves as `unset`: inherited properties such
+as `color` inherit, while non-inherited properties use their initial value. A defined variable can
+also invalidate a declaration when its substituted value is incompatible with the consuming
+property; a `var()` fallback does not repair that case. Custom properties do not require `@property`
+registration. On a dark surface, invalid `color` can inherit dark canvas text and erase contrast
+without a runtime error.
+
+Guard against silent fallback failures:
+
+- use the project's canonical design-token names, allowing distinct namespaces for colors, spacing,
+  typography, component-local values, and external libraries;
+- provide explicit, accessible literal fallbacks on inverted or dark-mode surfaces where inherited
+  canvas text colors would be imperceptible; and
+- check that required token references resolve in their intended scope during build-time linting or
+  rendered token audits; distinguish an undefined token from an intentionally optional variable with
+  a tested fallback.
+
 ## Occlusion, clipping, and reachability
 
 Every visible interactive control must retain a usable hit region and keyboard focus target. A
@@ -68,6 +88,17 @@ Positive width and height do not prove visibility. Check clipping ancestors, vie
 text truncation, scroll-container reachability, and whether another painted layer hides the target.
 Intentional clipping and truncation require an accessible way to obtain the complete information.
 
+Distinguish between true layer occlusion (unintended headers, sticky bars, or active dialogs blocking
+a control) and **ancestor scroll clipping**. In scrollable streams, message feeds, and tall tables,
+controls outside an ancestor's clipping region can yield a hit on sibling or parent containers at
+their viewport coordinates. Intersect the control with the viewport and every ancestor's actual
+clipping region on each clipped axis, accounting for `auto`, `scroll`, `hidden`, and `clip` as well as
+borders and scrollbars. Hit-test the surviving visible region, including partially visible controls;
+a clipped center is not permission to skip the whole control. Scroll declared targets into view and
+prove actionability or focus reachability separately. Fully clipped content is not an occlusion
+failure, but it cannot pass reachability solely because it was skipped; `hidden` or `clip` can leave
+a control permanently inaccessible.
+
 Use one canonical visually-hidden utility in the startup-critical stylesheet. It hides assistive
 text visually without removing it from the accessibility tree and restores any focusable skip link
 when focused. Do not wait for a secondary theme stylesheet to hide screen-reader-only content, and
@@ -83,13 +114,21 @@ technology review.
 
 The audit must:
 
-1. wait on explicit application readiness and state assertions rather than arbitrary sleeps;
-2. inspect computed/rendered state after fonts and startup-critical styles are ready;
-3. report the route, principal capability, UI state, viewport, locale, selector, measured values,
+1. **fail closed on state discovery:** assert the presence and resolution of every declared route,
+   navigation trigger, modal, or drawer in the matrix. Swallowing locator or navigation errors with
+   silent skips (e.g. `.catch(() => null)` without assertion) is prohibited; an unreachable state is
+   a hard failure;
+2. **wait on concrete dynamic data hydration:** in client-rendered feeds, chat logs, and paginated
+   views, assert the readiness and data expected by that matrix entry before measuring contrast or
+   geometry. Populated fixtures assert representative domain nodes; intentional empty, loading, and
+   error states assert their own state markers. Use application readiness and state assertions rather
+   than arbitrary sleeps;
+3. inspect computed/rendered state after fonts and startup-critical styles are ready;
+4. report the route, principal capability, UI state, viewport, locale, selector, measured values,
    and occluding or clipping element;
-4. retain a screenshot or equivalent artifact for a failure that cannot be understood from numbers;
-5. fail on unexpected violations, while keeping any exception narrow, justified, and owned; and
-6. run the smallest high-risk state set during normal checks and the complete declared matrix in its
+5. retain a screenshot or equivalent artifact for a failure that cannot be understood from numbers;
+6. fail on unexpected violations, while keeping any exception narrow, justified, and owned; and
+7. run the smallest high-risk state set during normal checks and the complete declared matrix in its
    dedicated acceptance runner.
 
 Static template and CSS checks remain useful for required attributes, canonical utilities, token
@@ -100,9 +139,14 @@ reported as evidence that the other passed.
 
 - Audit distinct rendered states across principals, data, interactions, viewports, locales, and
   directions—not merely one screenshot per route.
+- Execute audit runners fail-closed: assert navigation targets, triggers, and state-specific readiness
+  explicitly; never swallow errors to skip states silently.
+- Guard against silent custom-property failures: use canonical token names and verify required
+  references and accessible fallbacks in their intended scope.
 - Apply WCAG text and non-text contrast thresholds to the correct kind of content and measure the
   actual rendered background.
-- Prove controls are visible, reachable, and not unintentionally occluded or clipped.
+- Prove controls are visible, reachable, and not unintentionally occluded; distinguish ancestor scroll
+  clipping from layer occlusion.
 - Keep screen-reader-only behavior in one startup-critical utility.
 - Use standards-based accessibility tooling first; describe custom geometry checks as bounded
   regression evidence, never complete conformance.
@@ -113,3 +157,6 @@ reported as evidence that the other passed.
   color, focus, reflow, and content visibility requirements
 - [Understanding SC 1.4.11: Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
   — control and state-indicator contrast against adjacent colors
+- [CSS Custom Properties](https://www.w3.org/TR/css-variables-1/) — substitution, fallbacks, and
+  invalid declarations at computed-value time
+- [CSS Overflow](https://www.w3.org/TR/css-overflow-3/) — scrollports and axis-specific clipping

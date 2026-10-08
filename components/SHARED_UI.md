@@ -137,7 +137,7 @@ the capability is absent. Cosmetic animation stays inside its renderer and never
 or component re-renders.
 
 Every materially different route, principal, data, and interaction composition obeys the contrast,
-occlusion, clipping, focus reachability, and startup-critical visually-hidden rules in
+occlusion, clipping, focus reachability, token hygiene, and startup-critical visually-hidden rules in
 [rendered UI integrity](../practices/RENDERED_UI_INTEGRITY.md). A default guest screenshot is not
 evidence that privileged, populated, expanded, or error states remain usable.
 
