@@ -85,6 +85,8 @@ domain vocabulary and package scope.
 - [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
   host-safe compiler and SDK environments
 - [practices/AI_AGENT_WORKFLOW.md](practices/AI_AGENT_WORKFLOW.md) — rulebook, branch-guard hook, summaries
+- [practices/AI_AGENT_CONTEXT.md](practices/AI_AGENT_CONTEXT.md) — development-agent discovery,
+  file-access boundaries, and indexing/upload verification
 
 **Security** — runtime and supply-chain boundaries
 

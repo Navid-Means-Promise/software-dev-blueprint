@@ -45,7 +45,10 @@ exists.
    Prettier config, the shared bundler-config factory, and the root `check` script. See
    [monorepo](components/MONOREPO.md). Also install the agent workflow: the single-source rulebook,
    `CLAUDE.md` / `AGENTS.md` pointers, and the branch-guard hook
-   ([AI agent workflow](practices/AI_AGENT_WORKFLOW.md)).
+   ([AI agent workflow](practices/AI_AGENT_WORKFLOW.md)). Configure and verify
+   [workspace context controls](practices/AI_AGENT_CONTEXT.md) for the supported agents before
+   dependency installation or automatic indexing. When using Antigravity, follow its
+   [`.antigravityignore` setup](practices/AI_AGENT_CONTEXT.md#google-antigravity).
 
    If a specialized toolchain was identified, add its committed container definition and root runner
    now. Pin external inputs before product code depends on them; expose image/setup/build scripts and

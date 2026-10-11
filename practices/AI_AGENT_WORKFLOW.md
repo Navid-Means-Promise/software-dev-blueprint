@@ -75,6 +75,12 @@ commands it identifies as mutating. Add a versioned hook installer for `pre-comm
 checks that reject commits on `main` and validate subjects on feature branches; local `.git/hooks`
 alone are not cloned. Remote branch protection remains the authoritative merge backstop.
 
+## Workspace context controls
+
+Agent setup also includes [workspace context controls](AI_AGENT_CONTEXT.md), which own discovery
+exclusions, file-access boundaries, and indexing/upload verification for the project's supported
+development agents, including [Antigravity's `.antigravityignore` setup](AI_AGENT_CONTEXT.md#google-antigravity).
+
 ## The answer-summary rule
 
 An agent's _answers_ are governed too: any answer carrying findings, comparisons, trade-offs, or a
