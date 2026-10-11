@@ -15,6 +15,8 @@ Do not restate those rules here.
 - Client, server, firmware, and monorepo structure: [components](components/MONOREPO.md)
 - Testing, rendered UI integrity, i18n, assets, performance, isolated toolchains, and workflow:
   [practices](practices/TESTING.md)
+- Development-agent discovery, file-access boundaries, and indexing/upload verification:
+  [workspace context controls](practices/AI_AGENT_CONTEXT.md)
 - Runtime and supply-chain security: [sessions](security/SESSION_MANAGEMENT.md),
   [untrusted files](security/UNTRUSTED_FILE_HANDLING.md), and [scanning](security/README.md)
 - Project conformance: [cross-project sync](reuse/CROSS_PROJECT_SYNC.md)
