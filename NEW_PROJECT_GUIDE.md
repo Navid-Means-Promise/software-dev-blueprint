@@ -44,7 +44,8 @@ exists.
 1. **Monorepo skeleton.** npm workspaces, the shared strict `tsconfig.base.json`, one ESLint + one
    Prettier config, the shared bundler-config factory, and the root `check` script. See
    [monorepo](components/MONOREPO.md). Also install the agent workflow: the single-source rulebook,
-   `CLAUDE.md` / `AGENTS.md` pointers, and the branch-guard hook
+   `CLAUDE.md` / `AGENTS.md` pointers, and the branch-guard hook, and mandatory agent indexing controls
+   (`.antigravityignore`, `.gitignore`) before installing dependencies
    ([AI agent workflow](practices/AI_AGENT_WORKFLOW.md)).
 
    If a specialized toolchain was identified, add its committed container definition and root runner
