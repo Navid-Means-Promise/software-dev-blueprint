@@ -19,6 +19,16 @@ That is the whole client. A screen, reusable rule, or canonical record that live
 its owning UI/shared/server module is misplaced. Client validation may improve feedback, but the
 server repeats complete validation and authorization before any effect.
 
+### Development server and LAN reachability
+
+The web client's Vite configuration and development runner (`npm run dev -w @app/web`) must bind to all
+network interfaces (`host: true` or `host: "0.0.0.0"`) by default. This ensures the web application is
+directly reachable over the local area network (LAN) for testing on physical smartphones, tablets, and
+mobile browsers without requiring custom CLI flags, unless the project operator explicitly requests
+loopback-only (`127.0.0.1`) restriction. When proxying API requests to the backend server during local
+development, the proxy target remains local (`127.0.0.1:<api-port>`), seamlessly forwarding requests
+received from LAN clients.
+
 ## Persistence adapter
 
 For a networked application, web adapters call bounded server-owned use cases rather than exposing a
@@ -45,6 +55,8 @@ The built web app is static assets. It can be served by any static host, and the
 
 - The web app holds adapters and a bootstrap call — no screens, no rules, no domain state.
 - Its Vite config extends the shared factory and overrides only web-specific values.
+- The development server binds to all interfaces (`host: true` / `0.0.0.0`) by default for LAN
+  accessibility, unless explicitly restricted to loopback by the operator.
 - Canonical operations use bounded authenticated server APIs; no generic storage or client-authority
   fallback exists.
 - A local-authoritative product is outside this server-oriented blueprint, not a networked fallback.

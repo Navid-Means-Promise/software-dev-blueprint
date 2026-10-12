@@ -86,10 +86,12 @@ exists.
    tests. Every runnable networked
    composition, including local development and E2E, already obeys the trust boundary in
    [development principles §7](principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).
+   Development server scripts bind to all interfaces (`0.0.0.0`) by default for LAN reachability
+   unless explicitly restricted by the operator.
 
-5. **The web client (`@app/web`).** Vite config from the shared factory, HTTP/browser adapters, one
-   bootstrap call ([web client](components/WEB_CLIENT.md)). This is the first place the whole stack
-   runs end-to-end.
+5. **The web client (`@app/web`).** Vite config from the shared factory (binding to `host: true` by
+   default for LAN accessibility), HTTP/browser adapters, one bootstrap call
+   ([web client](components/WEB_CLIENT.md)). This is the first place the whole stack runs end-to-end.
 
 6. **Content and assets.** Define the content schema, the one layout definition every asset path
    derives from, and generate placeholder assets from the contract so loading and timing paths run

@@ -89,6 +89,15 @@ gate for Android shell, bridge, Gradle, SDK, permission, or container changes.
 }
 ```
 
+## Development server execution and LAN reachability
+
+Development execution scripts (`dev`, `dev:web`, `dev:server`) must bind to all local network
+interfaces (`0.0.0.0` or equivalent bundler `host: true`) by default. This ensures the running
+application is immediately reachable across the local area network (LAN) for testing on physical
+mobile devices, tablets, and secondary test machines without requiring developers to memorize or pass
+one-off CLI flags, unless the project operator explicitly configures or requests loopback-only
+(`127.0.0.1`) binding.
+
 ## Package naming
 
 Pick one scope per project (`@app` is the placeholder) and name packages by role:
@@ -103,4 +112,6 @@ product, names the package — so the layout reads the same across every project
 - Firmware stays outside the npm workspace with its own CMake build.
 - Invasive and platform-sensitive tools follow the host-safe container practice; root npm scripts
   remain the public interface.
+- Development scripts bind to all interfaces (`0.0.0.0`) by default so the application is reachable
+  over the LAN for multi-device testing, unless explicitly restricted by the operator.
 - `check` is the single composite gate; keep it honest — a skipped step is a failed check.

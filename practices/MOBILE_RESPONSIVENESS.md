@@ -306,6 +306,18 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
     [structured data verification](STRUCTURED_DATA_PRESENTATION.md#verification).
 - Fails the build (Exit code 1) with precise DOM element selectors and pixel amounts if any regression is introduced.
 
+### Physical device testing & LAN reachability
+
+Automated headless audits (`bin/test-mobile`) guarantee geometric invariants deterministically, but
+verifying real touch ergonomics, soft keyboard dismissals, viewport transitions, and thermal behavior
+on physical mobile hardware remains essential.
+
+To support interactive testing on physical devices without cumbersome manual configuration,
+development server scripts (`npm run dev`, `dev:web`, `dev:server`) must bind to all network
+interfaces (`0.0.0.0` / `host: true`) by default. This ensures the application is reachable over the
+local network (LAN) by any device sharing the local Wi-Fi or Ethernet network, unless the project
+operator explicitly requests loopback-only (`127.0.0.1`) restriction.
+
 ## Acceptance
 
 - [ ] All pages include `<meta name="viewport" content="width=device-width, initial-scale=1.0">`.
@@ -323,3 +335,4 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Triggering a modal from a mobile navigation drawer automatically dismisses the drawer.
 - [ ] All HTML/template files pass the static asset cache-busting invariant check.
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.
+- [ ] Development server scripts bind to all interfaces (`0.0.0.0` / `host: true`) by default for LAN testing on physical devices, unless explicitly opted out by the operator.
