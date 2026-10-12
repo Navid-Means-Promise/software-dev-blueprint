@@ -11,6 +11,10 @@ _how code is designed_; this document governs _how a task is run and landed_. Bo
   before the first edit.** Never develop directly on `main`.
 - Prefix the branch with its kind, then a concise kebab-case purpose:
   `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, `chore/`.
+- For successive branches serving the same broader purpose, keep a stable purpose stem and append
+  `-phase-N`, starting at `1` and incrementing for each subsequent branch. Use `-phase-1` from the
+  first branch when further phases are expected; for example,
+  `fix/stability-and-correctness-phase-1`, then `fix/stability-and-correctness-phase-2`.
 - **Only the repository owner authorizes a merge into `main`.** Finish the work, run the acceptance
   checks, report the result, and wait for explicit confirmation. Never merge, fast-forward, rebase
   onto, or force-push `main` on your own initiative.
