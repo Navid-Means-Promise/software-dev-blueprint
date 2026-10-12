@@ -21,13 +21,23 @@ server repeats complete validation and authorization before any effect.
 
 ### Development server and LAN reachability
 
-The web client's Vite configuration and development runner (`npm run dev -w @app/web`) must bind to all
-network interfaces (`host: true` or `host: "0.0.0.0"`) by default. This ensures the web application is
-directly reachable over the local area network (LAN) for testing on physical smartphones, tablets, and
-mobile browsers without requiring custom CLI flags, unless the project operator explicitly requests
-loopback-only (`127.0.0.1`) restriction. When proxying API requests to the backend server during local
-development, the proxy target remains local (`127.0.0.1:<api-port>`), seamlessly forwarding requests
-received from LAN clients.
+The Vite config maps the shared [development binding configuration](MONOREPO.md#development-server-execution-and-lan-reachability)
+to `server.host` (`0.0.0.0` or `true` for LAN access). Keep Vite's host and file-serving protections;
+add only controlled development hostnames to `server.allowedHosts`, and allow only the required
+origins if cross-origin asset access is needed. See
+[Vite's server options](https://vite.dev/config/server-options).
+
+For a same-origin API proxy, browser adapters use relative API URLs. Configure the proxy target as
+an address reachable from the Vite process: `127.0.0.1:<api-port>` when both processes share a network
+namespace, or the backend's service address when they run in separate containers. Configure hot-reload
+connections to use the device-visible host and forward WebSockets through any reverse proxy.
+
+LAN browser testing uses HTTPS with a certificate trusted by the test device to preserve
+[browser-session protections](../architecture/AUTHORIZATION.md#browser-and-api-trust-boundaries)
+and secure-context APIs. Plain HTTP on a LAN address lacks the localhost exception in
+[Secure Contexts](https://www.w3.org/TR/secure-contexts/#is-origin-trustworthy).
+[WebOTP](https://wicg.github.io/web-otp/) testing also requires a device-resolvable domain hostname
+matching the SMS origin binding.
 
 ## Persistence adapter
 
@@ -55,8 +65,6 @@ The built web app is static assets. It can be served by any static host, and the
 
 - The web app holds adapters and a bootstrap call — no screens, no rules, no domain state.
 - Its Vite config extends the shared factory and overrides only web-specific values.
-- The development server binds to all interfaces (`host: true` / `0.0.0.0`) by default for LAN
-  accessibility, unless explicitly restricted to loopback by the operator.
 - Canonical operations use bounded authenticated server APIs; no generic storage or client-authority
   fallback exists.
 - A local-authoritative product is outside this server-oriented blueprint, not a networked fallback.

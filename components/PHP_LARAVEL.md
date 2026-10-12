@@ -95,6 +95,10 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
 
 ## Tooling and delivery
 
+- Application development runners consume the shared
+  [development binding configuration](MONOREPO.md#development-server-execution-and-lan-reachability).
+  Server-rendered browser flows also apply the
+  [LAN browser access requirements](WEB_CLIENT.md#development-server-and-lan-reachability).
 - Keep Composer dependencies locked and run dependency audits as part of the repository check. When
   the application builds frontend assets, commit the JavaScript lockfile and install with its frozen
   mode (`npm ci` or the package-manager equivalent).

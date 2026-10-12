@@ -110,6 +110,8 @@ never as passing coverage.
   shell/bridge/adapter changes also pass the relevant Android host tests.
 - Firmware or container changes pass the host-safe workflow's clean all-target build and guardrail
   tests. See [containerized toolchains](CONTAINERIZED_TOOLCHAINS.md).
+- Application development-runner or network configuration changes pass
+  [LAN verification](../components/MONOREPO.md#verification) in implementing projects.
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules

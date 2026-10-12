@@ -151,16 +151,6 @@ still traverse the normal authentication, authorization, and tenant-isolation pa
 identity header, global fixed user, or authentication-disable switch must not exist in a listening
 composition.
 
-Development server execution scripts (`dev:server`, `bin/dev`) must bind to all network interfaces
-(`0.0.0.0` or equivalent) by default, making the application and API reachable across the local area
-network (LAN) for testing on secondary devices (such as physical smartphones, tablets, or test
-machines on the same local network), unless explicitly instructed otherwise by the project operator.
-Because the development server listens on the local network, it strictly enforces the authenticated
-multi-user boundary and tenant isolation required by
-[development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises)—it
-must never introduce authentication bypasses, loopback-only trust assumptions, or hardcoded mock
-principals in a listening process.
-
 One-time client-data migration is a separate authenticated use case: strictly decode its bounded
 input, replace claimed ownership with the authenticated principal, preserve newer server state, and
 commit atomically and idempotently. It never leaves a permanent generic persistence endpoint behind.
@@ -168,6 +158,15 @@ commit atomically and idempotently. It never leaves a permanent generic persiste
 These are the server-specific consequences of
 [development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises),
 not optional hardening for after launch.
+
+## Development execution
+
+Fastify's `listen` host consumes the shared
+[development binding configuration](MONOREPO.md#development-server-execution-and-lan-reachability).
+Register the declared development browser origins with the existing origin/CSRF checks and, for
+direct cross-origin API calls, an explicit CORS allowlist. When serving the browser app directly,
+apply the [LAN HTTPS requirements](WEB_CLIENT.md#development-server-and-lan-reachability).
+See [Fastify's listening options](https://fastify.dev/docs/latest/Reference/Server/#listen).
 
 ## Security and dependencies
 
@@ -182,8 +181,6 @@ source, logs, issue trackers, chat, test output, or another unintended channel.
 ## Rules
 
 - Routes are thin; rules live in services; persistence lives behind repositories.
-- Development server scripts bind to all interfaces (`0.0.0.0`) by default to enable LAN reachability
-  for multi-device testing, unless explicitly restricted to loopback by the operator.
 - The server imports shared contracts, reuses shared domain rules, and never imports the UI.
 - A device twin interprets the same semantic contract the firmware does; it never streams frames.
 - Keep the dependency surface audited and current.
