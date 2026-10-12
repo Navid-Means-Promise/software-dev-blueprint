@@ -306,6 +306,14 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
     [structured data verification](STRUCTURED_DATA_PRESENTATION.md#verification).
 - Fails the build (Exit code 1) with precise DOM element selectors and pixel amounts if any regression is introduced.
 
+### Physical device testing & LAN reachability
+
+Headless audits (`bin/test-mobile`) verify geometric invariants in the exercised states. Physical
+mobile checks also exercise touch targets, soft-keyboard dismissal, and viewport transitions; thermal
+and GPU checks follow [UI performance](UI_PERFORMANCE.md). Use the shared
+[development runners and LAN verification](../components/MONOREPO.md#development-server-execution-and-lan-reachability)
+with the [browser access configuration](../components/WEB_CLIENT.md#development-server-and-lan-reachability).
+
 ## Acceptance
 
 - [ ] All pages include `<meta name="viewport" content="width=device-width, initial-scale=1.0">`.
@@ -323,3 +331,5 @@ Executed as a dedicated mobile test runner (`./bin/test-mobile`) using headless 
 - [ ] Triggering a modal from a mobile navigation drawer automatically dismisses the drawer.
 - [ ] All HTML/template files pass the static asset cache-busting invariant check.
 - [ ] Automated mobile test runner (`./bin/test-mobile`) executes cleanly with zero failures.
+- [ ] The development workflow passes [LAN verification](../components/MONOREPO.md#verification)
+      and the relevant physical-device interaction checks above.

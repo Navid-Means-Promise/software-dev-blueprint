@@ -19,6 +19,26 @@ That is the whole client. A screen, reusable rule, or canonical record that live
 its owning UI/shared/server module is misplaced. Client validation may improve feedback, but the
 server repeats complete validation and authorization before any effect.
 
+### Development server and LAN reachability
+
+The Vite config maps the shared [development binding configuration](MONOREPO.md#development-server-execution-and-lan-reachability)
+to `server.host` (`0.0.0.0` or `true` for LAN access). Keep Vite's host and file-serving protections;
+add only controlled development hostnames to `server.allowedHosts`, and allow only the required
+origins if cross-origin asset access is needed. See
+[Vite's server options](https://vite.dev/config/server-options).
+
+For a same-origin API proxy, browser adapters use relative API URLs. Configure the proxy target as
+an address reachable from the Vite process: `127.0.0.1:<api-port>` when both processes share a network
+namespace, or the backend's service address when they run in separate containers. Configure hot-reload
+connections to use the device-visible host and forward WebSockets through any reverse proxy.
+
+LAN browser testing uses HTTPS with a certificate trusted by the test device to preserve
+[browser-session protections](../architecture/AUTHORIZATION.md#browser-and-api-trust-boundaries)
+and secure-context APIs. Plain HTTP on a LAN address lacks the localhost exception in
+[Secure Contexts](https://www.w3.org/TR/secure-contexts/#is-origin-trustworthy).
+[WebOTP](https://wicg.github.io/web-otp/) testing also requires a device-resolvable domain hostname
+matching the SMS origin binding.
+
 ## Persistence adapter
 
 For a networked application, web adapters call bounded server-owned use cases rather than exposing a

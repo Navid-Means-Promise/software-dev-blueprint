@@ -89,6 +89,33 @@ gate for Android shell, bridge, Gradle, SDK, permission, or container changes.
 }
 ```
 
+## Development server execution and LAN reachability
+
+Application web/API development runners (`dev`, `dev:web`, `dev:server`, or an equivalent `bin/dev`)
+bind to all IPv4 interfaces (`0.0.0.0`) by default for local area network (LAN) device testing. One
+shared development configuration owns the default and a documented operator override for
+loopback-only access; workspace scripts and the shared bundler-config factory consume it.
+
+Container runners publish the required application ports on a LAN-reachable host address. In
+loopback-only mode, restrict the host port publication while keeping the listener reachable inside
+the container. Preserve the [container isolation rules](../practices/CONTAINERIZED_TOOLCHAINS.md#host-isolation).
+Binding alone does not establish reachability: host firewalls, VM/WSL forwarding, routing, and Wi-Fi
+client isolation may require explicit operator configuration. Scope inbound access to the intended
+test networks when the host also has publicly reachable interfaces. Report the host's usable LAN
+address or hostname and actual port in startup output; devices connect to that address.
+
+The [web client](WEB_CLIENT.md#development-server-and-lan-reachability) owns browser origin, proxy,
+and HTTPS configuration. Every listener retains the
+[development trust boundary](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises).
+
+### Verification
+
+In implementing projects, test the default and operator override through the public runners,
+including container port publication when used. From a second LAN device, verify page loading,
+authenticated API access, and hot reload where supported; verify loopback-only mode still works
+locally and rejects remote connections. Report network prerequisites or an unperformed device check
+explicitly.
+
 ## Package naming
 
 Pick one scope per project (`@app` is the placeholder) and name packages by role:
@@ -104,3 +131,8 @@ product, names the package — so the layout reads the same across every project
 - Invasive and platform-sensitive tools follow the host-safe container practice; root npm scripts
   remain the public interface.
 - `check` is the single composite gate; keep it honest — a skipped step is a failed check.
+
+## Standards basis
+
+- [Docker port publishing](https://docs.docker.com/engine/network/port-publishing/) — application
+  listeners and host port mappings are separate network boundaries

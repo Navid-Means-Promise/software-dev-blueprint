@@ -159,6 +159,15 @@ These are the server-specific consequences of
 [development principles §7](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises),
 not optional hardening for after launch.
 
+## Development execution
+
+Fastify's `listen` host consumes the shared
+[development binding configuration](MONOREPO.md#development-server-execution-and-lan-reachability).
+Register the declared development browser origins with the existing origin/CSRF checks and, for
+direct cross-origin API calls, an explicit CORS allowlist. When serving the browser app directly,
+apply the [LAN HTTPS requirements](WEB_CLIENT.md#development-server-and-lan-reachability).
+See [Fastify's listening options](https://fastify.dev/docs/latest/Reference/Server/#listen).
+
 ## Security and dependencies
 
 Server dependencies carry a real audit surface (static file serving, request parsing). Keep them
