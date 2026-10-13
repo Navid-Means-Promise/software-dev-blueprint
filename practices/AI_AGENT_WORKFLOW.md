@@ -67,8 +67,10 @@ JSON
 fi
 ```
 
-Treat guards as backstops, not reminders: the agent still branches first by rule. Test each installed
-guard independently and verify that read-only inspection remains available.
+Treat guards as backstops, not reminders. Before editing, select or create the task branch using the
+[task-continuity and phase-boundary rules](../principles/WORKING_AGREEMENT.md#1-branching-and-merge-authority).
+Test each installed guard independently and verify that read-only inspection remains available.
+Guards check the current branch; they do not determine whether feedback starts a separate task.
 
 When an agent runtime can classify shell commands before execution, apply the same branch check to
 commands it identifies as mutating. Add a versioned hook installer for `pre-commit`/`commit-msg`
