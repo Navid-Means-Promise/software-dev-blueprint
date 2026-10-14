@@ -128,8 +128,9 @@ The audit must:
    and occluding or clipping element;
 5. retain a screenshot or equivalent artifact for a failure that cannot be understood from numbers;
 6. fail on unexpected violations, while keeping any exception narrow, justified, and owned; and
-7. run the smallest high-risk state set during normal checks and the complete declared matrix in its
-   dedicated acceptance runner.
+7. use the smallest high-risk state set in the composite check and the complete declared matrix in
+   its dedicated acceptance runner, scheduled through
+   [pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
 
 Static template and CSS checks remain useful for required attributes, canonical utilities, token
 fallbacks, and prohibited declarations. They complement the rendered audit; neither layer may be

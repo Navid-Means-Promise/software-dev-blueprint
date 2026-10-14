@@ -104,8 +104,9 @@ never as passing coverage.
 
 ## Change-specific verification gates
 
-- Run the **narrowest** relevant tests while iterating; run the repository-wide
-  [`check`](../components/MONOREPO.md) before calling a broad change done.
+- Select the **narrowest** relevant tests for scoped changes; broad changes require the
+  repository-wide [`check`](../components/MONOREPO.md). Execution timing, failure repair, and result
+  reuse follow the [pre-merge verification policy](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
 - Shared UI changes additionally pass the browser acceptance flow in every locale; Android
   shell/bridge/adapter changes also pass the relevant Android host tests.
 - Firmware or container changes pass the host-safe workflow's clean all-target build and guardrail
