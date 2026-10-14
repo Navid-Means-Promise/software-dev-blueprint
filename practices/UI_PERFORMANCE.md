@@ -142,20 +142,108 @@ platform timing would make that gate nondeterministic.
 
 ## Acceptance method
 
+### Coverage and budgets
+
 - Test at real mobile widths (e.g. ~393 px and ~320 px) in **every supported locale** and both text
-  directions; horizontal layout must not overflow.
+  directions; horizontal layout must not overflow. Apply the same performance criteria in each
+  locale; fonts, text wrapping, and direction are scenario inputs, not different standards.
 - Under CPU throttling (e.g. 6×) at a realistic device scale factor, a settled sample averages a high
   frame rate (target ≥ 55 FPS) with no frame over ~33 ms outside deliberate, transient transitions.
 - Resting paint-flashing shows no continuous repaint.
 - Focus targets, clicks, scrolling, and screen-reader labels stay stable during ambience.
 - Every optional GPU scene is exercised once through its production policy, forced-fallback launch,
   and inspection launch.
-- **Record the numbers.** Keep a dated performance baseline (average FPS, worst frame, buffer size,
-  conditions) so a later change has a regression reference. Distinguish a hardware-GPU measurement
-  from a software-renderer measurement — the latter validates the _fallback and lifecycle_, not
-  animated-shader performance, and the two must never be reported as the same thing.
 - Real GPU/thermal behavior is ultimately confirmed on a physical device, not only in a desktop
   browser or emulator.
+
+### Match the metric to the rendering path
+
+Declare what a measurement proves before choosing its probe. Compositor animation can continue while
+main-thread JavaScript is blocked; a delayed `requestAnimationFrame` callback therefore does not,
+by itself, prove that a displayed animation froze. Conversely, smooth compositor motion does not
+prove responsive JavaScript interactions. See Chrome's
+[rendering-pipeline explanation](https://developer.chrome.com/blog/inside-browser-part3/).
+
+| Subject | Required evidence | Limit of the claim |
+| --- | --- | --- |
+| Compositor HTML/CSS motion | Passive browser presentation feedback, or an equivalent validated frame-presentation signal, while the intended surface animates | Callback timing, paint counts, or frame submission alone do not establish presentation cadence |
+| JavaScript-driven DOM/canvas updates or gestures | Application update/callback cadence and work duration; presentation evidence when claiming displayed FPS | `requestAnimationFrame` measures scheduling opportunities; it does not prove each callback produced a distinct displayed update |
+| Interaction responsiveness | Representative input-to-response timing and main-thread work, including long tasks and garbage collection where relevant | Animation FPS alone cannot establish response latency |
+
+Zero Paint events is a separate repaint result, not evidence of cheap compositing or smooth motion.
+Large transparent surfaces, excess layers, clips, and overdraw can still cost rendering work when
+only `transform`/`opacity` animate. Inspect those costs before changing the intended appearance or
+timing. Validate visual continuity and effect coverage after an optimization.
+
+### Validate the measurement
+
+The measurement implementation is part of the verification system and must not pass vacuously:
+
+1. Establish scenario readiness, including critical fonts/assets and the intended active animation
+   or renderer. Check visibility, motion preference, lifecycle, and expected running animations
+   before and after capture. Confirm the target actually changes through scoped content evidence or
+   a separate bounded visual check. Browser-wide frame activity alone cannot prove the target
+   updated; scope the signal where possible and record any remaining attribution limit.
+2. Document the signal's meaning for the tested browser/version: event schema, clock, timestamp
+   units, and intended display/frame stream. A completion or submission timestamp is not implicitly
+   a presentation timestamp. Validate and explicitly select the intended stream; reject malformed,
+   absent, insufficient, or unresolved ambiguous evidence. Never silently substitute callback FPS
+   when presentation feedback is unavailable. Deduplicate repeated feedback for the same
+   presentation without removing distinct frames or gaps.
+3. Define readiness, warm-up, capture duration, sample count/window, and any deliberate-transition
+   exclusions before capture. Keep every slow interval inside that window, including intervals
+   coinciding with garbage collection. Do not search for a faster window or discard outliers to
+   pass. Calculate average FPS from interval count divided by total elapsed seconds, and report the
+   worst interval separately; averaging instantaneous FPS can conceal stalls.
+4. Minimize observer work. For independent CSS motion, use passive capture with boundaries controlled
+   outside the page; do not inject a per-frame JavaScript loop, style/layout reads, or screenshot
+   polling solely to count frames. Check for probe-induced work with a minimally instrumented
+   diagnostic comparison when introducing or changing a probe. Tracing itself has overhead; record
+   capture categories/options and keep them consistent across compared runs.
+5. Give metric parsers and sample selection deterministic fixture tests: regular pacing, a genuine
+   long presentation gap, repeated/out-of-order feedback, malformed or insufficient data, ambiguous
+   streams, and a later faster window. Cover delayed JavaScript with steady presentation separately
+   from an actual presentation stall. Missing evidence must fail or remain explicitly unverified;
+   it cannot become zero dropped frames or a passing default. Execute these tests through
+   [pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
+
+Browser trace events are version-dependent implementation details, not a portable Web API. When
+using them, keep a versioned source or specification reference for their semantics and representative
+fixtures so a browser upgrade cannot silently change the metric.
+
+### Evidence and diagnosis
+
+Keep a dated baseline with the candidate/base revisions, commands, scenario/state and locale,
+measurement method/version, sample policy, average FPS, worst interval, budget violations, paint
+counts, and applicable drawing-buffer size. Record build mode, browser/version, headless/headed mode,
+viewport, device scale, target refresh rate, CPU-throttle setting/scope, launch/capture options, and
+actual rendering backend/device status. An accelerated-layer label is not proof of hardware GPU
+compositing.
+
+Run timing profiles serially without competing test workers or known heavy workloads. Record host
+CPU/load and relevant power/thermal conditions where observable, including before/after load when
+diagnosing scheduling noise. CPU throttling is relative to the host and does not reproduce a phone's
+CPU/GPU architecture; see the
+[DevTools CPU-throttling reference](https://developer.chrome.com/docs/devtools/performance/reference#cpu-throttle).
+Software-composited DOM animation can have a valid, explicitly labelled presentation baseline. For
+a GPU canvas, software rendering verifies only its static fallback and lifecycle; animated-shader
+claims require a run that rejects software rendering. Neither desktop path substitutes for physical
+device GPU/thermal verification.
+
+Retain raw traces and scenario metadata before parsing or asserting budgets, including failed
+captures. Report failed attempts and the reason for a rerun; never retry until a passing run erases
+the failure. Correlate slow intervals with script work, garbage collection, layout/paint, compositor
+work, and host scheduling before assigning a cause. A JavaScript pause is real responsiveness
+evidence even when presentation stays smooth. A failure in one locale identifies a scenario to
+investigate; it does not establish language as the cause.
+
+Compare revisions under the same probe, scenario, sampling policy, and controlled conditions. A
+probe correction establishes a new baseline; old callback FPS and new presentation FPS cannot
+quantify an animation speedup. Separate confirmed causes from hypotheses and unresolved attribution.
+Keep the acceptance budgets when correcting a probe; if evidence is invalid or the host is
+contended, resolve that uncertainty before claiming the animation is defective or reducing effects
+to make a gate pass. A valid budget failure still requires implementation repair or
+the renderer's declared adaptive policy.
 
 ## Rules
 

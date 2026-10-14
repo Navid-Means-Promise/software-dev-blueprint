@@ -73,7 +73,7 @@ domain vocabulary and package scope.
 - [practices/I18N.md](practices/I18N.md) — default-language-first parity, RTL/LTR
 - [practices/TYPOGRAPHY.md](practices/TYPOGRAPHY.md) — language-aware font roles, local delivery,
   responsive fitting, and optical alignment
-- [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — compositor + GPU-canvas budgets
+- [practices/UI_PERFORMANCE.md](practices/UI_PERFORMANCE.md) — rendering budgets, continuity, and measurement validity
 - [practices/MOBILE_RESPONSIVENESS.md](practices/MOBILE_RESPONSIVENESS.md) — small-screen viewports, zero-overflow principle, multi-column vertical alignment, touch ergonomics
 - [practices/STRUCTURED_DATA_PRESENTATION.md](practices/STRUCTURED_DATA_PRESENTATION.md) — compact
   typed key-value panels, adaptive row spanning, and accessible full values

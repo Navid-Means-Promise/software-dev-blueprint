@@ -64,6 +64,10 @@ language.
 Structured data panels also pass [structured data verification](STRUCTURED_DATA_PRESENTATION.md#verification).
 The audit must reach the populated composition and assert that representative fields actually render.
 
+Timing profiles follow the [UI performance acceptance method](UI_PERFORMANCE.md#acceptance-method),
+which owns metric selection, probe validation, and evidence requirements. They complement the
+deterministic animation-property audit.
+
 When the server owns canonical state, browser tests assert through server-visible records and reset
 or namespace that state explicitly. Do not mistake a fresh browser context for data isolation. Add
 restart tests for the durable adapter, concurrent-mutation tests, migration precedence/idempotency,
