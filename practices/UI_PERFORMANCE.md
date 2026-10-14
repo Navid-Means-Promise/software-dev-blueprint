@@ -132,8 +132,8 @@ The audit must:
    contain properties other than `transform` and `opacity`.
 3. Assert the expected animation names or bounded counts in each state, so an empty, hidden, or
    incorrectly scoped audit cannot pass vacuously.
-4. Run whenever an infinite animation is introduced or changed, as part of the regular browser CI
-   acceptance flow.
+4. Cover every introduced or changed infinite animation in browser acceptance, scheduled through
+   [pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
 
 This deterministic property audit complements profiling; it does not replace it. Run paint-flashing
 and frame-pacing inspection whenever an animated surface changes and periodically refresh its dated

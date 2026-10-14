@@ -69,13 +69,27 @@ fi
 
 Treat guards as backstops, not reminders. Before editing, select or create the task branch using the
 [task-continuity and phase-boundary rules](../principles/WORKING_AGREEMENT.md#1-branching-and-merge-authority).
-Test each installed guard independently and verify that read-only inspection remains available.
+Include independent tests for each installed guard in
+[pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification), including proof
+that read-only inspection remains available.
 Guards check the current branch; they do not determine whether feedback starts a separate task.
 
 When an agent runtime can classify shell commands before execution, apply the same branch check to
 commands it identifies as mutating. Add a versioned hook installer for `pre-commit`/`commit-msg`
 checks that reject commits on `main` and validate subjects on feature branches; local `.git/hooks`
 alone are not cloned. Remote branch protection remains the authoritative merge backstop.
+
+## Test automation placement
+
+Implement the [pre-merge verification policy](../principles/WORKING_AGREEMENT.md#pre-merge-verification)
+in the project's hooks and CI. Keep commit and push hooks limited to branch/message guards and other
+lightweight checks that do not invoke tests or a test-containing `check`. Existing test invocations in
+those hooks move to the merge gate.
+
+CI test jobs validate a ready merge candidate targeting `main`, through a ready-for-review PR or an
+explicit pre-merge workflow. Ordinary development pushes and draft PR updates do not trigger test
+suites. Require successful results for the current candidate before enabling merge, and apply the
+policy's result-reuse and invalidation rules when the candidate changes.
 
 ## Workspace context controls
 

@@ -81,7 +81,9 @@ A healthy "Proposed" list is the stack's improvement pipeline made visible.
 3. Classify each blueprint change: applies to this project, or project-irrelevant. Apply the relevant
    ones through the project's domain boundaries.
 4. In the same pass, record any improvement made **here** as an upstream proposal.
-5. Update the baseline and the proposals, then run the acceptance [`check`](../components/MONOREPO.md).
+5. Update the baseline and the proposals; apply the
+   [completion checklist](../principles/WORKING_AGREEMENT.md#3-definition-of-done-single-authoritative-checklist)
+   when the sync branch is ready to merge.
 
 ## For a brand-new project
 

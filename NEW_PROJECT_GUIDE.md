@@ -52,7 +52,7 @@ exists.
 
    If a specialized toolchain was identified, add its committed container definition and root runner
    now. Pin external inputs before product code depends on them; expose image/setup/build scripts and
-   test the runner's host-isolation guards.
+   add tests for the runner's host-isolation guards.
 
 2. **The domain core (`@app/shared`).** In dependency order:
    - the **ports** required by pure rules and client presentation; only genuinely optional
@@ -65,8 +65,8 @@ exists.
      ([shared domain](architecture/SHARED_DOMAIN.md));
    - the **services** (and any mediator for coordinated effects);
    - the **i18n** catalog and locale service ([i18n](practices/I18N.md)).
-     Write the deterministic unit tests **with** each rule ([testing](practices/TESTING.md)). The core
-     should be fully green before any UI exists.
+     Write the deterministic unit tests **with** each rule ([testing](practices/TESTING.md)). Their
+     execution follows [pre-merge verification](principles/WORKING_AGREEMENT.md#pre-merge-verification).
 
 3. **The shared UI (`@app/ui`).** The component set, the [shared bootstrap](components/SHARED_UI.md)
    seam that takes an adapter set, and the bounded startup readiness gate. Choose and record the
@@ -138,5 +138,6 @@ and proposing its own reusable improvements upstream.
 
 Every step uses the
 [working agreement's single completion checklist](principles/WORKING_AGREEMENT.md#3-definition-of-done-single-authoritative-checklist).
-Area documents define the applicable requirements and verification methods; this guide does not
-create a phase-specific copy of that checklist.
+Apply it when the task branch is ready to merge, including a separately delivered phase. Area
+documents define the applicable requirements and verification methods; this guide does not create a
+phase-specific copy of that checklist.

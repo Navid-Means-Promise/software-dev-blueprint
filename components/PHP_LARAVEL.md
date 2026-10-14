@@ -102,9 +102,10 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
 - Keep Composer dependencies locked and run dependency audits as part of the repository check. When
   the application builds frontend assets, commit the JavaScript lockfile and install with its frozen
   mode (`npm ci` or the package-manager equivalent).
-- Run Laravel Pint on changed PHP files and the narrowest relevant PHPUnit tests while iterating; run
-  the repository-wide check before handoff. In containerized projects, use the committed `bin/`
-  runners rather than bypassing the project runtime.
+- Run Laravel Pint on changed PHP files while iterating. Select relevant PHPUnit tests and the
+  repository-wide check through the [verification gates](../practices/TESTING.md#change-specific-verification-gates),
+  with execution governed by [pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
+  In containerized projects, use the committed `bin/` runners rather than bypassing the project runtime.
 - Keep `lang/fa` and `lang/en` (or the project's declared locale set) in exact key parity. UI strings
   live in catalogs; templates contain no user-facing literals. Use logical CSS properties and local,
   licensed fonts with recorded provenance.

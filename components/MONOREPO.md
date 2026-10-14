@@ -68,12 +68,13 @@ DRY applied to configuration.
 Root `package.json` exposes the repo-wide verbs; per-workspace scripts do the actual work via
 `--workspace`. The important composite is a single **`check`** that runs, in order: typecheck, unit
 tests, server tests, lint, and builds. `check` passing is the bar for a broad change in the
-[definition of done](../principles/WORKING_AGREEMENT.md).
+[definition of done](../principles/WORKING_AGREEMENT.md). Schedule it through
+[pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
 
 Firmware exposes `firmware:build:<target>` and `firmware:build:all` through the root even though it is
 not an npm workspace. Keep long cross-compilation out of an ordinary UI-only inner loop when needed,
-but make the all-target container build a required CI/release gate and a required local check for
-firmware, container, lockfile, or toolchain changes.
+but require the all-target container build for releases and for pre-merge verification of firmware,
+container, lockfile, or toolchain changes. Use local or CI evidence according to the pre-merge policy.
 
 The mobile workspace similarly exposes the isolated Android package build at the root. Capacitor's
 web build remains part of the ordinary workspace check; native APK/AAB compilation is an additional
