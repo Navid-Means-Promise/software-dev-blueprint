@@ -147,14 +147,44 @@ platform timing would make that gate nondeterministic.
 - Test at real mobile widths (e.g. ~393 px and ~320 px) in **every supported locale** and both text
   directions; horizontal layout must not overflow. Apply the same performance criteria in each
   locale; fonts, text wrapping, and direction are scenario inputs, not different standards.
-- Under CPU throttling (e.g. 6×) at a realistic device scale factor, a settled sample averages a high
-  frame rate (target ≥ 55 FPS) with no frame over ~33 ms outside deliberate, transient transitions.
+- Profile settled motion under declared CPU throttling (e.g. 6×) at a realistic device scale factor,
+  using the [frame-pacing budget](#frame-pacing-budget).
 - Resting paint-flashing shows no continuous repaint.
 - Focus targets, clicks, scrolling, and screen-reader labels stay stable during ambience.
 - Every optional GPU scene is exercised once through its production policy, forced-fallback launch,
   and inspection launch.
 - Real GPU/thermal behavior is ultimately confirmed on a physical device, not only in a desktop
   browser or emulator.
+
+### Frame-pacing budget
+
+For an animated scenario targeting 60 FPS, each measured sample must meet **all three** limits:
+
+| Metric | Acceptance limit |
+| --- | --- |
+| Average FPS over the complete sample | ≥ 55 FPS |
+| Mean duration of the slowest 20% of frame intervals | ≤ 25 ms |
+| Longest individual frame interval | ≤ 70 ms |
+
+These are stack acceptance defaults, not universal Web-platform standards. Declare any alternative
+target and its budgets, with a rationale, before capture. Apply the limits to each scenario, locale,
+and measured rendering path separately; pooling samples must not conceal a failing composition.
+The repaint and interaction requirements remain independent of these timing limits.
+
+For `N` validated frame intervals inside the predefined measurement window, select the
+`ceil(N / 5)` largest durations and take their arithmetic mean in milliseconds. For example, a
+180-interval sample uses exactly its 36 slowest intervals. Repeated equal durations still count as
+separate intervals; ties do not enlarge the selected group. This statistic is a mean of durations,
+not the 80th percentile or an average of instantaneous FPS. Keep every interval in the complete
+sample used for average FPS, the maximum, and raw evidence; no trimming or outlier removal is allowed.
+
+The tail mean limits sustained uneven pacing while the individual maximum bounds an isolated
+severe stall. A single interval above the former ~33 ms limit no longer automatically fails timing;
+an interval above the new maximum or a tail mean above its limit still fails, regardless of the
+overall average FPS. Report the count and percentage of **all** sampled intervals strictly above
+50 ms as diagnostic evidence of repeated long gaps; this count is not an additional pass/fail gate.
+It measures presentation gaps when using presentation feedback, not Long Animation Frames API
+events or JavaScript task durations.
 
 ### Match the metric to the rendering path
 
@@ -202,9 +232,12 @@ The measurement implementation is part of the verification system and must not p
    capture categories/options and keep them consistent across compared runs.
 5. Give metric parsers and sample selection deterministic fixture tests: regular pacing, a genuine
    long presentation gap, repeated/out-of-order feedback, malformed or insufficient data, ambiguous
-   streams, and a later faster window. Cover delayed JavaScript with steady presentation separately
-   from an actual presentation stall. Missing evidence must fail or remain explicitly unverified;
-   it cannot become zero dropped frames or a passing default. Execute these tests through
+   streams, and a later faster window. Verify tail-size rounding and ties, inclusive budget
+   boundaries, an isolated stall that passes all timing limits, and failures of the tail mean and
+   individual maximum independently of average FPS. Cover delayed JavaScript with steady
+   presentation separately from an actual presentation stall. Missing evidence must fail or remain
+   explicitly unverified; it cannot become zero dropped frames or a passing default. Execute these
+   tests through
    [pre-merge verification](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
 
 Browser trace events are version-dependent implementation details, not a portable Web API. When
@@ -214,9 +247,10 @@ fixtures so a browser upgrade cannot silently change the metric.
 ### Evidence and diagnosis
 
 Keep a dated baseline with the candidate/base revisions, commands, scenario/state and locale,
-measurement method/version, sample policy, average FPS, worst interval, budget violations, paint
-counts, and applicable drawing-buffer size. Record build mode, browser/version, headless/headed mode,
-viewport, device scale, target refresh rate, CPU-throttle setting/scope, launch/capture options, and
+measurement method/version, budget-policy revision, sample policy, average FPS, slowest-20% mean,
+worst interval, count/percentage above 50 ms, budget violations, paint counts, and applicable
+drawing-buffer size. Record build mode, browser/version, headless/headed mode, viewport, device scale,
+target refresh rate, CPU-throttle setting/scope, launch/capture options, and
 actual rendering backend/device status. An accelerated-layer label is not proof of hardware GPU
 compositing.
 
@@ -240,10 +274,12 @@ investigate; it does not establish language as the cause.
 Compare revisions under the same probe, scenario, sampling policy, and controlled conditions. A
 probe correction establishes a new baseline; old callback FPS and new presentation FPS cannot
 quantify an animation speedup. Separate confirmed causes from hypotheses and unresolved attribution.
-Keep the acceptance budgets when correcting a probe; if evidence is invalid or the host is
-contended, resolve that uncertainty before claiming the animation is defective or reducing effects
-to make a gate pass. A valid budget failure still requires implementation repair or
-the renderer's declared adaptive policy.
+Correcting a probe alone must not loosen acceptance budgets. Record an owner-authorized budget
+revision as a policy change, preserve historical verdicts, and label any reassessment of retained
+traces with the new policy; passing under a revised budget does not establish faster rendering.
+If evidence is invalid or the host is contended, resolve that uncertainty before claiming the
+animation is defective or reducing effects to make a gate pass. A valid budget failure still requires
+implementation repair or the renderer's declared adaptive policy.
 
 ## Rules
 
