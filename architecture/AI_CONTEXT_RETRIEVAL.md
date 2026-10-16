@@ -223,6 +223,10 @@ Common projections include:
 - **Application-domain indexes:** identifiers, scopes, or selectors chosen by the product because
   they support measured retrieval needs.
 
+For local-time scopes, document the domain's handling of nonexistent or repeated wall times at
+daylight-saving transitions. The model cannot resolve ambiguity by inventing a UTC offset or
+increasing the user's stated time precision.
+
 Projection entries may be derived deterministically, requested from a model as separately validated
 index candidates, or produced by another adapter. In every case, trusted application code assigns
 the record reference and revision and validates the closed product-specific index schema; the model
@@ -288,6 +292,23 @@ incurs usage. This is an optional availability mechanism, not a requirement to r
 Document update/deletion must invalidate or replace its revisioned projection. Cached vectors may be
 content-addressed and shared across equal permitted text, but need retention, model-version cleanup,
 and deletion policy. Neither a persisted search document nor a cached vector becomes canonical truth.
+
+### Embedding adapter contract
+
+Keep query and document embedding operations distinct, mapping each to the model's required task
+mode or prefix. They must use a compatible model/configuration within one vector space. Bound text
+length, item count, and aggregate batch size before provider work. Validate exactly one result per
+input, reconstruct input order from checked unique indexes when returned out of order, and reject
+missing/duplicate items, wrong dimensions, non-finite components, or zero-magnitude vectors. Apply
+the declared normalization before cosine scoring; malformed vectors cannot enter persisted caches
+or search snapshots. Library/SDK types do not replace these runtime checks.
+
+Calibrate each model/configuration's acceptance threshold against
+[retrieval evaluation](../practices/AI_EVALUATION.md#retrieval-and-speech-qualification). A numerically
+high similarity is not evidence that the user's question has a stored answer. Keep an explicit
+no-relevant-context outcome; do not force the nearest record into every prompt. Changes to
+dimensions, task mode, normalization, or thresholds require the corresponding reindex/requalification
+decision, rather than reuse of previously calibrated scores by model name alone.
 
 ### Searchable application data
 
@@ -678,6 +699,8 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
   and successful batches survive independent failures;
 - required semantic coverage cannot be satisfied by lexical-only output; optional fallback/hedging
   keeps vector spaces separate and selects only a result meeting the declared coverage policy;
+- embedding adapters preserve query/document task modes and input order, reject malformed batches
+  before cache/index publication, and preserve no-hit outcomes under calibrated thresholds;
 - changing model/dimensions/config invalidates the embedding cache deterministically;
 - application-specific index hits always rehydrate their owning current record;
 - exact domain commands are not duplicated into assistant memory, while uncertain intent cannot be

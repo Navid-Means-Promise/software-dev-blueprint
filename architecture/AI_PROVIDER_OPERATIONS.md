@@ -35,6 +35,25 @@ crosses application decoding, validation, and authorization. Desired-state comma
 idempotency identities protect later delivery boundaries; provider retries never replay committed
 effects.
 
+## Admission and resource bounds
+
+Apply the server's [per-principal resource/rate policy](../components/SERVER.md#identity-authority-and-tenant-isolation)
+before expensive provider work. A turn admission is not unlimited permission for inner calls:
+retrieval, repair, fallback, and hedging consume the declared operation allowances. Bound active
+requests, queued work and queue wait, background embedding concurrency, and resident user-runtime
+caches. Eviction must preserve durable state and must not discard an active turn's coordination.
+Queue wait counts toward the user-facing deadline; align server and client timeouts so an expected
+server workflow does not routinely outlive its caller. A client disconnect does not undo committed
+effects; recovery follows [turn consistency](AI_SUBSYSTEM.md#turn-consistency-and-failure-recovery).
+
+Before sending a request, budget the complete prompt, not only retrieved records: stable
+instructions/tools, baseline/pinned values, recent conversation, current input, and tool results
+must fit the selected model's context window with reserved output capacity. Bound input/media sizes,
+returned response size, and cumulative tokens across continuations. Never trim serialized data into
+invalid JSON or silently drop required instructions/evidence to make a request fit. Reject or
+explicitly omit optional context under the declared completeness policy. Token estimates are
+admission estimates, separate from provider-reported usage.
+
 ## Route within explicit policy
 
 Keep endpoint routing and application model priority separate. Every permitted endpoint/model must
@@ -93,6 +112,12 @@ cost or cache savings are needed. Include cache-write surcharges, which can make
 negative; if required accounting is missing, report savings as unavailable. Fetch diagnostic billing
 metadata outside the timed user-response interval.
 
+Specify failure behavior for accounting and telemetry stores. Diagnostic persistence failure is an
+internal operation failure, not malformed model output or a reason for model fallback. Noncritical
+telemetry failure must not replay analysis or suppress a committed result; report the gap and repair
+it durably when available. If a billing/audit policy requires fail-closed admission, stop before
+effects instead of discovering the requirement after commit or representing missing usage as zero.
+
 ## Diagnostics and sensitive evidence
 
 Audit validation failures, bounded corrective retries, requested and served model versions, latency,
@@ -121,6 +146,8 @@ bounds across combined retry/repair/fallback paths, per-model option mapping, ha
 usage from failed/rejected attempts, and safe diagnostic projections. If a latency breaker is
 adopted, prove isolated slow samples, sustained breaches, concurrent probe exclusion, cooldown,
 recovery, irrelevant-error exclusion, and last-model availability. Prove unknown accounting cannot
-be reported as free usage or exact savings. Live-provider evidence follows
+be reported as free usage or exact savings. Admission tests prove rate/concurrency/queue bounds,
+whole-prompt/output reservation, caller/server deadline alignment, and that internal diagnostic
+failures cannot trigger model repair/fallback or duplicate effects. Live-provider evidence follows
 [AI evaluation](../practices/AI_EVALUATION.md) and the normal
 [pre-merge verification policy](../principles/WORKING_AGREEMENT.md#pre-merge-verification).

@@ -72,6 +72,16 @@ limited to transient cache/session state and explicitly device-local preferences
 embedding, derived-index maintenance, retention jobs, and durable audit storage execute on the
 server. This blueprint defines no client-side offline write queue for assistant or application data.
 
+### Capability readiness
+
+Distinguish configured assistant reasoning, transcription, synthesis, and retrieval capabilities;
+browser recording support alone does not mean server transcription is available. Report availability
+from the active composition, not from installed SDKs or dormant driver files. Missing required wiring
+fails startup; an optional capability may be explicitly unavailable while independent capabilities
+remain usable. Expose only the bounded status the client needs, without credentials or provider
+configuration. Configured availability does not prove live provider health. Client controls reflect
+readiness, permissions, and locale support, while the server still validates every request.
+
 ## Application-owned durable context
 
 An assistant may need durable user-supplied context beyond the current conversation. That context is
@@ -202,6 +212,32 @@ conversational guidance. When uncertainty prevents execution, the visible reply 
 complete answer and any necessary focused clarification; a hidden clarification flag cannot carry
 part of the user-facing response.
 
+### Turn consistency and failure recovery
+
+Persist the accepted user message before retrieval/provider work so a failed analysis does not erase
+its evidence. Keep application-generated errors and mutation receipts distinct from model-authored
+assistant history. A failed or intermediate analysis must not become a completed assistant exchange.
+
+Order concurrent turns sharing conversation/canonical context by a server-owned sequence, using
+serialization or an equivalent conflict protocol. A process-local queue is not cross-instance
+coordination; document that boundary and keep database revision checks authoritative for competing
+devices and non-chat use cases. Independent users must not share conversation or pending-instruction
+state.
+
+Preflight the entire final decision, including implicit entity creation and aggregate limits, before
+the first write. Commit related canonical effects in one transaction or an explicitly idempotent
+recovery protocol; keep remote model work outside that transaction. An invalid candidate cannot
+partially commit the rest of an atomic decision. Publish receipts from committed service results,
+and remove optimistic receipts if a transaction rolls back.
+
+Define whether reply/event persistence is part of the commit or requires durable recovery. Failure
+of secondary history projections or predictive instructions after commit must preserve the truthful
+domain outcome and queue/report repair, rather than invite duplicate execution. Do not silently
+reclassify required evidence or audit records as optional: if policy requires their availability,
+check that requirement before allowing effects. A lost HTTP response leaves delivery uncertain; it
+does not prove rollback. Reconcile the known turn/receipt or authoritative state before resubmitting;
+only a declared deduplication protocol makes a resubmission the same logical user turn.
+
 ## Domain change proposals
 
 A `DomainChangeProposal` is a reviewable diff against a named base revision or hash. It contains
@@ -235,6 +271,11 @@ the server still retains the bounded evidence/audit data required by its declare
 
 This separation preserves provider choice, permits independent language-quality testing, and avoids
 retaining raw audio. Raw recordings are deleted after transcription by default.
+
+Audio uploads follow [untrusted file handling](../security/UNTRUSTED_FILE_HANDLING.md), including
+byte/type limits and failure cleanup. Permission denial or cancellation releases recording resources
+and sends no canceled utterance. Transcription failure preserves typed input; playback failure or
+interruption never resubmits a turn or re-executes its effects.
 
 Prefer a platform speech-synthesis adapter for the first `TextToSpeechProvider` implementation when
 its required locales pass device testing; it avoids a remote dependency and per-request service cost.
@@ -308,3 +349,9 @@ size budget. Repair tests prove actionable trusted feedback, a missing-revision 
 revalidation, and no effects from rejected attempts. Provider-operation checks live in
 [their authoritative document](AI_PROVIDER_OPERATIONS.md#verification); provider-backed quality and
 latency checks follow [AI evaluation](../practices/AI_EVALUATION.md).
+
+Turn-level failure tests cover concurrent devices, aggregate preflight rejection, rollback without
+success receipts, provider failure after saving user evidence, and failures of history/predictive
+persistence after canonical commit. Prove delivery recovery cannot create another logical effect.
+Composition and host tests prove capability status matches registered adapters, disabled speech
+does not disable text, canceled recordings are released, and playback errors cannot replay effects.

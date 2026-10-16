@@ -82,8 +82,8 @@ domain vocabulary and package scope.
 - [practices/RENDERED_UI_INTEGRITY.md](practices/RENDERED_UI_INTEGRITY.md) — rendered contrast,
   occlusion, clipping, and state-matrix audits
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
-- [practices/AI_EVALUATION.md](practices/AI_EVALUATION.md) — reproducible live AI-quality,
-  retrieval, latency, and cost comparisons
+- [practices/AI_EVALUATION.md](practices/AI_EVALUATION.md) — candidate functional qualification,
+  assistant/retrieval/speech evaluation, and reproducible latency/cost comparisons
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
 - [practices/DEPLOYMENT_AND_CACHING.md](practices/DEPLOYMENT_AND_CACHING.md) — HTTP cache matrix, asset versioning, post-deploy healthchecks
 - [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
