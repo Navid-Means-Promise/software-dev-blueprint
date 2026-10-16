@@ -6,6 +6,33 @@ particular prompt, provider route, configuration, and workload. Run billable eva
 the explicit bounded runner required by [live provider smoke checks](TESTING.md#live-provider-smoke-checks),
 outside the ordinary deterministic suite and CI.
 
+## Required functional acceptance suite
+
+Every shipped AI capability must have a maintained, product-owned functional acceptance suite.
+Define its scenarios and pass criteria before comparing candidate models. Each case specifies the
+initial application state, conversation/input, expected visible behavior and canonical effects,
+forbidden effects, and how the outcome is asserted. Cover normal use, multi-turn follow-ups,
+ambiguity/clarification, corrections, read-only requests, invalid or unsupported actions, and
+previously observed failures for the capability. Include supported locales and required tool/read
+protocols. Grade observable behavior and resulting state under the real application contract.
+
+Every selectable candidate, including a fallback model, must pass the required functional cases for
+its assigned capabilities before adoption or promotion. Exercise the actual candidate through the
+production prompt, decoder, orchestration, and applicable retrieval path; fake-model tests prove
+application safeguards but cannot establish a candidate's functional ability. Keep mandatory cases
+separate from optional quality scores: low price, fast replies, or a high aggregate pass rate cannot
+compensate for a failed required function or an unauthorized write. Document repeat-run counts and
+per-case acceptance thresholds in advance so stochastic results cannot be cherry-picked. Any
+observed forbidden effect fails qualification regardless of aggregate scores.
+
+Rerun affected acceptance cases when a model/version, prompt, response contract, tool policy,
+retrieval strategy, or routing configuration changes shipped behavior. Retain passing evidence for
+the exact evaluated configuration before approving the change; unavailable, skipped, or incomplete
+required cases leave qualification pending. Use the
+[pre-merge verification cadence](../principles/WORKING_AGREEMENT.md#pre-merge-verification) for changes
+on a task branch and the explicit bounded live runner above. This requirement does not place live
+provider calls in ordinary CI.
+
 ## Preserve the behavior being investigated
 
 Use synthetic data by default and isolate each candidate's canonical state. Exercise the production

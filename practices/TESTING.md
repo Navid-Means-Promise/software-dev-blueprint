@@ -106,8 +106,9 @@ timeouts, and retries without a live call. The opt-in smoke check proves only th
 network, and provider integration it actually exercised. Report a skipped live check as skipped,
 never as passing coverage.
 
-Live assistant/retrieval quality comparisons follow [AI evaluation](AI_EVALUATION.md), which owns
-multi-turn scenarios, semantic assessment, latency/cost measurements, and reproducible reports.
+AI capabilities require a [functional acceptance suite](AI_EVALUATION.md#required-functional-acceptance-suite)
+that qualifies primary and fallback candidates against product behavior. The same evaluation guide
+owns multi-turn scenarios, semantic assessment, latency/cost measurements, and reproducible reports.
 
 ## Change-specific verification gates
 
@@ -120,6 +121,8 @@ multi-turn scenarios, semantic assessment, latency/cost measurements, and reprod
   tests. See [containerized toolchains](CONTAINERIZED_TOOLCHAINS.md).
 - Application development-runner or network configuration changes pass
   [LAN verification](../components/MONOREPO.md#verification) in implementing projects.
+- Changes affecting shipped AI behavior or model selection satisfy
+  [candidate functional qualification](AI_EVALUATION.md#required-functional-acceptance-suite).
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules
