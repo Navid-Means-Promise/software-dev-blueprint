@@ -95,16 +95,20 @@ prove the ordinary deployment path never erases unexpected records.
 ## Live provider smoke checks
 
 A test that spends money, contacts a real person, mutates a third-party account, or produces another
-externally visible effect is an operational smoke check, not part of the deterministic suite. Expose
-it through a separately named runner that refuses to act unless it receives both an explicit
+externally visible effect is an operational check outside the deterministic suite. Expose it
+through a separately named runner that refuses to act unless it receives both an explicit
 confirmation value and an explicit bounded target. Keep it out of the normal `test`/`check` path and
 ordinary CI; use least-privilege test credentials, cap the number and cost of operations, and redact
 credentials and personal data from output.
 
 Provider contract tests still use recording/fake transports to prove request mapping, errors,
-timeouts, and retries without a live call. The opt-in smoke check proves only the deployed credential,
-network, and provider integration it actually exercised. Report a skipped live check as skipped,
-never as passing coverage.
+timeouts, and retries without a live call. A basic opt-in smoke check proves the deployed credential,
+network, and provider integration it actually exercised; model functionality requires the acceptance
+evaluation below. Report a skipped live check as skipped, never as passing coverage.
+
+AI capabilities require a [functional acceptance suite](AI_EVALUATION.md#required-functional-acceptance-suite)
+that qualifies primary and fallback candidates against product behavior. The same evaluation guide
+owns multi-turn scenarios, semantic assessment, latency/cost measurements, and reproducible reports.
 
 ## Change-specific verification gates
 
@@ -117,6 +121,8 @@ never as passing coverage.
   tests. See [containerized toolchains](CONTAINERIZED_TOOLCHAINS.md).
 - Application development-runner or network configuration changes pass
   [LAN verification](../components/MONOREPO.md#verification) in implementing projects.
+- Changes affecting shipped AI behavior or model selection satisfy
+  [candidate functional qualification](AI_EVALUATION.md#required-functional-acceptance-suite).
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules

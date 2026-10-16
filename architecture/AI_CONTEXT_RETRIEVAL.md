@@ -120,30 +120,36 @@ interface MemoryRecord {
   readonly expiresAt?: string;
 }
 
-type MemoryMutationCandidate =
-  | {
-      readonly operation: "create";
-      readonly content: string;
-      readonly deliveryMode: MemoryRecord["deliveryMode"];
-      readonly expiresAt?: string;
-    }
-  | {
-      readonly operation: "update";
-      readonly target: {
-        readonly memoryRecordId: string;
-        readonly expectedRevision: number;
-      };
-      readonly content: string;
-      readonly deliveryMode: MemoryRecord["deliveryMode"];
-      readonly expiresAt?: string;
-    }
-  | {
-      readonly operation: "delete";
-      readonly target: {
-        readonly memoryRecordId: string;
-        readonly expectedRevision: number;
-      };
-    };
+interface MemoryMutationEvidence {
+  readonly evidenceMessageIds: readonly string[];
+}
+
+type MemoryMutationCandidate = MemoryMutationEvidence &
+  (
+    | {
+        readonly operation: "create";
+        readonly content: string;
+        readonly deliveryMode: MemoryRecord["deliveryMode"];
+        readonly expiresAt?: string;
+      }
+    | {
+        readonly operation: "update";
+        readonly target: {
+          readonly memoryRecordId: string;
+          readonly expectedRevision: number;
+        };
+        readonly content: string;
+        readonly deliveryMode: MemoryRecord["deliveryMode"];
+        readonly expiresAt?: string;
+      }
+    | {
+        readonly operation: "delete";
+        readonly target: {
+          readonly memoryRecordId: string;
+          readonly expectedRevision: number;
+        };
+      }
+  );
 ```
 
 The raw message already preserves exact wording. `evidenceMessageIds` is a bounded set supporting
@@ -154,6 +160,29 @@ unbounded correction history; a latest-only reference is often the clearest curr
 Lifecycle expiry and subject-matter time scope are separate. A current temporary constraint or
 one-off future intention should normally expire at its applicability boundary, while a durable
 historical fact may retain a finite past scope without being expired from memory.
+
+### Evidence eligibility and memory decisions
+
+Every memory mutation cites a nonempty bounded set of supporting user-message IDs. Trusted
+application code derives and supplies the eligible set from the current message plus unanswered
+user messages after the latest assistant reply. Reject a citation outside that set even when the
+older message was retrieved or remains in recent conversation. Historical recall and assistant
+prose provide context, not fresh mutation authority. Exact retry of an already accepted trusted
+turn retains its original evidence identity and must converge.
+
+The cited text must directly support the complete proposition or clearly adopt the requested
+outcome. A question about a topic, an exploratory possibility, or an unaccepted assistant suggestion
+does not establish preference, motive, ownership, habit, identity, or intention. Define a deliberate
+memory decision for each directly asserted proposition: new durable knowledge, an equivalent no-op,
+a correction to the same factual question, or conversation only. One-off status, mood, progress, or
+accomplishment normally remains in history unless the user requests later recall or states a lasting
+change or recurring pattern. Product-specific retention policy decides future usefulness; no
+universal memory taxonomy is implied.
+
+The decoder can prove citation membership, target revisions, and structural invariants; it cannot
+prove arbitrary natural-language entailment or atomicity. Do not present lexical overlap as semantic
+proof. Evaluate interpretation with [representative conversations](../practices/AI_EVALUATION.md),
+including paraphrases, questions, unrelated facts sharing vocabulary, and read-only follow-ups.
 
 ### Derived memory-selection indexes
 
@@ -193,6 +222,10 @@ Common projections include:
   improve lexical, semantic, or hybrid recall without bloating prompt content.
 - **Application-domain indexes:** identifiers, scopes, or selectors chosen by the product because
   they support measured retrieval needs.
+
+For local-time scopes, document the domain's handling of nonexistent or repeated wall times at
+daylight-saving transitions. The model cannot resolve ambiguity by inventing a UTC offset or
+increasing the user's stated time precision.
 
 Projection entries may be derived deterministically, requested from a model as separately validated
 index candidates, or produced by another adapter. In every case, trusted application code assigns
@@ -236,14 +269,46 @@ itself decide cache correctness.
 
 Do not synchronously regenerate an entire corpus in a user turn. Commit canonical data first, make a
 lexical or otherwise deterministic projection available promptly, and queue missing/stale document
-embeddings in a bounded server worker. During backlog or provider failure, return lexical results
-with explicit incompleteness rather than blocking indefinitely or pretending semantic coverage is
-complete. Query embeddings are normally request-specific; cache them only with a measured reuse and
+embeddings in a bounded server worker. Read atomically committed semantic snapshots while document
+work runs. Completeness is query-specific: an excluded or inaccessible pending document cannot make
+an otherwise covered query unavailable. Revision/generation checks prevent a late older batch from
+overwriting a newer projection; successful independent batches survive a peer's failure. Bound
+background concurrency and retry/backoff, and retain missing-vector state for repair after transient
+exhaustion or restart.
+
+Declare whether semantic coverage is optional or required for each retrieval policy. Optional
+coverage may return lexical results with explicit incompleteness. Required coverage must return an
+unavailable result when it cannot be supplied; lexical success cannot silently stand in for semantic
+success. Query embeddings are normally request-specific; cache them only with a measured reuse and
 privacy policy.
+
+When measured outages or tail latency justify independent embedding fallback, keep each vector space
+warm in its own index/cache identity, with its own dimensions, task configuration, and calibrated
+thresholds. Never compare or combine raw similarity scores across incompatible spaces. A bounded
+delayed hedge may take the first result satisfying the declared coverage policy; a fast failed or
+incomplete attempt does not win. Account for every attempt, including a losing request that still
+incurs usage. This is an optional availability mechanism, not a requirement to run two providers.
 
 Document update/deletion must invalidate or replace its revisioned projection. Cached vectors may be
 content-addressed and shared across equal permitted text, but need retention, model-version cleanup,
 and deletion policy. Neither a persisted search document nor a cached vector becomes canonical truth.
+
+### Embedding adapter contract
+
+Keep query and document embedding operations distinct, mapping each to the model's required task
+mode or prefix. They must use a compatible model/configuration within one vector space. Bound text
+length, item count, and aggregate batch size before provider work. Validate exactly one result per
+input, reconstruct input order from checked unique indexes when returned out of order, and reject
+missing/duplicate items, wrong dimensions, non-finite components, or zero-magnitude vectors. Apply
+the declared normalization before cosine scoring; malformed vectors cannot enter persisted caches
+or search snapshots. Library/SDK types do not replace these runtime checks.
+
+Calibrate each model/configuration's acceptance threshold against
+[retrieval evaluation](../practices/AI_EVALUATION.md#retrieval-and-speech-qualification). A numerically
+high similarity is not evidence that the user's question has a stored answer. Keep an explicit
+no-relevant-context outcome; do not force the nearest record into every prompt. Changes to
+dimensions, task mode, normalization, or thresholds require the corresponding reindex/requalification
+decision, rather than reuse of previously calibrated scores by model name alone.
 
 ### Searchable application data
 
@@ -272,6 +337,9 @@ This origin is automatic because application code starts it and predictive becau
 semantic/vector, or hybrid search estimates which stored records will help. It is not a model tool
 call. The new raw message is excluded from its own search results; save it before orchestration when
 required, but index it only after this search or pass its reference as an explicit exclusion.
+Exclude messages already supplied in bounded recent conversation from every relevance query as
+well; their exact text is present and duplicate historical hits add no evidence. These exclusions
+also apply when assessing whether missing document vectors affect the current query.
 
 ### 2. Model-directed predictive context retrieval
 
@@ -305,6 +373,18 @@ same model interaction, and lets the model continue. The user need not receive a
 
 Limit retrieval rounds and repeated equivalent queries. A prompt can suggest a tool call, but cannot
 authorize a source, enlarge a budget, or create a new explicit operation.
+
+An intermediate retrieval step contains only read queries, with no visible reply or proposed
+mutation. At the round limit, supply one explicit terminal continuation that disallows further
+reads; the model must answer from available evidence and state material uncertainty. Only a
+validated final decision becomes a visible/persisted assistant reply or reaches mutation policy.
+
+Treat an in-call read requested to complete the decision as a prerequisite: a failed, rejected, or
+incomplete required read makes that decision ineligible for memory or domain writes. Enforce this in
+application validation, not only the prompt. Incomplete automatic/predictive background retrieval
+does not alone block a write supported directly by eligible current user evidence and all required
+domain revisions. Neither an empty partial result nor exhausted reads prove that a record does not
+exist.
 
 ## Provider-neutral contracts
 
@@ -598,6 +678,8 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
 
 - automatic retrieval derives its query only from the newly received message and cannot return that
   message as its own result;
+- completed dialogue uses recent continuity before speculative search, and every relevance query
+  excludes messages already supplied there;
 - forged client identity, owner/tenant scope, time, source selection, or retrieval results cannot
   enter the server-generated request;
 - predictive instructions expire deterministically and their permitted results are not rejudged for
@@ -613,17 +695,29 @@ Use fixed model, retrieval, source, clock, and token-budget test doubles. Prove:
 - a restart reloads durable projection inputs without regenerating unchanged document embeddings;
 - slow or failed document embedding does not block canonical writes or lexical retrieval, and the
   incomplete semantic state is visible;
+- query coverage ignores excluded pending vectors, stale batches cannot replace newer projections,
+  and successful batches survive independent failures;
+- required semantic coverage cannot be satisfied by lexical-only output; optional fallback/hedging
+  keeps vector spaces separate and selects only a result meeting the declared coverage policy;
+- embedding adapters preserve query/document task modes and input order, reject malformed batches
+  before cache/index publication, and preserve no-hit outcomes under calibrated thresholds;
 - changing model/dimensions/config invalidates the embedding cache deterministically;
 - application-specific index hits always rehydrate their owning current record;
 - exact domain commands are not duplicated into assistant memory, while uncertain intent cannot be
   written prematurely into an authoritative application source;
 - duplicate references converge without dropping distinct conflicting records;
 - partial failures and hard-budget truncation are visible to the model;
+- incomplete model-required reads prevent writes, while incomplete background retrieval alone does
+  not reject a directly supported authorized write;
+- memory citations outside the current/unanswered user-message window are rejected, including older
+  answered messages returned by retrieval;
 - retrieved prompt injection cannot alter tool authority or system rules;
-- in-call limits terminate repeated or cyclic retrieval requests; and
+- intermediate read steps cannot publish replies or effects, and a terminal continuation ends
+  repeated or cyclic retrieval requests; and
 - related canonical domain and memory mutations commit atomically or recover idempotently, including
   under concurrent same-user turns.
 
-Evaluate this design against representative conversations before adoption. Retrieval precision,
-recall, latency, token cost, privacy, correction behavior, and user control—not architectural
-novelty—decide whether it is preferable to a ready-made agent/context solution.
+Evaluate this design against [representative conversations](../practices/AI_EVALUATION.md) before
+adoption. Retrieval precision, recall, latency, token cost, privacy, correction behavior, and user
+control—not architectural novelty—decide whether it is preferable to a ready-made agent/context
+solution.
