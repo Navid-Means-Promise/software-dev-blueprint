@@ -1,0 +1,91 @@
+# AI evaluation
+
+Authoritative for live assistant-quality, retrieval, latency, and cost evaluation. Deterministic
+tests still prove application invariants; a model benchmark supplies observational evidence about a
+particular prompt, provider route, configuration, and workload. Run billable evaluations through
+the explicit bounded runner required by [live provider smoke checks](TESTING.md#live-provider-smoke-checks),
+outside the ordinary deterministic suite and CI.
+
+## Preserve the behavior being investigated
+
+Use synthetic data by default and isolate each candidate's canonical state. Exercise the production
+prompt, decoder, orchestration, retrieval, and routing configuration. A simplified benchmark prompt
+or permissive decoder does not prove production behavior. Isolate a single model when comparing
+model capability; separately label a production-routing replay that includes fallback.
+
+Maintain ordered multi-turn journeys covering product-required fact creation, correction, recall,
+ambiguity, domain actions, and memory/domain ownership. Include read-only turns with explicit
+assertions that no canonical records changed: a plausible answer can conceal an unsupported write.
+Check resulting records/revisions and truthful receipts, not just that some tool was called.
+
+Preserve exact prior user/assistant turns when reproducing a contextual failure. A fresh short
+question without its original exchange cannot reproduce ellipsis, objections, corrections, or
+rejection of a suggestion. Include supported locales, casual language, code-switching, and the same
+behavior expressed across several domain topics, so a scenario-specific phrase fix cannot masquerade
+as a general improvement. For retrieval, use a labeled corpus with expected relevant records,
+known irrelevant distractors, and access partitions; measure precision/recall as well as latency.
+
+Before changing prompts, retrieval, reasoning effort, or models, inspect what context actually
+reached the failed turn. Diagnose missing context, irrelevant context, contract ambiguity, semantic
+reasoning, and transport failure separately. Repair the shared cause and replay the original failure
+plus representative neighboring cases. Do not infer missing memory from an unhelpful reply alone.
+
+## Separate state correctness from language quality
+
+Use deterministic assertions for authorized effects, no-op/read-only turns, exact revisions,
+evidence scope, uncertainty preservation, and absence of duplicate memory/domain state. These
+assertions remain decisive even if the visible answer sounds good.
+
+Evaluate natural-language meaning against a complete behavioral rubric rather than exact wording
+or keyword presence. An independent semantic judge may assist, but its output is another untrusted
+provider response: validate case IDs, uniqueness, completeness, declared fields, and bounded
+evidence-based reasons. Delimit candidate text and conversation as data; they cannot rewrite the
+rubric. Record judge model/configuration, latency, usage, and cost separately from the candidate.
+An unavailable or malformed judge result leaves evaluation incomplete; it does not become a pass or
+evidence of candidate failure.
+
+Retain the original candidate reply, state assertions, rubric version, and judgment so disputed
+judgments can be reviewed or rescored without regenerating the answer. A rubric correction is a new
+evaluation of the preserved evidence; report both the original and corrected result and why it
+changed. A model judge does not replace deterministic authorization or mutation validation.
+
+## Measure the user interaction and its costs
+
+Measure the complete response interval and content-free stage timings using the
+[provider operations guidance](../architecture/AI_PROVIDER_OPERATIONS.md#diagnostics-and-sensitive-evidence).
+Report per-turn latency, distribution and budget misses, retrieval/model round counts, validation
+repairs, provider failures, prompt growth, and input/output/cache usage. Separate visible-response
+time from background indexing drain, judge work, and post-run accounting. Functional quality and
+network-sensitive latency assertions are separate outcomes; when timing enforcement is disabled,
+say so. Do not infer interactive performance from aggregate suite wall time alone.
+
+Report known generation, embedding, judge, and accounting-operation costs separately and state any
+exclusions. Use the requested and actually served provider/model routes and
+[accounting rules](../architecture/AI_PROVIDER_OPERATIONS.md#prompt-caching-and-truthful-accounting);
+headline catalog prices and configured cache hints do not prove billed cost or savings.
+
+Keep availability and quality outcomes distinct. An unavailable route, rate limit, credential/key
+spending limit, interrupted run, or missing evaluation is an operational/incomplete result, not a
+zero-score model-quality result. A returned response that violates the required contract is a real
+compatibility failure on the tested route. Report attempted/completed/evaluated counts and failures
+alongside any pass rate rather than silently omitting failed turns.
+
+## Make comparisons reproducible
+
+Version or fingerprint the source revision, prompt/response contract, decoder/protocol, ordered
+scenarios, model and reasoning settings, embedding configuration, routing/fallback policy,
+price/output limits, retry/deadline bounds, and relevant latency policy. Record run time, requested
+and served versions/routes, and cache observations; remote providers remain variable even when the
+local fingerprint matches.
+
+Checkpoint completed work atomically with its identity and ordered results. Resume only a validated
+completed prefix under the same fingerprint; a changed prompt, scenario list, model order, or policy
+requires a separate run. Preserve partial reports and record the interruption instead of combining
+incompatible runs into a better-looking score. Evidence containing private conversations follows
+the same protected diagnostic policy as runtime captures.
+
+Choose a default only after repeated clean runs meet the product's correctness, interaction-latency,
+and cost requirements together. Keep per-scenario regressions visible; a higher aggregate pass rate
+does not excuse unsupported writes or unacceptable response times. Benchmark selection establishes
+the initial configuration; optional runtime health routing remains owned by
+[provider operations](../architecture/AI_PROVIDER_OPERATIONS.md#optional-latency-circuit-breaker).

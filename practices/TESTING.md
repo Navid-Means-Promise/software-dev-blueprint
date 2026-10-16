@@ -106,6 +106,9 @@ timeouts, and retries without a live call. The opt-in smoke check proves only th
 network, and provider integration it actually exercised. Report a skipped live check as skipped,
 never as passing coverage.
 
+Live assistant/retrieval quality comparisons follow [AI evaluation](AI_EVALUATION.md), which owns
+multi-turn scenarios, semantic assessment, latency/cost measurements, and reproducible reports.
+
 ## Change-specific verification gates
 
 - Select the **narrowest** relevant tests for scoped changes; broad changes require the

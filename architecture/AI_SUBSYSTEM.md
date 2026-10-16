@@ -154,47 +154,27 @@ a competing source of truth: generate its model-facing representation from share
 when practical; otherwise colocate it with the adapter and enforce structural parity in tests.
 Measure the UTF-8 bytes and observed input tokens of the complete static request configuration, set a
 regression budget, and split the interaction or relevant tool set when growth is no longer justified.
-Keep that static configuration as a stable prefix and put turn-specific data afterward so provider
-prompt caching can reuse it. Treat cache affinity as an opaque optimization, record reported cached
-tokens in live tests, and do not add intent classifiers, alternate greeting prompts, or padding to
-manufacture cache hits. Full-response caching is unsafe when exact replay of dynamic private or
-domain context is not explicitly valid.
-Audit validation failures, bounded corrective retries, model version, latency, and reported token
-usage. When protected raw diagnostics are enabled, retain the exact instructions and complete
-provider response body—including routing metadata—under the application's separately protected
-sensitive-payload access, retention, and deletion policy. Keep that raw artifact separate from the
-structured diagnostic projection described below, and never capture transport credentials or
-authorization headers with it.
+Provider-specific caching, deadlines, routing, usage, and protected diagnostic evidence follow
+[AI provider operations](AI_PROVIDER_OPERATIONS.md).
 
-### Provider resilience and routing diagnostics
+### Validation-aware repair
 
-Provider-side fallback does not remove the application's resilience responsibility: an upstream can
-fail after fallback is exhausted or too late for the router to replay safely. Keep a transport retry
-policy distinct from corrective retries for successfully returned but invalid model output. A model
-analysis request may retry only a small bounded set of transient network, timeout, overload, and
-unavailability failures, using an injected scheduler port for short exponential backoff. Honor
-`Retry-After` only when it fits the interactive request budget; otherwise fail without an immediate
-retry. Never retry authentication, payment, permission, request-validation, or content-policy
-failures.
+An invalid returned response may receive a small bounded number of corrective calls. Select
+actionable feedback from static application-owned invariant codes/messages: for example, a missing
+target revision directs the model to the existing typed read before it proposes a write. Repair may
+return that read step; it cannot invent a revision, bypass a denied read, or weaken authorization.
+Keep the original trusted turn input and place the feedback in an explicit trusted channel. Never
+interpolate rejected model text, user values, or raw exception/provider messages into trusted repair
+instructions. Any retained invalid response remains delimited untrusted evidence.
 
-Replay the same model-analysis input, count and audit every provider request, and perform no domain
-mutation until a final response has crossed application decoding, validation, and authorization.
-This makes transport replay safe while desired-state commands and trusted turn identities preserve
-convergence at later delivery boundaries. Tests inject the delay and prove both the retryable
-classification and the maximum request count without waiting or using a network.
+Validate every corrected result from scratch, within the same
+[operation deadline and request bounds](AI_PROVIDER_OPERATIONS.md#bound-the-complete-operation).
+Exhaustion produces a typed failure with no proposed effect applied. Where a pure domain invariant
+can be checked before mutation, reuse it at the decoder/preflight boundary so repair can respond to
+it; the authoritative domain service still enforces it at commit. Do not build a second independent
+implementation of the domain rule in the provider adapter.
 
-When a provider or router offers routing diagnostics, opt in explicitly. Preserve its additive
-metadata object inside the protected complete-response artifact because reconstructing provider
-selection and fallback behavior depends on it; do not promote the vendor-shaped object into a
-canonical contract or ordinary queryable log. Independently decode a content-free projection such
-as generation ID, requested model, strategy/region, selected provider and model, attempt count, and
-each fallback attempt's provider, model, and status. Omit summaries, pipeline payloads, raw upstream
-errors, headers, and unknown fields from that structured projection—not from the raw artifact—and
-capture the projection on success and error paths under the diagnostic retention policy. Within an
-owner-approved, fully configured set of model endpoints, leave router fallback enabled by default.
-Every permitted endpoint must already satisfy the project's privacy, data residency, capability,
-and reliability policy; pinning or excluding one is an explicit policy decision, not a routine
-response to one transient failure.
+### Execution policy
 
 Mutation tools express the desired resulting state rather than a toggle and target the exact
 revision the model was supplied: delivery retries must converge on the same state instead of
@@ -213,6 +193,14 @@ Classify tools by effect:
 
 The policy is domain-owned and provider-independent. A prompt may guide tool selection but cannot
 grant authority.
+
+Advice, exploration, a draft plan, or a question about an assistant suggestion does not authorize
+persisting the suggestion or executing it. Interpret terse follow-ups through the current exchange;
+user correction or rejection overrides assistant-proposed values. Ask for information needed to
+execute an authorized effect, but do not require mutation-specific details merely to provide useful
+conversational guidance. When uncertainty prevents execution, the visible reply must contain the
+complete answer and any necessary focused clarification; a hidden clarification flag cannot carry
+part of the user-facing response.
 
 ## Domain change proposals
 
@@ -262,7 +250,8 @@ design provides user-visible inspect/edit/delete/export controls, authenticates 
 server request, encrypts server databases and backups with managed key lifecycle, partitions every
 query by owner/tenant before ranking, and records the minimum ordinary diagnostic content. Any
 protected raw model-provider captures remain separate and follow the bounded access, retention, and
-deletion policy above. Raw audio is not retained by default.
+deletion policy in [provider operations](AI_PROVIDER_OPERATIONS.md#diagnostics-and-sensitive-evidence).
+Raw audio is not retained by default.
 
 Do not use a model provider's conversation identifier as durable product memory. Store short-term
 conversation state under product control, send only the turns or summary required for the current
@@ -315,5 +304,7 @@ convergence, stale-index rejection, partial proposal application, and revision c
 DOM, network, microphone, speaker, or real time. Provider-adapter tests additionally prove the chosen
 output representation is actually sent, malformed or undeclared output cannot cross the decoder,
 retry count is bounded, and the static prompt/schema/tool definitions stay within their declared
-size budget. Keep a provider-backed smoke test outside the deterministic suite for detecting remote
-API compatibility changes.
+size budget. Repair tests prove actionable trusted feedback, a missing-revision read path, complete
+revalidation, and no effects from rejected attempts. Provider-operation checks live in
+[their authoritative document](AI_PROVIDER_OPERATIONS.md#verification); provider-backed quality and
+latency checks follow [AI evaluation](../practices/AI_EVALUATION.md).

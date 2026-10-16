@@ -55,6 +55,8 @@ domain vocabulary and package scope.
 - [architecture/CONTRACTS.md](architecture/CONTRACTS.md) — single-source contracts, semantic device model
 - [architecture/AI_SUBSYSTEM.md](architecture/AI_SUBSYSTEM.md) — assistant orchestration, durable
   application context, typed domain tools, proposals, and speech adapters
+- [architecture/AI_PROVIDER_OPERATIONS.md](architecture/AI_PROVIDER_OPERATIONS.md) — bounded
+  provider operations, routing, latency recovery, caching, accounting, and diagnostics
 - [architecture/AI_CONTEXT_RETRIEVAL.md](architecture/AI_CONTEXT_RETRIEVAL.md) — optional,
   experimental application-owned AI-chat context memory and retrieval
 
@@ -80,6 +82,8 @@ domain vocabulary and package scope.
 - [practices/RENDERED_UI_INTEGRITY.md](practices/RENDERED_UI_INTEGRITY.md) — rendered contrast,
   occlusion, clipping, and state-matrix audits
 - [practices/TESTING.md](practices/TESTING.md) — deterministic domain tests, manual clock, E2E
+- [practices/AI_EVALUATION.md](practices/AI_EVALUATION.md) — reproducible live AI-quality,
+  retrieval, latency, and cost comparisons
 - [practices/ASSETS_AND_CONTENT.md](practices/ASSETS_AND_CONTENT.md) — content-as-data, generated paths
 - [practices/DEPLOYMENT_AND_CACHING.md](practices/DEPLOYMENT_AND_CACHING.md) — HTTP cache matrix, asset versioning, post-deploy healthchecks
 - [practices/CONTAINERIZED_TOOLCHAINS.md](practices/CONTAINERIZED_TOOLCHAINS.md) — repeatable,
