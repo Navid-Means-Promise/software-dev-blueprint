@@ -54,6 +54,12 @@ invalid JSON or silently drop required instructions/evidence to make a request f
 explicitly omit optional context under the declared completeness policy. Token estimates are
 admission estimates, separate from provider-reported usage.
 
+Reserve output for both hidden reasoning and visible content when the provider shares their token
+budget. Different stages may use independently qualified reasoning settings: a short projection must
+not inherit a reasoning allocation that consumes its entire response allowance. Fingerprint stage
+overrides, preserve the total deadline/price policy, and retain reported reasoning usage and finish
+reasons so truncation can be distinguished from invalid meaning or provider unavailability.
+
 ## Route within explicit policy
 
 Keep endpoint routing and application model priority separate. Every permitted endpoint/model must
