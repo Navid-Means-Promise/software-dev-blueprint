@@ -1,0 +1,168 @@
+# FactDB: immutable propositions and sourced assertions
+
+Authoritative for the optional, reusable FactDB contract. Adopt it when a product needs atomic
+knowledge with explicit evidence and correction dependencies, especially when sources can be edited.
+It is not a requirement to migrate simple [current-state assistant memory](AI_CONTEXT_RETRIEVAL.md#current-state-assistant-memory).
+Follow the [contract source rule](CONTRACTS.md), [authorization boundary](AUTHORIZATION.md), and
+[AI qualification requirements](../practices/AI_EVALUATION.md).
+
+## Meaning and identity
+
+A proposition is one independently assertable meaning. Separate information that can be corrected
+independently; retain the subject, time, units, polarity, and uncertainty needed to interpret each
+statement. Natural-language statements are sufficient; no legal schema, fixed semantic taxonomy,
+or subject/predicate/object encoding is required.
+
+Proposition meaning is immutable. A meaning change creates a different proposition ID, not a new
+semantic version of the old ID. Different wording with equivalent meaning resolves to an existing
+ID. Equivalence is evaluated within the same knowledge scope and qualifiers. Different periods,
+assertors, or modalities must not be merged when they change meaning. Related or contradictory
+propositions are not duplicates merely because their vocabulary overlaps.
+
+An assertion records a source's support for a proposition, not proof of objective truth. Attribution
+comes from its primary source. A question used to interpret an answer is context evidence, not an
+assertion that the question's content is true. Two parties' conflicting assertions remain available
+and attributed; the store never resolves truth through recency, similarity, or support count alone.
+
+Semantic atomicity and equivalence require reviewed extraction/reconciliation. Database constraints
+can enforce exact identity and reference integrity, not guarantee semantic equivalence of arbitrary
+language. Automatic analyzers must qualify on decomposition, paraphrases, distinct qualifiers,
+conflicting speakers, negation, ellipsis, and edited-source journeys. Unreviewed model text does not
+become canonical knowledge merely because it passes a JSON decoder.
+
+## Contract v1
+
+This document is the language-neutral source. Implementations expose checked named types, with
+camelCase field names in serialized records. IDs are opaque ASCII strings matching
+`[A-Za-z0-9][A-Za-z0-9._:-]{0,127}`. Integer counters are nonnegative safe integers; source versions
+start at one. Timestamps are RFC 3339 UTC instants. A scope has `tenantId` and `scopeId`; every record,
+lookup, relationship, uniqueness check, and transaction is partitioned by both.
+
+| Record | Fields and meaning |
+| --- | --- |
+| Scope | `tenantId`, `scopeId`; constructed from trusted host authorization, never model-selected |
+| SourceReference | `id`, `version`; identifies exactly one immutable source representation |
+| SourceVersion | `reference`, `position`, `actor`, `text`, `occurredAt`; position and original occurrence time remain stable across edits |
+| Proposition | `id`, `statement`, `createdAt`; immutable meaning, no proposition revision field |
+| Claim | `id`, `propositionId`, `source`, `context`, `dependsOn`, `supersedes`, `contradicts`, `createdAt`; immutable assertion and dependency bundle |
+| SourceAnalysis | `source`, `claimIds`, `reviewId`; current reviewed interpretation of that source |
+| AppliedOperation | `id`, `fingerprint`, `revision`; retry identity for a committed reconciliation |
+
+`source` in a Claim is its primary SourceReference. `context` is a distinct list of additional
+SourceReferences. The other three lists contain Claim IDs. This produces a many-to-many relation:
+one source can assert multiple propositions; independent claims from several sources can support
+one proposition. Keep primary support and contextual dependency distinguishable. A reply such as
+"No" must cite the question needed to interpret it; otherwise editing the question would leave an
+incorrectly supported assertion behind.
+
+Source versions increase by one. Replaying the same current version and content is a no-op;
+reusing a version for different content is rejected. Withdrawing a source removes its current head,
+not the meanings of propositions it once supported. Reinstatement needs a fresh source version.
+Sources may represent messages, document properties, or other authorized evidence; application
+domains retain authority over their original records.
+
+### Reconciliation plan
+
+A checked plan contains `operationId`, `expectedRevision`, `source`, `reviewId`, `propositions`, and
+`claims`. The host supplies the authorized scope separately. `source` must identify its current
+head. `reviewId` identifies the human review or qualified analyzer configuration accepted by the host;
+the identifier itself is not proof that a model is qualified.
+
+Each proposed proposition contains `key` and `statement`. Each claim draft contains `key`,
+`proposition`, `context`, `dependsOn`, `supersedes`, and `contradicts`. Draft references have `kind`
+(`existing` or `proposed`) and `id`. Proposed IDs are local keys resolved by the application; they
+cannot select persistent IDs. Resolve equivalent propositions by existing ID. Exact duplicate
+statements converge mechanically, while semantic equivalence remains the reviewer's responsibility.
+Unused drafts, duplicate keys/references, unknown or cross-scope references, self-links, and cycles
+are rejected. Every claim's primary source is the plan's source.
+
+Applying a plan replaces the current analysis of that source; an empty claims list records a
+reviewed source with no assertions. Previously stored claims remain immutable provenance, rather
+than being overwritten to represent a new meaning. Existing claim references must refer to the
+current analysis of their primary source, and every evidence version must still be current.
+
+`supersedes` means an explicit correction, not automatic preference for a newer claim. The default
+contract permits it only from a later source position by the same actor; another actor's competing
+claim uses `contradicts`. Changes to this authority policy require an explicit host-domain contract.
+`dependsOn` records reliance on another assertion. A dependency on a superseded or disputed assertion
+needs reconsideration; it cannot silently inherit that assertion as current truth.
+
+## Revisions, invalidation, and views
+
+The scope's knowledge revision is a concurrency token, not a proposition version. Source publication,
+withdrawal, and reconciliation commit atomically against an expected revision. Provider calls run
+outside transactions. A plan generated against a changed snapshot is rejected before publication.
+An identical operation replay converges without another claim or proposition; reusing an operation
+ID for a different plan is rejected.
+
+A claim is usable only when it belongs to its source's current analysis, its source and context
+versions are current, and its referenced claims remain usable. A source change invalidates affected
+claims and propagates through recorded dependencies, including correction relationships. This finds
+known affected analyses without semantic search. It does not prove the extractor recorded every
+dependency; completeness must be evaluated, and recovery may require broader source review.
+
+Views distinguish `supported`, `superseded`, `disputed`, and `unsupported` propositions. Supported
+means currently sourced, not verified true. Contradictory current claims remain attributed and
+visible. Old meanings with no usable claims are not delivered as current facts. A view also exposes
+`pendingSources` and `complete`; a summary input accessor rejects incomplete views. Selection indexes,
+current views, summaries, and UI briefs are derived projections, not mutable proposition content.
+Summary input preserves each delivered claim's source attribution and chronology. It does not turn
+"supported" into "verified", drop conflicting speakers, or require sending all original source text.
+
+Reanalyzing an unchanged source can be necessary when its context or a related claim changed.
+Replace its current analysis using current evidence and explicit relationships; do not invent a new
+message occurrence or treat an old message edit as a new conversational turn.
+
+## Module and host responsibilities
+
+The reusable core owns checked values, immutable identity, evidence/dependency validation, impact
+propagation, view construction, and concurrency/idempotency rules. It receives repositories,
+identifiers, clocks, and optional analyzers through narrow ports. It imports no application domain,
+provider SDK, UI, HTTP framework, or global environment. Persistence and model integrations are
+adapters. Implementations may be language-specific; PHP/TypeScript interoperability follows this
+contract rather than pretending one language can directly import the other's library.
+
+The host owns authentication, domain permissions, source access and ordering, review policy,
+semantic candidate selection, and model qualification. A core repository is a trusted server port,
+not a generic public CRUD API. Never accept a model-chosen tenant, scope, source version, timestamp,
+or persistent identifier as authority. A provider adapter proposes a plan; domain validation and
+scope checks decide whether it can commit.
+
+Choose one canonical owner for each knowledge representation. A FactDB-backed assistant can derive
+a current-memory delivery view; it must not maintain another independently mutable MemoryRecord
+copy of the same knowledge. Existing domain records remain authoritative for their own facts.
+
+## Persistence, bounds, and deletion
+
+Explicit versioned migrations own durable storage; constructors never install schema. Enable foreign
+keys, partition relationships by scope, and enforce proposition/source/claim immutability in the
+durable adapter as well as the core. Reads use a consistent snapshot; writes use compare-and-swap
+and one short transaction. Missing schema, stale state, capacity exhaustion, or invalid evidence
+fails explicitly instead of returning a partial view as complete.
+
+Declare limits for sources, retained versions, propositions, claims, operation receipts, context and
+dependency fan-out, and analysis batch size. A bounded aggregate implementation is valid when its
+limits and cost are explicit; large scopes require indexed/partitioned adapters rather than hidden
+truncation. Evidence content follows the host's protected retention policy. Immutability prevents
+meaning reassignment, not authorized erasure.
+
+Scope erasure removes source text, propositions, evidence, claims, analyses, and operation receipts.
+Retain only a non-content scope tombstone and advanced revision to reject stale work; do not recreate
+an erased scope through a delayed worker retry. Do not expose retained provenance through ordinary
+logs, cross-tenant search, or unfiltered model prompts.
+
+## Required verification
+
+Alongside [AI semantic qualification](../practices/AI_EVALUATION.md), deterministic tests prove:
+
+- two atomic propositions from one source and one proposition supported by multiple sources;
+- immutable IDs, exact-duplicate convergence, and existing-ID reuse without meaning reassignment;
+- old-source edits, withdrawals, and reinstatement, preserving independent valid support;
+- context-question edits, transitive dependencies, correction chains, and empty analyses;
+- contradictory speakers remain disputed; an old edit cannot mechanically supersede a later source;
+- no dangling, cross-scope, self-referential, cyclic, or stale evidence/claim references;
+- operation replay, mismatched operation reuse, concurrent snapshots, rollback, and restart;
+- explicit capacity failures, incomplete-summary rejection, migration ownership, and erasure.
+
+Use colliding IDs in different tenants/scopes and real durable-adapter tests. Fake semantic reviewers
+prove orchestration only; they do not establish atomicity or semantic deduplication in live models.

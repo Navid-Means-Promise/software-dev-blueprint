@@ -89,6 +89,7 @@ diagram contradictory; a compile-time violation remains an architecture bug even
 - Server-side authority, RBAC, ABAC, and resource policies: [authorization and policy decisions](AUTHORIZATION.md)
 - Assistant orchestration, durable user context, domain tools, and speech:
   [AI subsystem](AI_SUBSYSTEM.md)
+- Immutable sourced knowledge and historical-source edits: [FactDB](FACT_DB.md)
 - Provider routing, resilience, caching, accounting, and diagnostics:
   [AI provider operations](AI_PROVIDER_OPERATIONS.md)
 - The clients, server, and firmware as concrete hosts: the [components](../components/) set

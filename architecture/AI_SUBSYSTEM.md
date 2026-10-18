@@ -85,12 +85,14 @@ readiness, permissions, and locale support, while the server still validates eve
 ## Application-owned durable context
 
 An assistant may need durable user-supplied context beyond the current conversation. That context is
-application data: a current-state repository stores it, the user can inspect and control it, and the
-application selects the minimum relevant records for each request.
+application data: the user can inspect and control it, and the application selects the minimum
+relevant records for each request. Simple current-state memory follows the contract below. Products
+requiring immutable propositions and historical-source reconciliation can adopt [FactDB](FACT_DB.md)
+and derive their current delivery view from it; do not maintain two canonical copies of that knowledge.
 
 The blueprint does not prescribe a product-specific memory name, semantic category list, structured
-assertion vocabulary, or claim of objective truth. When a project adopts general natural-language
-assistant memory, use one canonical `MemoryRecord` collection. One record contains the
+assertion vocabulary, or claim of objective truth. When a project adopts the current-state
+assistant-memory pattern, use one canonical `MemoryRecord` collection. One record contains the
 smallest coherent information that can be corrected, expired, or deleted independently. A correction
 updates the same stable ID and revision; forgetting deletes the current record. The original raw
 message remains separately available as evidence through an evidence-message reference, so canonical

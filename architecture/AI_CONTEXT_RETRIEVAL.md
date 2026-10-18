@@ -47,6 +47,11 @@ The source catalog is product-defined and extensible. It normally begins with:
   expose typed, explicit retrieval operations such as lookup by identifier or bounded range. The
   context subsystem never replaces them with assistant-memory copies merely to make them searchable.
 
+For immutable sourced propositions and edit-dependency tracking, use the optional
+[FactDB contract](FACT_DB.md); its current delivery view can participate as a processed source without
+duplicating canonical memory. The current-state MemoryRecord pattern below remains available for
+products that do not need that provenance lifecycle.
+
 If assistant memory is stored as natural language, do not add subject/predicate/object fields merely
 in anticipation of a future query mechanism. Store a standalone canonical statement containing the
 smallest coherent information that can be corrected, expired, or deleted independently. Closely

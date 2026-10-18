@@ -15,6 +15,7 @@ Do not restate those rules here.
 - Runtime assistants, provider operations, and live quality comparisons:
   [AI subsystem](architecture/AI_SUBSYSTEM.md), [provider operations](architecture/AI_PROVIDER_OPERATIONS.md),
   and [evaluation](practices/AI_EVALUATION.md)
+- Immutable propositions and source evidence: [FactDB](architecture/FACT_DB.md)
 - Client, server, firmware, and monorepo structure: [components](components/MONOREPO.md)
 - Testing, rendered UI integrity, i18n, assets, performance, isolated toolchains, and workflow:
   [practices](practices/TESTING.md)
