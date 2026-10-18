@@ -46,6 +46,8 @@ lookup, relationship, uniqueness check, and transaction is partitioned by both.
 | Proposition | `id`, `statement`, `createdAt`; immutable meaning, no proposition revision field |
 | Claim | `id`, `propositionId`, `source`, `context`, `dependsOn`, `supersedes`, `contradicts`, `createdAt`; immutable assertion and dependency bundle |
 | SourceAnalysis | `source`, `claimIds`, `reviewId`; current reviewed interpretation of that source |
+| SourceAnalysisDraft | `source`, `claims`; one source interpretation inside a reconciliation batch |
+| ReconciliationBatch | `operationId`, `expectedRevision`, `reviewId`, `propositions`, `analyses`; one atomic multi-source semantic decision |
 | AppliedOperation | `id`, `fingerprint`, `revision`; retry identity for a committed reconciliation |
 | FactView | `proposition`, `status`, `claims`; interpreted status with usable attributed assertions |
 | KnowledgeSnapshot | `scope`, `revision`, `facts`, `claims`, `sources`, `pendingSources`, `supersededClaimIds`, `disputedClaimIds`, `complete`; a consistent bounded read |
@@ -96,6 +98,33 @@ claim uses `contradicts`. Changes to this authority policy require an explicit h
 `dependsOn` records reliance on another assertion. A dependency on a superseded or disputed assertion
 needs reconsideration; it cannot silently inherit that assertion as current truth.
 
+### Batched reconciliation and source handoff
+
+A batch contains globally unique proposition/claim draft keys and chronologically ordered, distinct
+SourceAnalysisDraft entries. Every requested source must have an analysis, including sources with
+no assertions. Proposed proposition keys may be reused across analyses; proposed claim references
+may target the same or an earlier analysis, never a later one. Resolve local keys to server-generated
+IDs. Preflight the complete decision and publish one knowledge revision and one batch receipt;
+invalid later entries cannot leave a committed prefix. Exact replay and mismatched identity reuse
+follow the single-plan rules. Keep per-source and aggregate batch capacities explicit.
+
+A provider-neutral analysis representation/decoder may be reusable alongside the core. It does not
+own network credentials, transport, admission, usage accounting, host metadata, or model qualification.
+Keep source text and host context explicitly delimited as untrusted data. Include complete selected
+sources, relevant contextual originals and the current scoped knowledge needed for equivalence and
+relationship decisions. Reject oversized required context rather than silently dropping propositions
+or evidence. Prompt instructions do not establish semantic correctness.
+
+Hosts must coordinate original-source changes and FactDB freshness. A transactionally dirtied source
+revision plus a complete bounded manifest is a valid durable idempotent handoff: synchronize changed
+heads and withdrawals atomically, reject stale analysis, and compare both the original-source
+watermark and knowledge revision before publishing derived outputs. A store-local `complete` flag
+alone cannot prove no source change is waiting outside the store. Persist incomplete progress so
+unchanged sources invalidated by dependencies remain scheduled after edited-source checkpoints catch
+up. A projection failure retains accepted knowledge and retries projection, rather than treating the
+canonical analysis as rolled back. Host-owned fields used to interpret sources need explicit versioned
+context dependencies or an equally conservative invalidation policy.
+
 ## Revisions, invalidation, and views
 
 The scope's knowledge revision is a concurrency token, not a proposition version. Source publication,
@@ -115,7 +144,8 @@ means currently sourced, not verified true. Contradictory current claims remain 
 visible. Old meanings with no usable claims are not delivered as current facts. A view also exposes
 `pendingSources` and `complete`; a summary input accessor rejects incomplete views. Selection indexes,
 current views, summaries, and UI briefs are derived projections, not mutable proposition content.
-Summary input preserves each delivered claim's source attribution and chronology. It does not turn
+Summary input excludes individually superseded claims even when another source still supports the
+same proposition, and preserves each delivered claim's source attribution and chronology. It does not turn
 "supported" into "verified", drop conflicting speakers, or require sending all original source text.
 
 Reanalyzing an unchanged source can be necessary when its context or a related claim changed.
@@ -171,6 +201,8 @@ Alongside [AI semantic qualification](../practices/AI_EVALUATION.md), determinis
 - contradictory speakers remain disputed; an old edit cannot mechanically supersede a later source;
 - no dangling, cross-scope, self-referential, cyclic, or stale evidence/claim references;
 - operation replay, mismatched operation reuse, concurrent snapshots, rollback, and restart;
+- multi-source batch rollback, cross-analysis key resolution, complete source coverage, strict analyzer
+  decoding, durable source-handoff freshness, and superseded-assertion attribution;
 - explicit capacity failures, incomplete-summary rejection, migration ownership, and erasure.
 
 Use colliding IDs in different tenants/scopes and real durable-adapter tests. Fake semantic reviewers
