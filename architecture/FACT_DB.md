@@ -115,6 +115,13 @@ sources, relevant contextual originals and the current scoped knowledge needed f
 relationship decisions. Reject oversized required context rather than silently dropping propositions
 or evidence. Prompt instructions do not establish semantic correctness.
 
+Distinguish sources selected for analysis from supporting context in the serialized request. A
+context-only source must not acquire an accidental replacement analysis. Compact request-local
+aliases may represent existing proposition/claim IDs when their checked mapping belongs to that
+exact scoped snapshot. Keep aliases disjoint from supplied source IDs and new draft keys; resolve
+them to canonical IDs before core validation. Unknown aliases and references to replaced claims
+remain invalid. Compaction must preserve meanings, attribution, chronology and relationships.
+
 Hosts must coordinate original-source changes and FactDB freshness. A transactionally dirtied source
 revision plus a complete bounded manifest is a valid durable idempotent handoff: synchronize changed
 heads and withdrawals atomically, reject stale analysis, and compare both the original-source
@@ -203,6 +210,8 @@ Alongside [AI semantic qualification](../practices/AI_EVALUATION.md), determinis
 - operation replay, mismatched operation reuse, concurrent snapshots, rollback, and restart;
 - multi-source batch rollback, cross-analysis key resolution, complete source coverage, strict analyzer
   decoding, durable source-handoff freshness, and superseded-assertion attribution;
+- request-local reference isolation/collision rejection and complete prompt budgets using
+  production-length identifiers and dense corroborating evidence;
 - explicit capacity failures, incomplete-summary rejection, migration ownership, and erasure.
 
 Use colliding IDs in different tenants/scopes and real durable-adapter tests. Fake semantic reviewers
