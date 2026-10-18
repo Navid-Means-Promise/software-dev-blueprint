@@ -47,6 +47,15 @@ lookup, relationship, uniqueness check, and transaction is partitioned by both.
 | Claim | `id`, `propositionId`, `source`, `context`, `dependsOn`, `supersedes`, `contradicts`, `createdAt`; immutable assertion and dependency bundle |
 | SourceAnalysis | `source`, `claimIds`, `reviewId`; current reviewed interpretation of that source |
 | AppliedOperation | `id`, `fingerprint`, `revision`; retry identity for a committed reconciliation |
+| FactView | `proposition`, `status`, `claims`; interpreted status with usable attributed assertions |
+| KnowledgeSnapshot | `scope`, `revision`, `facts`, `claims`, `sources`, `pendingSources`, `supersededClaimIds`, `disputedClaimIds`, `complete`; a consistent bounded read |
+| SourceAttribution | `reference`, `actor`, `position`, `occurredAt`; summary evidence without original source text |
+| SummaryInput | `scope`, `revision`, `facts`, `evidence`; complete current fact views with attribution |
+
+Snapshot `facts`, `claims`, and current `sources` are maps keyed by their scoped IDs; `pendingSources`
+and claim-ID collections are lists. SummaryInput `facts` and `evidence` are lists. The adapter's
+private aggregate/storage shape is not a network API. `status` uses `supported`, `superseded`,
+`disputed`, or `unsupported`, with the interpretation specified below.
 
 `source` in a Claim is its primary SourceReference. `context` is a distinct list of additional
 SourceReferences. The other three lists contain Claim IDs. This produces a many-to-many relation:
