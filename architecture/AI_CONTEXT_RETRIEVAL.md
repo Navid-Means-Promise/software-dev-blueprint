@@ -52,12 +52,12 @@ For immutable sourced propositions and edit-dependency tracking, use the optiona
 duplicating canonical memory. The current-state MemoryRecord pattern below remains available for
 products that do not need that provenance lifecycle.
 
-If assistant memory is stored as natural language, do not add subject/predicate/object fields merely
+For the current-state MemoryRecord pattern, do not add subject/predicate/object fields merely
 in anticipation of a future query mechanism. Store a standalone canonical statement containing the
 smallest coherent information that can be corrected, expired, or deleted independently. Closely
 coupled details with the same evidence and lifecycle may share one record; information that can
-change independently does not. Adopt structured assertions later only when a measured use case needs
-structured querying.
+change independently does not. Adopt a structured contract only for a demonstrated extraction or
+query requirement; sourced atomic extraction follows the separate [FactDB contract](FACT_DB.md).
 
 Raw messages, assistant memory, and application state are not competing copies of one truth: they
 have different meanings. Raw messages are evidence, memory records are the application's current

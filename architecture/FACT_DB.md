@@ -10,8 +10,9 @@ Follow the [contract source rule](CONTRACTS.md), [authorization boundary](AUTHOR
 
 A proposition is one independently assertable meaning. Separate information that can be corrected
 independently; retain the subject, time, units, polarity, and uncertainty needed to interpret each
-statement. Natural-language statements are sufficient; no legal schema, fixed semantic taxonomy,
-or subject/predicate/object encoding is required.
+assertion. Use the simple structured content contract below; it imposes no legal fields, entity
+ontology, or fixed qualifier taxonomy. Negation belongs in the predicate, without a separate polarity
+field. Schema validation helps extraction but does not prove semantic atomicity.
 
 Proposition meaning is immutable. A meaning change creates a different proposition ID, not a new
 semantic version of the old ID. Different wording with equivalent meaning resolves to an existing
@@ -30,7 +31,7 @@ language. Automatic analyzers must qualify on decomposition, paraphrases, distin
 conflicting speakers, negation, ellipsis, and edited-source journeys. Unreviewed model text does not
 become canonical knowledge merely because it passes a JSON decoder.
 
-## Contract v1
+## Contract v2
 
 This document is the language-neutral source. Implementations expose checked named types, with
 camelCase field names in serialized records. IDs are opaque ASCII strings matching
@@ -43,7 +44,9 @@ lookup, relationship, uniqueness check, and transaction is partitioned by both.
 | Scope | `tenantId`, `scopeId`; constructed from trusted host authorization, never model-selected |
 | SourceReference | `id`, `version`; identifies exactly one immutable source representation |
 | SourceVersion | `reference`, `position`, `actor`, `text`, `occurredAt`; position and original occurrence time remain stable across edits |
-| Proposition | `id`, `statement`, `createdAt`; immutable meaning, no proposition revision field |
+| PropositionContent | `subject`, `predicate`, `object`, `qualifiers`; one assertion with flexible circumstances |
+| Qualifier | `type`, `value`; both ordinary text, no proposition/claim reference |
+| Proposition | `id`, the four PropositionContent fields, `createdAt`; immutable meaning, no proposition revision field |
 | Claim | `id`, `propositionId`, `source`, `context`, `dependsOn`, `supersedes`, `contradicts`, `createdAt`; immutable assertion and dependency bundle |
 | SourceAnalysis | `source`, `claimIds`, `reviewId`; current reviewed interpretation of that source |
 | SourceAnalysisDraft | `source`, `claims`; one source interpretation inside a reconciliation batch |
@@ -79,11 +82,30 @@ A checked plan contains `operationId`, `expectedRevision`, `source`, `reviewId`,
 head. `reviewId` identifies the human review or qualified analyzer configuration accepted by the host;
 the identifier itself is not proof that a model is qualified.
 
-Each proposed proposition contains `key` and `statement`. Each claim draft contains `key`,
-`proposition`, `context`, `dependsOn`, `supersedes`, and `contradicts`. Draft references have `kind`
+Each proposed proposition contains `key` and the four content fields. `subject` and `predicate` are
+nonblank text; `object` is nonblank text or null. `qualifiers` is a list of text `type`/`value` pairs.
+A conditional assertion keeps its condition as literal qualifier text on that same assertion;
+never create a separate proposition for the condition or assert its premise occurred. Time, scope,
+reported viewpoint and explicitly stated certainty can also be qualifiers. Do not infer confidence.
+A stated reason may remain a text qualifier; separately storing an explicitly asserted reason is
+allowed, never required. There is no reasoning graph, `reasonClaimRefs`, condition reference or
+additional polarity field. Independently asserted facts elsewhere in a message are still extracted
+with correct attribution. "Amount and date are unknown" needs separate amount/date propositions.
+Reported speech retains the reported speaker in its content/qualifiers as well as primary-source
+attribution; source authorship alone must not erase whose view is being reported.
+
+Trim surrounding whitespace without changing exact inner values. The canonical exact-identity
+encoding uses field order `subject`, `predicate`, `object`, `qualifiers`; qualifier order is insignificant
+and is sorted by UTF-8 byte order of type then value. Reject repeated identical pairs. Multiple
+qualifiers of the same type with different values are allowed. Bounds in UTF-8 bytes: subject and
+predicate 2,048 each, object 4,096, qualifier type 128 and value 2,048, at most 12 qualifiers and 8,192
+bytes for the entire unescaped-Unicode/slash JSON content. Different structures may still mean the
+same thing; qualified semantic reconciliation must reuse existing IDs in that case.
+
+Each claim draft contains `key`, `proposition`, `context`, `dependsOn`, `supersedes`, and `contradicts`. Draft references have `kind`
 (`existing` or `proposed`) and `id`. Proposed IDs are local keys resolved by the application; they
 cannot select persistent IDs. Resolve equivalent propositions by existing ID. Exact duplicate
-statements converge mechanically, while semantic equivalence remains the reviewer's responsibility.
+structured content converges mechanically, while semantic equivalence remains the reviewer's responsibility.
 Unused drafts, duplicate keys/references, unknown or cross-scope references, self-links, and cycles
 are rejected. Every claim's primary source is the plan's source.
 
@@ -166,10 +188,13 @@ required memory layer or intermediate step for a UI brief. An optional detailed 
 independent derived feature, never another canonical knowledge copy.
 
 When exact wording, attribution and values matter more than paraphrase, let the model select and
-order existing propositions and let code render their stored statements with trusted source
+order existing propositions and let code render their structured content with trusted source
 attribution. A checked request-local catalog may use compact references, resolved only against
 that scoped snapshot. Reject unknown/duplicate references, unexpected content fields and over-budget
-selections; never truncate statements or accept model-supplied replacement text. Preserve all usable
+selections; never truncate content or accept model-supplied replacement text.
+Render subject, object when present, and predicate in order, with every qualifier displayed as
+`type: value`. This deterministic display is derived from content, not another mutable prose field.
+A host requiring a different language ordering owns and qualifies that projection policy. Preserve all usable
 assertors of each selected proposition. Selecting one side of a recorded dispute must retain the
 related opposing assertions and mark the disagreement, rather than presenting a winner.
 
@@ -226,12 +251,27 @@ Retain only a non-content scope tombstone and advanced revision to reject stale 
 an erased scope through a delayed worker retry. Do not expose retained provenance through ordinary
 logs, cross-tenant search, or unfiltered model prompts.
 
+### Upgrade from prose content
+
+Retain v1 immutable proposition/claim/source records and their hashes as historical provenance.
+Do not mechanically guess subject/predicate/object from old prose or reassign existing IDs. Claims
+using legacy prose are ineligible for current views; their source analyses and recorded dependents
+become pending for fresh structured extraction. Legacy IDs cannot receive new support. Exclude
+legacy content from the analyzer's reusable proposition catalog. A successful reanalysis produces
+new structured IDs and preserves historical records. Invalidate derived summaries and schedule the
+host handoff through an explicit migration; retain provider usage/account history. Unchanged empty
+source analyses can remain valid. Never mark an incomplete upgrade as a complete summary.
+
 ## Required verification
 
 Alongside [AI semantic qualification](../practices/AI_EVALUATION.md), deterministic tests prove:
 
 - two atomic propositions from one source and one proposition supported by multiple sources;
 - immutable IDs, exact-duplicate convergence, and existing-ID reuse without meaning reassignment;
+- structured round trips, order-independent qualifier identity, literal negation, conditions without
+  invented premises, optional reason qualifiers, unknown-value separation and partial corrections;
+- v1 upgrades retain immutable provenance, reject legacy reuse and require fresh extraction before
+  summary publication; malformed qualifier values, nested references and model-owned attribution fail;
 - old-source edits, withdrawals, and reinstatement, preserving independent valid support;
 - context-question edits, transitive dependencies, correction chains, and empty analyses;
 - contradictory speakers remain disputed; an old edit cannot mechanically supersede a later source;
