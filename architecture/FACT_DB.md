@@ -175,7 +175,10 @@ related opposing assertions and mark the disagreement, rather than presenting a 
 
 Host-owned document properties and generic metadata can have separately selectable references.
 Render their canonical labels/display values without duplicating them as mutable propositions or
-imposing a fixed semantic schema. Historical attribution must not transfer to a newly assigned
+imposing a fixed semantic schema. A host may require particular document fields, such as current
+participant names, independently of model selection; include that policy in prompt/render budgets
+and qualification identity. Keep document participant context distinct from assertion attribution.
+Historical attribution must not transfer to a newly assigned
 participant. Derived caches retain the selected canonical references and the knowledge/source
 revisions needed to reject stale publication. Changing projection strategy invalidates prose caches,
 not otherwise valid accepted knowledge or evidence checkpoints.
