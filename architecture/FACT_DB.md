@@ -159,6 +159,32 @@ Reanalyzing an unchanged source can be necessary when its context or a related c
 Replace its current analysis using current evidence and explicit relationships; do not invent a new
 message occurrence or treat an old message edit as a new conversational turn.
 
+## Reference-based summaries
+
+FactDB can supply the maintained knowledge directly; a rolling or detailed prose summary is not a
+required memory layer or intermediate step for a UI brief. An optional detailed narrative is an
+independent derived feature, never another canonical knowledge copy.
+
+When exact wording, attribution and values matter more than paraphrase, let the model select and
+order existing propositions and let code render their stored statements with trusted source
+attribution. A checked request-local catalog may use compact references, resolved only against
+that scoped snapshot. Reject unknown/duplicate references, unexpected content fields and over-budget
+selections; never truncate statements or accept model-supplied replacement text. Preserve all usable
+assertors of each selected proposition. Selecting one side of a recorded dispute must retain the
+related opposing assertions and mark the disagreement, rather than presenting a winner.
+
+Host-owned document properties and generic metadata can have separately selectable references.
+Render their canonical labels/display values without duplicating them as mutable propositions or
+imposing a fixed semantic schema. Historical attribution must not transfer to a newly assigned
+participant. Derived caches retain the selected canonical references and the knowledge/source
+revisions needed to reject stale publication. Changing projection strategy invalidates prose caches,
+not otherwise valid accepted knowledge or evidence checkpoints.
+
+Selection reduces opportunities to invent prose; it does not prove extraction accuracy, dependency
+completeness, appropriate emphasis or coverage. Qualify the complete extraction/selection/rendering
+path and test deterministic reference rejection, exact values, attribution, dispute closure,
+capacity failure and projection-only recovery through the real host composition.
+
 ## Module and host responsibilities
 
 The reusable core owns checked values, immutable identity, evidence/dependency validation, impact
