@@ -30,6 +30,15 @@ for deterministic tests. Honor `Retry-After` only when it fits the remaining bud
 without an immediate retry. Avoid multiplying router, adapter, and orchestrator retry loops: declare
 the maximum total provider requests and which layer spends each allowance.
 
+A background pipeline may reserve several execution windows inside one fixed outer task deadline.
+For example, three chances total share two retry allowances across extraction, repair, and selection;
+a stage does not receive an independent three-chance loop. Each retry gets a bounded inner window
+from the remaining reserved total, with two/four-second backoff. All preparation, waiting and calls
+inside the task count toward that outer deadline; separately admitted startup discovery must have
+its own reported bound. Set the active-job lease for the complete task. Reuse accepted intermediate
+knowledge when only a derived projection failed, with normal freshness checks. SDK/router loops
+must not multiply this host allowance or reset shared quotas/cooldowns.
+
 Replay preserves the trusted turn envelope and performs no domain mutation before a final response
 crosses application decoding, validation, and authorization. Desired-state commands and trusted
 idempotency identities protect later delivery boundaries; provider retries never replay committed
@@ -127,7 +136,10 @@ effects instead of discovering the requirement after commit or representing miss
 ## Diagnostics and sensitive evidence
 
 Audit validation failures, bounded corrective retries, requested and served model versions, latency,
-and reported token usage. Correlate content-free stage durations/counts under a trusted turn ID:
+and reported token usage. Report failed request attempts, rejected outputs, retries, recovered
+stages/tasks, exhausted tasks, and eventual completion separately. A final success never overwrites
+an earlier failure receipt; usage and timing include every attempt, with unknown usage left unknown.
+Correlate content-free stage durations/counts under a trusted turn ID:
 queue wait, context preparation, model/provider work, retrieval, validation, usage persistence,
 canonical transaction, and reply persistence. Define overlapping/parallel stages so their sum is not
 misrepresented as end-to-end latency. Ordinary logs exclude message, prompt, memory, and plan text.

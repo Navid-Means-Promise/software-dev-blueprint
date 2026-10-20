@@ -62,6 +62,9 @@ domain vocabulary and package scope.
 - [architecture/FACT_DB.md](architecture/FACT_DB.md) — optional immutable propositions, versioned
   evidence, correction dependencies, and reusable knowledge-store contract
 
+- [architecture/ROLLING_SUMMARIES.md](architecture/ROLLING_SUMMARIES.md) — optional maintained prose
+  context, revision coverage, historical-edit recovery, and derived UI briefs
+
 **Components** — the concrete modules
 
 - [components/MONOREPO.md](components/MONOREPO.md) — workspaces, toolchain, budgets, `check`

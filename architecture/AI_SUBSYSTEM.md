@@ -89,6 +89,8 @@ application data: the user can inspect and control it, and the application selec
 relevant records for each request. Simple current-state memory follows the contract below. Products
 requiring immutable propositions and historical-source reconciliation can adopt [FactDB](FACT_DB.md)
 and derive their current delivery view from it; do not maintain two canonical copies of that knowledge.
+For compressed working context rather than a proposition store, applications may instead adopt
+[rolling summaries](ROLLING_SUMMARIES.md), a revisioned derived view of authoritative sources.
 
 The blueprint does not prescribe a product-specific memory name, semantic category list, structured
 assertion vocabulary, or claim of objective truth. When a project adopts the current-state

@@ -87,6 +87,10 @@ Do not store the same proposition in assistant memory and an application-specifi
   owns it.
 - Casual conversation remains in raw conversation history only.
 
+A host may expose a [rolling summary](ROLLING_SUMMARIES.md) as a revision-bound processed source,
+retaining its original-source ownership and completeness policy rather than copying its contents
+into a second canonical memory collection.
+
 The exact boundary is product-defined. The invariant is universal: a convenient retrieval copy does
 not become a second authoritative record.
 

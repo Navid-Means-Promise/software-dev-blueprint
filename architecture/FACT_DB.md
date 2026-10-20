@@ -186,6 +186,8 @@ message occurrence or treat an old message edit as a new conversational turn.
 FactDB can supply the maintained knowledge directly; a rolling or detailed prose summary is not a
 required memory layer or intermediate step for a UI brief. An optional detailed narrative is an
 independent derived feature, never another canonical knowledge copy.
+[Rolling summaries](ROLLING_SUMMARIES.md) remain a separate reusable alternative for workloads that
+choose maintained prose context instead of proposition-based knowledge.
 
 When exact wording, attribution and values matter more than paraphrase, let the model select and
 order existing propositions and let code render their structured content with trusted source

@@ -47,6 +47,20 @@ Qualify fallback models independently with fallback disabled, then exercise the 
 path under controlled primary failure. Record whether bounded repair was needed; passing after
 repair does not erase the cost, latency, or initial rejection.
 
+A required journey may pass after a transient failure when the predeclared production retry path
+completes the task accurately within all attempt/resource/deadline bounds. Preserve and report
+first-attempt success, failed attempts, rejected outputs, recoveries, exhausted tasks, and cumulative
+known/unknown usage. Judge each operation against the latency allowance for the execution windows
+it actually used; reserving three chances must not excuse a slow unretried operation. Exhausted or
+unavailable required journeys remain incomplete and block qualification.
+
+This is availability recovery, not permission to regenerate until a favorable answer appears.
+Any inaccurate output accepted as successful, incorrect accepted intermediate knowledge, or
+forbidden effect fails the journey even if another attempt later looks correct. Structural output
+rejection/repair stays separately recorded and bounded. Review preserved original outputs and state;
+do not erase failed trials, relabel semantic errors as transport failures, or substitute a later
+successful run for an originally failed required slot.
+
 ## Preserve the behavior being investigated
 
 Use synthetic data by default and isolate each candidate's canonical state. Exercise the production
