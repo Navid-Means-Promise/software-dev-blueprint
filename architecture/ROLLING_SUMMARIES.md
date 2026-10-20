@@ -60,6 +60,21 @@ later 12-million correction without treating the edited earlier message as the l
 
 ## Historical edits and recovery
 
+A host may keep summary snapshots after accepted batches. An edit or deletion selects the latest
+snapshot whose entire covered source prefix is still current and lies before the earliest changed
+message, then replays every current message after that boundary in original order. Discard snapshots
+containing changed/deleted inputs; later snapshots cannot be reused just because their final message
+is unchanged. A missing or incompatible snapshot starts a rebuild from the beginning. Changed
+document context invalidates snapshots that used the previous context. Source IDs/revisions and a
+context/contract identity establish validity; old message bodies are not required by this algorithm.
+Snapshots do not restore information omitted from their own compressed prefix.
+
+Hosts exposing FactDB and rolling summaries concurrently select them through a strategy port,
+with independent persisted state and source checkpoints. A common displayed summary is a derived
+projection of the selected strategy only. Switching queues catch-up for the target and must not
+let an in-flight nonselected strategy overwrite that display. Job lifecycle and shared-host triggers
+follow [background jobs](BACKGROUND_JOBS.md).
+
 A source's processing timestamp or revision tells the system **what changed**, not which later
 messages reinterpret it. A rolling summary alone cannot reliably identify every relevant later
 correction. State how the host obtains the required context:

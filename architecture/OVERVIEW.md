@@ -90,6 +90,7 @@ diagram contradictory; a compile-time violation remains an architecture bug even
 - Assistant orchestration, durable user context, domain tools, and speech:
   [AI subsystem](AI_SUBSYSTEM.md)
 - Maintained prose context and derived briefs: [rolling summaries](ROLLING_SUMMARIES.md)
+- Resumable execution and shared-host triggers: [background jobs](BACKGROUND_JOBS.md)
 - Immutable sourced knowledge and historical-source edits: [FactDB](FACT_DB.md)
 - Provider routing, resilience, caching, accounting, and diagnostics:
   [AI provider operations](AI_PROVIDER_OPERATIONS.md)
