@@ -30,14 +30,14 @@ for deterministic tests. Honor `Retry-After` only when it fits the remaining bud
 without an immediate retry. Avoid multiplying router, adapter, and orchestrator retry loops: declare
 the maximum total provider requests and which layer spends each allowance.
 
-A background pipeline may reserve several execution windows inside one fixed outer task deadline.
-For example, three chances total share two retry allowances across extraction, repair, and selection;
-a stage does not receive an independent three-chance loop. Each retry gets a bounded inner window
-from the remaining reserved total, with two/four-second backoff. All preparation, waiting and calls
-inside the task count toward that outer deadline; separately admitted startup discovery must have
-its own reported bound. Set the active-job lease for the complete task. Reuse accepted intermediate
-knowledge when only a derived projection failed, with normal freshness checks. SDK/router loops
-must not multiply this host allowance or reset shared quotas/cooldowns.
+A background execution attempt may reserve several provider-call windows inside its fixed run
+deadline. For example, an initial call for each required stage can share two additional retry
+allowances across extraction, repair, and selection; each stage does not receive two extra retries.
+Keep provider timeouts within the remaining admitted window. Persistent steps, cumulative retry
+allowances across later visits, intermediate-result reuse, leases, and startup/request budget
+ownership follow [job management](BACKGROUND_JOBS.md). The run deadline bounds this invocation,
+not the lifetime of a durable job that may resume during later requests. SDK/router loops must not
+multiply the host allowance or reset shared quotas/cooldowns.
 
 Replay preserves the trusted turn envelope and performs no domain mutation before a final response
 crosses application decoding, validation, and authorization. Desired-state commands and trusted

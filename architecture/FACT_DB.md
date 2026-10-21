@@ -5,6 +5,8 @@ knowledge with explicit evidence and correction dependencies, especially when so
 It is not a requirement to migrate simple [current-state assistant memory](AI_CONTEXT_RETRIEVAL.md#current-state-assistant-memory).
 Follow the [contract source rule](CONTRACTS.md), [authorization boundary](AUTHORIZATION.md), and
 [AI qualification requirements](../practices/AI_EVALUATION.md).
+Hosts scheduling extraction and projections use [Job Management](BACKGROUND_JOBS.md) for resumable
+steps and common attempt/log administration; FactDB remains the owner of accepted knowledge.
 
 ## Meaning and identity
 

@@ -81,6 +81,16 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
   the validation failure. Throwing inside the same transaction must not silently roll that increment
   back. Bound paid-provider work per principal/source and with an explicit application-wide ceiling.
 
+## Durable background work
+
+PHP jobs use the [Job Management contract](../architecture/BACKGROUND_JOBS.md) for handler/step
+interfaces, saved results, ownership, retries, and common logging. Laravel queues or another queue
+library can supply an adapter; serializing a whole use case does not establish its resumability.
+Use the [shared-host trigger guidance](../architecture/BACKGROUND_JOBS.md#10-trigger-adapters-and-php-shared-hosting)
+when no resident worker exists, and record the actual host request-time profile before enabling it.
+The same guide owns PSR-3 diagnostic integration, lifecycle-event persistence, and the required
+[process-interruption verification](../architecture/BACKGROUND_JOBS.md#13-required-verification-and-adoption).
+
 ## Determinism and tests
 
 - Inject clocks, randomness, schedulers, and external ports. Tests use fixed or recording adapters and

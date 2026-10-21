@@ -57,8 +57,11 @@ are caches or migration inputs, never a second writable truth.
 
 Remote AI/provider work and durable derived indexes also belong here. Search documents and vector
 caches are projections that can be rebuilt from canonical records. Background workers perform
-expensive document embedding, reindexing, retention, and repair without holding a user request open;
-the request path exposes a deterministic degraded mode while work is pending.
+expensive document embedding, reindexing, retention, and repair without holding the initiating
+product request open; the request path exposes a deterministic degraded mode while work is pending.
+Durable execution, step checkpoints, recovery, and shared logs/admin follow
+[job management](../architecture/BACKGROUND_JOBS.md). A host without a resident worker can use its
+bounded HTTP-trigger adapters; that runner request remains open for its execution window.
 
 Process-local repositories and fixed-principal substitutes are allowed only when explicitly
 constructed inside isolated unit or component tests. They are not selectable server modes. Every
