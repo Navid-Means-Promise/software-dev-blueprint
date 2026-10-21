@@ -72,8 +72,8 @@ Snapshots do not restore information omitted from their own compressed prefix.
 Hosts exposing FactDB and rolling summaries concurrently select them through a strategy port,
 with independent persisted state and source checkpoints. A common displayed summary is a derived
 projection of the selected strategy only. Switching queues catch-up for the target and must not
-let an in-flight nonselected strategy overwrite that display. Job lifecycle and shared-host triggers
-follow [background jobs](BACKGROUND_JOBS.md).
+let an in-flight nonselected strategy overwrite that display. Job lifecycle, saved execution steps,
+common logging, and shared-host triggers follow [Job Management](BACKGROUND_JOBS.md).
 
 A source's processing timestamp or revision tells the system **what changed**, not which later
 messages reinterpret it. A rolling summary alone cannot reliably identify every relevant later

@@ -123,6 +123,9 @@ owns multi-turn scenarios, semantic assessment, latency/cost measurements, and r
   [LAN verification](../components/MONOREPO.md#verification) in implementing projects.
 - Changes affecting shipped AI behavior or model selection satisfy
   [candidate functional qualification](AI_EVALUATION.md#required-functional-acceptance-suite).
+- Durable job/step changes satisfy the [Job Management verification matrix](../architecture/BACKGROUND_JOBS.md#13-required-verification-and-adoption),
+  including real process interruption and fresh-process recovery when lifecycle, leases, checkpoints,
+  publication, or external-effect handling changes. Provider timeouts alone do not cover this gate.
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules

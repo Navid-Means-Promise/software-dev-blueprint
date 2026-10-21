@@ -42,9 +42,9 @@ name, everywhere.** A second name for a thing that already has one is a bug.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
   the firmware does, for use without hardware.
 - **Memory record** — in the current-state assistant-memory pattern, the application interpretation
-  of the smallest coherent piece of
-  durable conversational knowledge that can be corrected, expired, or deleted independently. It
-  references its evidence instead of duplicating the source message and does not copy authoritative
+  of the smallest coherent piece of durable conversational knowledge that can be corrected,
+  expired, or deleted independently. It references its evidence instead of duplicating the source
+  message and does not copy authoritative
   state owned by another application domain. See [AI subsystem](architecture/AI_SUBSYSTEM.md).
 - **FactDB** — optional sourced knowledge whose proposition meanings are immutable and whose
   current views depend on versioned evidence. See [FactDB](architecture/FACT_DB.md).
@@ -54,6 +54,9 @@ name, everywhere.** A second name for a thing that already has one is a bug.
 - **Rolling summary** — revision-bound prose derived incrementally from authoritative sources,
   with explicit coverage and edit recovery. A brief may derive from its detailed text. See
   [rolling summaries](architecture/ROLLING_SUMMARIES.md).
+- **Job Management** — the durable-work subsystem coordinated through `JobManager`; its `Job`,
+  `JobStep`, checkpoint, attempt, trigger, and lease vocabulary is defined in
+  [job management](architecture/BACKGROUND_JOBS.md#1-vocabulary-and-guarantees).
 - **Memory-selection index** — a disposable, revision-bound projection that helps select memory
   records by time, semantic relevance, or application-defined selectors. A hit is only a reference;
   context assembly reloads the matching current memory record before use. See

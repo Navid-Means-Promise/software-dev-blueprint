@@ -72,6 +72,11 @@ selected entity_ (not once for the app), the container holds the **factory**, no
 per-entity service stays out of the singleton graph without ever looking its collaborators up
 globally.
 
+[Job Management](../architecture/BACKGROUND_JOBS.md) composes these existing patterns: a State
+Machine for lifecycle, a Mediator (`JobRunner`) for bounded execution, Repositories for durable
+claims/checkpoints, and injected Strategy/Ports & Adapters for handlers, retry policy, and hosts.
+Its named steps and execution context do not require a second pattern catalog or a base-class tree.
+
 **Semantic Device Model** is the rule for physical hardware. The wire contract carries _meaning_ —
 a mode and its parameters — and the firmware renders the actual frames locally from that meaning.
 This keeps the link cheap, keeps timing correct on-device, and lets a server or client hold a
