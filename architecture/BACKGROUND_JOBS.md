@@ -396,6 +396,8 @@ The generation/token is a **fence**: a late old owner cannot overwrite newer pro
 provider response arrives successfully. Lease exclusion protects local writes, not third-party
 side effects; those need the independent idempotency protocol below. Keep database write locks
 short. No HTTP call, sleep, queue wait, or expensive computation runs while holding them.
+Close or exhaust persistence cursors before such work as well. An unfinished SQLite read cursor
+can retain a lock even without an explicit application transaction and stall other native workers.
 
 Make claim, checkpoint acceptance, and recovery race-safe across real connections/processes. Enqueue
 of a newer desired revision while an attempt runs must survive that attempt's completion. Old work
