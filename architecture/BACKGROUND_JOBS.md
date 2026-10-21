@@ -330,6 +330,11 @@ manual checkpoint call. Commit output/reference, cursor, checkpoint revision, st
 lifecycle event atomically with lease/input checks. Return `continue` to save partial progress and
 schedule the next batch; this does not mean the whole step or job is complete.
 
+A continuation identifies newly saved progress through a checked cursor or domain receipt. If an
+unchanged continuation repeatedly returns the same progress identity, block/report that stalled
+step rather than creating a visit-driven hot loop. Retrying unchanged work is a deferral/retry,
+not evidence of another accepted batch.
+
 A domain-owned result may commit separately, but then its stable operation receipt must let recovery
 recognize that result and attach the missing job checkpoint without repeating the domain effect.
 If the stores differ, use an outbox or explicit idempotent reconciliation protocol; do not imply two
@@ -840,6 +845,8 @@ For adoption, record the host capability profile and time limits, registered job
 checkpoint compatibility policy, canonical storage/event owners, retry/resource ceilings, migration
 and recovery procedure, log retention/access, and verification evidence. Map existing job records
 and provider ledgers explicitly; preserve accepted outputs and historical receipts during migration.
+Drain or stop executors before changing the ownership protocol. Legacy workers may not participate
+in the new manager lock; marking their rows interrupted during migration cannot prove they stopped.
 When upgrading payload-based queued jobs, an explicit migration may extract validated reference
 metadata and reconnect it to canonical sources. Never rename the old input blob to `metadata` or
 silently treat its stale contents as fresh data. Block unmappable jobs for review; keep legitimate
