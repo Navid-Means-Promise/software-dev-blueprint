@@ -121,6 +121,19 @@ supported lexical/format scope, retain exact dates where required, and reject un
 These rules do not establish complete semantic coverage, correct attribution or arbitrary-language
 truth. Conservative rejection is visible work needing repair, never an accepted inaccurate update.
 
+Canonical metadata also needs faithful attribution. An assigned participant is not necessarily the
+person who created, registered or approved an item; a creation timestamp does not identify that
+actor. Do not invent performed actions from those associations. Preserve supplied proper names as
+literal identities, rather than interchangeable descriptions. Exact brief copying can propagate an
+unsupported assertion already present in detailed memory, so review accepted intermediate prose.
+
+Align prompts and value guards on historical retention. A guard that requires every value from a
+batch can reject a faithful current-state summary that keeps only an explicit later correction.
+If that policy is intentional, require superseded values to remain clearly historical in detailed
+memory; otherwise define a separately qualified way to establish supersession. Number presence
+alone cannot determine which claim replaced another. Measure these false rejections separately
+from accepted inaccuracies, without replacing failed trials with successful reruns.
+
 A brief projection may select referenced complete sentences from the accepted detailed summary and
 render their exact text in code. References identify this attributed derived text, not raw user
 messages that omit their speakers. Validate references, duplicates, length and protected value/context
