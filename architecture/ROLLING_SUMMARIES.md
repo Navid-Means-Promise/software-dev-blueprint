@@ -109,6 +109,25 @@ attribution. Validate the response envelope, bounds, references, and coverage me
 checks cannot prove natural-language correctness; semantic qualification remains necessary. A
 failed/rejected attempt must not advance coverage or overwrite accepted text.
 
+A host may strengthen incremental updates with an exact edit plan: bounded, unique, nonoverlapping
+old-text/replacement pairs plus appended prose. Apply the pairs against the same accepted revision;
+reject missing or ambiguous targets before advancing coverage. The detailed summary can rephrase
+source messages and add speaker attribution. For example, changing ten to twelve million must retain
+an existing monthly period unless the new source explicitly changes that period too.
+
+Mechanically check recognizable value/context groups (amount, scale/currency and time period),
+not the presence of isolated numbers or a qualifier somewhere else in the summary. Define the
+supported lexical/format scope, retain exact dates where required, and reject ungrounded new values.
+These rules do not establish complete semantic coverage, correct attribution or arbitrary-language
+truth. Conservative rejection is visible work needing repair, never an accepted inaccurate update.
+
+A brief projection may select referenced complete sentences from the accepted detailed summary and
+render their exact text in code. References identify this attributed derived text, not raw user
+messages that omit their speakers. Validate references, duplicates, length and protected value/context
+coverage before publication. Exact copying prevents rewriting a selected sentence; it cannot prove
+that the selection includes every material sentence or necessary surrounding context. Qualify a
+rewritten projection and a sentence-selection projection as different strategies/configurations.
+
 Do model work outside database write locks. Publish detailed text and its coverage atomically only
 if source/context and prior-summary revisions still match. Use compare-and-swap and trusted
 idempotency identities to reject stale/concurrent results and avoid duplicate updates. Bounded

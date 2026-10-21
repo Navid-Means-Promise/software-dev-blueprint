@@ -55,6 +55,22 @@ Queue wait counts toward the user-facing deadline; align server and client timeo
 server workflow does not routinely outlive its caller. A client disconnect does not undo committed
 effects; recovery follows [turn consistency](AI_SUBSYSTEM.md#turn-consistency-and-failure-recovery).
 
+A shared provider client can coordinate admission across PHP workers or other host processes using
+a bounded queue and configurable active-request permits. Keep ledger critical sections short; waiting
+or network work must not monopolize the ledger lock. Queue timeout/cancellation releases its ticket,
+process exit releases its active permit, and interrupted reservations remain counted. Share one
+policy/store for the intended quota scope; changing concurrency must not reset rolling counts,
+server cooldowns or failed-attempt history. Admission performs no hidden generation retry.
+
+Keep a configurable minimum gap even during successful traffic. When justified by measured failures,
+a bounded adaptive penalty may increase spacing after repeated transient transport/server failures
+and decay only after fresh healthy requests. Authentication/contract errors, rejected model content
+and internal accounting faults do not train server health. Older concurrent completions cannot erase
+a newer failure penalty. Server `Retry-After` and model-capacity resets take precedence. Retain queue
+wait separately from HTTP duration and report the effective interval and queue pressure without
+request content. Deterministic and independent-process checks prove exclusion, queue ordering,
+cancellation, recovery and preserved budgets before live use.
+
 Before sending a request, budget the complete prompt, not only retrieved records: stable
 instructions/tools, baseline/pinned values, recent conversation, current input, and tool results
 must fit the selected model's context window with reserved output capacity. Bound input/media sizes,
