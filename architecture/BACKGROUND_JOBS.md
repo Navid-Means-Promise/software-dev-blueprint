@@ -412,7 +412,8 @@ failure means stop before the next effect; a late result still needs fencing.
 Use an authoritative persisted UTC clock for due times and expiry comparisons, and an injected
 monotonic clock for elapsed run budgets. Do not persist a process's monotonic timestamp for another
 process to compare. Clock uncertainty or stale database connections cannot become permission to
-write after ownership has expired.
+write after ownership has expired. Ownership expiry is an interruption with bounded recovery;
+it is not a manual/business cancellation. Preserve an explicit cancellation reason when both occur.
 
 ## 6. Run budgets and unreliable hosts
 
@@ -611,7 +612,9 @@ The recorder derives reserved identity fields; a handler's log context cannot ov
 lease, outcome, or correlation. Use opaque references instead of personal identifiers. Reject or
 sanitize unrecognized detail fields through the declared boundary policy. A PSR-3 diagnostic bridge
 must handle unexpected context safely without breaking its lenient logging contract; it does not
-turn arbitrary exception messages/objects into unredacted durable evidence.
+turn arbitrary exception messages/objects into unredacted durable evidence. Keep diagnostic codes
+in a distinct namespace from authoritative lifecycle events, even if a handler supplies a lifecycle
+code as its message. Bind the actual step-attempt ID to the logger when that attempt starts.
 
 Lifecycle events include enqueue/coalesce, claim, fresh-input capture, step start, checkpoint saved,
 step complete, deferral, retry scheduled, rejection, interruption, blocked/exhausted, cancellation
@@ -849,6 +852,10 @@ and recovery procedure, log retention/access, and verification evidence. Map exi
 and provider ledgers explicitly; preserve accepted outputs and historical receipts during migration.
 Drain or stop executors before changing the ownership protocol. Legacy workers may not participate
 in the new manager lock; marking their rows interrupted during migration cannot prove they stopped.
+Preflight existing referential-integrity defects before rebuilding legacy tables. Preserve orphan
+attempt receipts in an explicit blocked legacy identity or protected archive; never silently delete
+them or turn missing business identity into runnable work. Compare pre/post integrity defects so
+unrelated existing corruption is distinguished from new migration damage.
 When upgrading payload-based queued jobs, an explicit migration may extract validated reference
 metadata and reconnect it to canonical sources. Never rename the old input blob to `metadata` or
 silently treat its stale contents as fresh data. Block unmappable jobs for review; keep legitimate
