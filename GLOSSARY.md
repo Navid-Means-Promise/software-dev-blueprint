@@ -57,6 +57,9 @@ name, everywhere.** A second name for a thing that already has one is a bug.
 - **Job Management** — the durable-work subsystem coordinated through `JobManager`; its `Job`,
   `JobStep`, checkpoint, attempt, trigger, and lease vocabulary is defined in
   [job management](architecture/BACKGROUND_JOBS.md#1-vocabulary-and-guarantees).
+- **Job metadata** — creation-time target/correlation key-value data, such as `documentId`, used to
+  identify and find jobs; business inputs are loaded separately on execution. See
+  [job metadata and creation](architecture/BACKGROUND_JOBS.md#job-metadata-and-creation).
 - **Memory-selection index** — a disposable, revision-bound projection that helps select memory
   records by time, semantic relevance, or application-defined selectors. A hit is only a reference;
   context assembly reloads the matching current memory record before use. See

@@ -127,8 +127,9 @@ owns multi-turn scenarios, semantic assessment, latency/cost measurements, and r
   including real process interruption and fresh-process recovery when lifecycle, leases, checkpoints,
   publication, or external-effect handling changes. Execution changes prove native PHP thread
   behavior on a capable runtime and sequential fallback without it; input/lifecycle changes prove
-  fresh start-time loading, atomic equivalent-job reuse/replacement, cancellation races, and admin
-  visibility. Provider timeouts alone do not cover this gate.
+  metadata-only creation/scoped lookup, fresh start-time loading, atomic equivalent-job
+  reuse/replacement, cancellation races, and admin visibility. Provider timeouts alone do not cover
+  this gate.
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules

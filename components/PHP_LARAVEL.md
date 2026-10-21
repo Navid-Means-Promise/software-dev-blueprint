@@ -85,6 +85,9 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
 
 PHP jobs use the [Job Management contract](../architecture/BACKGROUND_JOBS.md) for handler/step
 interfaces, saved results, latest-input loading, equivalent-job replacement, and common logging.
+Creation accepts [identifying job metadata](../architecture/BACKGROUND_JOBS.md#job-metadata-and-creation)
+only; domain input records and mutable configuration are loaded when the job executes. Business
+logic can find and track its jobs through scoped metadata filters and returned handles.
 Its [execution policy](../architecture/BACKGROUND_JOBS.md#php-execution-policy) selects native PHP
 threads when supported and sequential execution otherwise, with one active manager. Laravel queues
 or another queue library can supply transport, without replacing that execution policy or adding

@@ -24,6 +24,7 @@ Use these names consistently rather than introducing a parallel `TaskManager` wi
 | JobAttempt | One claim of a job by a runner; it can execute a bounded number of steps |
 | StepAttempt | One execution of a step or its next batch; retries have separate receipts |
 | JobHandle | Checked reference returned to business logic for inspecting, tracking, or cancelling its job |
+| JobMetadata | Checked key-value list assigned at creation for identifying, correlating, and finding work; it contains no copied business inputs |
 | Trigger | An opportunity to ask the runner to process due work; it does not own that work |
 | Lease | Temporary ownership with an expiry and a token that guards writes |
 
@@ -62,9 +63,9 @@ Prefer these language-neutral names and narrow roles:
 | `JobExecutor` | Execution port with `SequentialJobExecutor` and PHP's native `PhpThreadJobExecutor` adapters |
 | `JobManagerLock` | Nonblocking ownership port admitting one active manager execution session across all triggers |
 | `JobHandler` | Interface implemented by each job type; supplies its versioned definition and composed domain steps |
-| `JobStep` | Interface implemented by each executable step; receives checked input and execution context and returns a `StepResult` |
-| `JobDefinition` | Immutable value describing type, definition version, payload contract, ordered stable step keys, and step policies |
-| `JobExecutionContext` | Per-step capability object: trusted identity, reusable checkpoint, upstream outputs, remaining budget, cancellation check, and bound logger |
+| `JobStep` | Interface implemented by each executable step; uses current attempt data/context and returns a `StepResult` |
+| `JobDefinition` | Immutable value describing type, definition version, metadata schema, searchable/equivalence fields, ordered stable step keys, and step policies |
+| `JobExecutionContext` | Per-step capability object: trusted identity, job metadata, fresh attempt data, reusable checkpoint, upstream outputs, budget, cancellation check, and bound logger |
 | `StepResult` | Checked outcome: complete, continue with saved progress, defer/retry, block, or cancel; includes typed result/reference and safe reason |
 | `JobRepository` | Persistence port for atomic enqueue, claims, guarded checkpoint commits, attempt transitions, cancellation, and bounded recovery scans |
 | `JobRecovery` | Reconciles expired ownership, unfinished attempts, committed results, and missing work through bounded repository operations |
@@ -81,7 +82,8 @@ handlers and steps at the composition root. Validate their registered type/versi
 uniqueness at startup. Unknown persisted types or incompatible versions become visible blocked
 jobs; never deserialize client-selected classes/untrusted executable objects or invoke
 client-supplied callables, commands, or URLs. A framework-owned queue wrapper may carry the checked
-job identity/payload through its trusted transport without replacing this application contract.
+job identity/metadata and manager-owned execution envelope through its trusted transport without
+adding a caller-supplied business-input payload.
 
 Use a simple ordered sequence by default. A dependency graph, parallel step execution, or child jobs
 requires a demonstrated workload; then define dependency completion, cancellation, and join semantics
@@ -107,7 +109,7 @@ interface JobStep
 ```
 
 `JobDefinition` associates those step implementations in the composition root; storage contains only
-checked identities and data. The runner supplies each step's typed input/output view in the context.
+checked identities and data. The runner supplies each step's fresh attempt data/output view in the context.
 Use concrete or generic checked values as the language permits, not unbounded arrays crossing ports.
 These names describe roles, not permission to create an interface and implementation for every DTO.
 
@@ -147,7 +149,7 @@ information is:
 
 | Record | Required information |
 | --- | --- |
-| Job | ID, trusted tenant/owner scope, producer/purpose and subject, type, definition/payload version, equivalence key, input mode, desired input revision, state, due time, optional absolute expiry, counters, cancellation reason/revision/timestamps, replacement links, created/updated timestamps |
+| Job | ID, trusted tenant/owner scope and producer, type, definition/metadata-schema version, metadata, equivalence key, desired source revision, state, priority/fairness data, due time, optional absolute expiry, counters, cancellation reason/revision/timestamps, replacement links, created/updated timestamps |
 | JobAttempt | ID, job and claimed desired revision, actual captured source revision/manifest, trigger/run correlation, lease token/generation and expiry, start/end, outcome, safe reason, cumulative resource receipts |
 | StepAttempt | ID, job attempt, stable step key and batch identity, input fingerprint, logical operation identity, start/end, outcome, safe error category, correlated external-request IDs |
 | Checkpoint | Job/scope, step and batch key, schema/definition identity, exact input fingerprint and upstream checkpoint identities, output or protected durable reference, cursor/coverage, checkpoint revision, commit time |
@@ -156,7 +158,7 @@ information is:
 Outputs may remain in an application-owned repository, such as FactDB, with a checkpoint referencing
 the committed revision/receipt. Do not copy canonical domain data into a second job-owned truth.
 Large results use protected immutable artifacts or domain references, not log text or an unbounded
-job payload. Store enough checked input/version identity to rebuild or explicitly reject lost state.
+creation record. Store enough checked source/version identity to rebuild or explicitly reject lost state.
 The backing storage must survive request/process restarts and routine host cleanup. Record and
 verify its actual transaction/locking guarantees on that host; request memory, sessions, or an
 ephemeral temporary directory are not the canonical queue. Schema ownership and explicit migrations
@@ -188,17 +190,64 @@ Persist jobs before dispatch. Source changes and desired work must commit togeth
 outbox/reconciliation protocol that proves no change can be lost between those writes. Invalidate
 old output synchronously with a source change; a delayed outbox delivery must not allow an old
 source revision to publish. Do not let a retry create a fresh logical effect identity.
-Bound payloads, backlog, retained receipts, and scans; apply tenant limits and an explicit rejection
+Bound metadata, backlog, retained receipts, and scans; apply tenant limits and an explicit rejection
 or coalescing policy instead of dropping required work silently.
 Resolve current domain authority at execution and publication, not only enqueue time. A recorded
 initiator is audit context, not permanent authorization after access is revoked. Explicit system
 maintenance jobs use their declared service authority and subject scope under the same policy model.
 
+### Job metadata and creation
+
+**Job creation accepts a registered job type and `JobMetadata`; it has no business-input arguments,
+`input`/`payload` field, source snapshot, or per-job generation-options bag.** Metadata is an
+extensible flat key-value list for target references and stable routing/correlation labels. Each
+job definition declares required/allowed keys, scalar types (string, safe integer, boolean, or null),
+key/value/total-size bounds, searchable fields, and which fields identify equivalent work. Fields
+are job-type-specific; the core does not hard-code `documentId` or legal-document properties.
+
+For example, a summary creation request can be:
+
+```json
+{
+  "jobType": "case-summary.rolling",
+  "metadata": {"documentId": "LD-42"}
+}
+```
+
+This identifies the document to summarize. Its messages, edits, dynamic properties, document dates,
+participant details, and active generation configuration are loaded through authorized repositories
+when execution begins. Do not hide those inputs in metadata as long strings, encoded JSON, arrays,
+serialized objects, or document copies. Required job options that describe mutable business state
+belong to its canonical domain record/configuration, resolved by reference at execution time.
+
+Creation metadata is immutable for that job identity. Changing the target creates distinct work;
+coalescing advances manager-owned source revisions, not the stored identity map. Reusing a job
+returns its canonical stored metadata/handle; a new caller's correlation can be recorded against
+that handle without silently rewriting creation metadata. Scope, authority, leases, status, clocks,
+scheduling/resource policy, and source watermarks remain manager/host-owned fields; metadata cannot
+override them or grant access to the referenced document. A projected subject column or metadata
+index is derived from this canonical map, not another independently editable copy of the target.
+
+Business logic can query `JobManager` by job type, metadata predicates, and states; for example,
+find jobs whose `documentId` equals `LD-42` and whose state is pending, running, or cancelling.
+Use checked filters over declared searchable fields, bounded indexed queries, and cursor pagination.
+Apply trusted tenant/owner scope inside the query. Preserve scalar types and distinguish a missing
+field from explicit null; metadata key order does not change equality. Reject unknown fields or
+raw SQL/JSON-path expressions instead of accepting arbitrary query strings. A metadata lookup aids
+tracking; the atomic enqueue/coalescing operation still owns race-safe equivalence decisions.
+
+This restriction concerns **creation-time inputs**, not accepted step outputs or checkpoints.
+Runtime attempt data and saved validated progress remain necessary and follow freshness checks.
+An event-delivery job also queues metadata only, such as `eventId`; it loads that event's canonical
+database record and current delivery/cancellation state on start. Immutable event content preserves
+the historical event's meaning without an event-snapshot payload exception or substituting the
+latest aggregate state for a different event.
+
 ### Latest inputs and equivalent jobs
 
-**Golden rule for latest-state jobs: store what to process, and load the latest authorized database
-state when execution actually starts.** Queue subject references, purpose, and checked options;
-do not freeze messages, dynamic properties, or document metadata into a delayed job payload.
+**Golden rule: queue identifying metadata, and load the current authorized database data when
+execution actually starts.** Job metadata such as `documentId` identifies the source; document
+metadata such as creation date and assigned participants is business data to load at that time.
 Capture one consistent source snapshot and its exact revision/manifest when the worker begins,
 including on resumed executions. Keep that snapshot stable for the attempt and validate it again
 at checkpoint/publication. Reloading live fields independently during processing can mix revisions.
@@ -208,16 +257,19 @@ queued desired watermark, adopt it under the same ownership/generation checks; a
 cancellation wins. Dispatch references to free executor slots rather than preloading stale source
 bodies into a second hidden thread queue.
 
-Declare a trusted equivalence key, normally tenant/owner scope + job type + subject + purpose +
-strategy. Exclude mutable source revisions: a new message changes the target, not which summary
-is being requested. Jobs for FactDB and rolling summaries have different keys. Nonreplaceable
-event-delivery jobs explicitly declare event-snapshot input and include the immutable event identity;
-their event semantics must not be lost through latest-state coalescing.
+Derive the equivalence key from trusted scope + job type + the definition's declared identity
+metadata fields, independent of metadata key ordering. For a summary this can be the scoped job
+type plus `documentId`; FactDB and rolling summaries have different job types. Exclude mutable
+source revisions and nonidentity correlation tags: a new message changes the requested revision,
+not which document's summary is requested. Nonreplaceable event-delivery definitions include
+`eventId` in their identity fields, so distinct events cannot coalesce or replace one another.
 
 Business logic receives a `JobHandle` and can use `JobManager` to find an equivalent current job or
 read its state/history within authorized scope. To request current output, call one atomic operation
-such as `ensureLatest(key, desiredRevision)`. It returns the existing or new handle and whether work
-was reused or replaced. A separate application-level “find, then insert” sequence is not race-safe.
+such as `ensureLatest(jobType, metadata)`. It validates the map, derives the equivalence key and
+desired source watermark through injected host/domain ports, and returns the existing or new handle
+and whether work was reused or replaced. Caller-supplied source bodies or revision overrides are
+not input arguments. A separate application-level “find, then insert” sequence is not race-safe.
 
 | Equivalent work found | Atomic decision |
 | --- | --- |
@@ -353,7 +405,7 @@ cannot make a synchronous 90-second LLM call reliably finish inside a 30-second 
 
 Do not wait in a web request merely to spend a long retry delay or acquire a busy provider permit.
 Persist the next due time and yield when admission cannot fit. Distinguish job backlog from the
-provider SDK's live request queue: the latter does not preserve the job payload after PHP exits.
+provider SDK's live request queue: the latter does not preserve the durable job after PHP exits.
 The runner remains independent of provider concurrency; [provider admission](AI_PROVIDER_OPERATIONS.md#admission-and-resource-bounds)
 controls actual calls across workers, accounts, and job types within its declared quota scope.
 
@@ -468,7 +520,7 @@ need their own domain expiry/compensation policy rather than the replaceable-sum
 
 ### Definition changes and manual recovery
 
-Definition, payload, checkpoint schema, prompt, model, or algorithm changes require a declared
+Definition, metadata schema, checkpoint schema, prompt, model, or algorithm changes require a declared
 compatibility decision. Version manifests identify relevant inputs per step, so a new display
 projection need not discard compatible accepted facts. A migration/rebuild creates a new target
 and preserves receipts; it never reinterprets a stored step key/index under unrelated new code.
@@ -621,6 +673,8 @@ The common views show:
 - Queued/running/cancelling jobs by producer, equivalence key, subject, and strategy, with handles,
   the captured source revision, cancellation reason/request time/stop confirmation, and navigable
   predecessor/successor links. New requests are visible immediately, before any worker starts them.
+- Creation metadata rendered as labeled key-value fields and filterable through each job type's
+  declared searchable keys, such as `documentId`; distinguish it from fresh source data and logs.
 - The single active manager, effective native-thread/sequential mode, configured/effective job slots,
   occupied workers, fallback reason, current request deadline, and last checkpoint observation.
 - A stable ordered timeline of attempts, checkpoints, retries, interruptions, and publication.
@@ -688,10 +742,10 @@ separately authorized and bounded; their quality tests do not substitute for cra
 
 Required evidence includes:
 
-1. **Contract and lifecycle:** unknown handler/version rejection, checked payload/output/cursor,
+1. **Contract and lifecycle:** unknown handler/version rejection, checked metadata/output/cursor,
    one-step and multi-step jobs, allowed transitions, disabled execution, and finite resource bounds.
    Include atomic equivalent-job lookup/create, producer tracking, current completed-output no-op,
-   repeated enqueue, and explicit event-snapshot separation.
+   repeated enqueue, and distinct event-ID lookup without queued input snapshots.
 2. **Durable progress:** valid prefix reuse, output-before-next-step ordering, batched continuation,
    projection-only retry, missing/corrupt artifact recovery, and exact source/contract invalidation.
 3. **Real interruption:** an isolated durable database and controlled fake external service; stop a
@@ -727,6 +781,14 @@ Required evidence includes:
    during native/blocking calls, bounded local cancellation checks, old result rejection at every
    commit boundary, recovery never revives cancelled work, and retained compatible checkpoints,
    replacement links, and known/unknown usage in both execution modes and the admin timeline.
+10. **Metadata-only creation and lookup:** reject business-input arguments and representative
+    nested/encoded source bodies that violate declared metadata schemas; reject wrong scalar types,
+    unknown/reserved fields, and size overflow.
+    Prove required-reference validation, immutable metadata on reuse, key-order-independent identity,
+    missing/null and string/integer distinctions, declared metadata filters, bounded indexed pages,
+    tenant/owner isolation with colliding metadata values, safe admin rendering, and no arbitrary
+    query execution. Verify both state-derived jobs and event-ID jobs load their canonical records
+    when execution starts, and incompatible legacy input payloads cannot run without migration.
 
 The process-death harness uses barriers or recorded signals to choose interruption points, not
 arbitrary sleep timings, production workers, paid providers, or the developer's normal database.
@@ -737,5 +799,9 @@ For adoption, record the host capability profile and time limits, registered job
 checkpoint compatibility policy, canonical storage/event owners, retry/resource ceilings, migration
 and recovery procedure, log retention/access, and verification evidence. Map existing job records
 and provider ledgers explicitly; preserve accepted outputs and historical receipts during migration.
+When upgrading payload-based queued jobs, an explicit migration may extract validated reference
+metadata and reconnect it to canonical sources. Never rename the old input blob to `metadata` or
+silently treat its stale contents as fresh data. Block unmappable jobs for review; keep legitimate
+accepted checkpoints only under the declared compatibility checks.
 This document specifies the target contract. A blueprint update alone does not change runtime code,
 qualify a model, enable a worker, or prove an implementing project's conformance.
