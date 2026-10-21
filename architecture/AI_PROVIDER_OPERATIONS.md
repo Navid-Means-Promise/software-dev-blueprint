@@ -30,6 +30,15 @@ for deterministic tests. Honor `Retry-After` only when it fits the remaining bud
 without an immediate retry. Avoid multiplying router, adapter, and orchestrator retry loops: declare
 the maximum total provider requests and which layer spends each allowance.
 
+A background pipeline may reserve several execution windows inside one fixed outer task deadline.
+For example, three chances total share two retry allowances across extraction, repair, and selection;
+a stage does not receive an independent three-chance loop. Each retry gets a bounded inner window
+from the remaining reserved total, with two/four-second backoff. All preparation, waiting and calls
+inside the task count toward that outer deadline; separately admitted startup discovery must have
+its own reported bound. Set the active-job lease for the complete task. Reuse accepted intermediate
+knowledge when only a derived projection failed, with normal freshness checks. SDK/router loops
+must not multiply this host allowance or reset shared quotas/cooldowns.
+
 Replay preserves the trusted turn envelope and performs no domain mutation before a final response
 crosses application decoding, validation, and authorization. Desired-state commands and trusted
 idempotency identities protect later delivery boundaries; provider retries never replay committed
@@ -46,6 +55,22 @@ Queue wait counts toward the user-facing deadline; align server and client timeo
 server workflow does not routinely outlive its caller. A client disconnect does not undo committed
 effects; recovery follows [turn consistency](AI_SUBSYSTEM.md#turn-consistency-and-failure-recovery).
 
+A shared provider client can coordinate admission across PHP workers or other host processes using
+a bounded queue and configurable active-request permits. Keep ledger critical sections short; waiting
+or network work must not monopolize the ledger lock. Queue timeout/cancellation releases its ticket,
+process exit releases its active permit, and interrupted reservations remain counted. Share one
+policy/store for the intended quota scope; changing concurrency must not reset rolling counts,
+server cooldowns or failed-attempt history. Admission performs no hidden generation retry.
+
+Keep a configurable minimum gap even during successful traffic. When justified by measured failures,
+a bounded adaptive penalty may increase spacing after repeated transient transport/server failures
+and decay only after fresh healthy requests. Authentication/contract errors, rejected model content
+and internal accounting faults do not train server health. Older concurrent completions cannot erase
+a newer failure penalty. Server `Retry-After` and model-capacity resets take precedence. Retain queue
+wait separately from HTTP duration and report the effective interval and queue pressure without
+request content. Deterministic and independent-process checks prove exclusion, queue ordering,
+cancellation, recovery and preserved budgets before live use.
+
 Before sending a request, budget the complete prompt, not only retrieved records: stable
 instructions/tools, baseline/pinned values, recent conversation, current input, and tool results
 must fit the selected model's context window with reserved output capacity. Bound input/media sizes,
@@ -53,6 +78,12 @@ returned response size, and cumulative tokens across continuations. Never trim s
 invalid JSON or silently drop required instructions/evidence to make a request fit. Reject or
 explicitly omit optional context under the declared completeness policy. Token estimates are
 admission estimates, separate from provider-reported usage.
+
+Reserve output for both hidden reasoning and visible content when the provider shares their token
+budget. Different stages may use independently qualified reasoning settings: a short projection must
+not inherit a reasoning allocation that consumes its entire response allowance. Fingerprint stage
+overrides, preserve the total deadline/price policy, and retain reported reasoning usage and finish
+reasons so truncation can be distinguished from invalid meaning or provider unavailability.
 
 ## Route within explicit policy
 
@@ -121,7 +152,10 @@ effects instead of discovering the requirement after commit or representing miss
 ## Diagnostics and sensitive evidence
 
 Audit validation failures, bounded corrective retries, requested and served model versions, latency,
-and reported token usage. Correlate content-free stage durations/counts under a trusted turn ID:
+and reported token usage. Report failed request attempts, rejected outputs, retries, recovered
+stages/tasks, exhausted tasks, and eventual completion separately. A final success never overwrites
+an earlier failure receipt; usage and timing include every attempt, with unknown usage left unknown.
+Correlate content-free stage durations/counts under a trusted turn ID:
 queue wait, context preparation, model/provider work, retrieval, validation, usage persistence,
 canonical transaction, and reply persistence. Define overlapping/parallel stages so their sum is not
 misrepresented as end-to-end latency. Ordinary logs exclude message, prompt, memory, and plan text.

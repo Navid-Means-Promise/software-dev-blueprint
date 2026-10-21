@@ -47,12 +47,17 @@ The source catalog is product-defined and extensible. It normally begins with:
   expose typed, explicit retrieval operations such as lookup by identifier or bounded range. The
   context subsystem never replaces them with assistant-memory copies merely to make them searchable.
 
-If assistant memory is stored as natural language, do not add subject/predicate/object fields merely
+For immutable sourced propositions and edit-dependency tracking, use the optional
+[FactDB contract](FACT_DB.md); its current delivery view can participate as a processed source without
+duplicating canonical memory. The current-state MemoryRecord pattern below remains available for
+products that do not need that provenance lifecycle.
+
+For the current-state MemoryRecord pattern, do not add subject/predicate/object fields merely
 in anticipation of a future query mechanism. Store a standalone canonical statement containing the
 smallest coherent information that can be corrected, expired, or deleted independently. Closely
 coupled details with the same evidence and lifecycle may share one record; information that can
-change independently does not. Adopt structured assertions later only when a measured use case needs
-structured querying.
+change independently does not. Adopt a structured contract only for a demonstrated extraction or
+query requirement; sourced atomic extraction follows the separate [FactDB contract](FACT_DB.md).
 
 Raw messages, assistant memory, and application state are not competing copies of one truth: they
 have different meanings. Raw messages are evidence, memory records are the application's current
@@ -81,6 +86,10 @@ Do not store the same proposition in assistant memory and an application-specifi
 - Other durable user knowledge belongs in assistant memory unless another application domain already
   owns it.
 - Casual conversation remains in raw conversation history only.
+
+A host may expose a [rolling summary](ROLLING_SUMMARIES.md) as a revision-bound processed source,
+retaining its original-source ownership and completeness policy rather than copying its contents
+into a second canonical memory collection.
 
 The exact boundary is product-defined. The invariant is universal: a convenient retrieval copy does
 not become a second authoritative record.

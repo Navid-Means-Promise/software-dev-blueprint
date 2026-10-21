@@ -59,6 +59,12 @@ domain vocabulary and package scope.
   provider operations, routing, latency recovery, caching, accounting, and diagnostics
 - [architecture/AI_CONTEXT_RETRIEVAL.md](architecture/AI_CONTEXT_RETRIEVAL.md) — optional,
   experimental application-owned AI-chat context memory and retrieval
+- [architecture/FACT_DB.md](architecture/FACT_DB.md) — optional immutable propositions, versioned
+  evidence, correction dependencies, and reusable knowledge-store contract
+- [architecture/ROLLING_SUMMARIES.md](architecture/ROLLING_SUMMARIES.md) — optional maintained prose
+  context, revision coverage, historical-edit recovery, and derived UI briefs
+- [architecture/BACKGROUND_JOBS.md](architecture/BACKGROUND_JOBS.md) — durable jobs, saved progress,
+  bounded execution, and shared-host triggers
 
 **Components** — the concrete modules
 

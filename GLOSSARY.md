@@ -41,10 +41,19 @@ name, everywhere.** A second name for a thing that already has one is a bug.
   locally; never streamed frames.
 - **Device twin** — an in-memory model of a physical device that interprets the same semantic contract
   the firmware does, for use without hardware.
-- **Memory record** — the current application interpretation of the smallest coherent piece of
+- **Memory record** — in the current-state assistant-memory pattern, the application interpretation
+  of the smallest coherent piece of
   durable conversational knowledge that can be corrected, expired, or deleted independently. It
   references its evidence instead of duplicating the source message and does not copy authoritative
   state owned by another application domain. See [AI subsystem](architecture/AI_SUBSYSTEM.md).
+- **FactDB** — optional sourced knowledge whose proposition meanings are immutable and whose
+  current views depend on versioned evidence. See [FactDB](architecture/FACT_DB.md).
+- **Proposition / claim** — immutable meaning and a source's attributed assertion of that meaning,
+  respectively. Evidence and correction relationships determine delivery eligibility; support is
+  not proof of truth. See [FactDB](architecture/FACT_DB.md#meaning-and-identity).
+- **Rolling summary** — revision-bound prose derived incrementally from authoritative sources,
+  with explicit coverage and edit recovery. A brief may derive from its detailed text. See
+  [rolling summaries](architecture/ROLLING_SUMMARIES.md).
 - **Memory-selection index** — a disposable, revision-bound projection that helps select memory
   records by time, semantic relevance, or application-defined selectors. A hit is only a reference;
   context assembly reloads the matching current memory record before use. See
