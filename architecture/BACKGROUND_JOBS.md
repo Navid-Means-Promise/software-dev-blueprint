@@ -361,6 +361,10 @@ execution merely because that timestamp passed. If exclusion cannot be establish
 failure model, keep execution blocked and report it privately. Job-level leases/fences below remain
 necessary for attempt recovery, cancellation, and stale writes; they do not replace manager exclusion.
 
+Create native worker pools and perform recovery/discovery only after acquiring that lock. A busy
+wake-up must not initialize a pool or produce a run/failure receipt. If dispatch fails after a worker
+may have started, settle that worker under the same lock before allowing replacement execution.
+
 ### Per-job ownership
 
 Claim due work in a short atomic transaction or equivalent database operation. Capture the desired
@@ -369,6 +373,19 @@ generation. Every checkpoint, domain publication, renewal, and completion must r
 owner, an expired lease, cancellation/replacement generation, erased scope, or incompatible input
 revision. A queue-only token check is insufficient if an old process can still write domain results
 directly.
+
+Resolve the current target, source revision, and enqueue authority inside the transaction that
+coalesces or replaces work, or prove an equivalent conditional-write protocol. A fresh lookup before
+opening that transaction alone leaves an ownership/revision race. When source writers also enqueue
+through database triggers, they and the application API use one maintained transition contract.
+A checked command view with one transaction-owned enqueue trigger can serve both; it is a host
+adapter detail, not a second application-facing job API.
+
+Domain stores that commit independently of the job repository need an injected commit guard inside
+their own transaction. Check the active attempt, cancellation, scope, and source revision at that
+commit boundary. Checking only before a provider call or outside the domain transaction cannot
+fence a result cancelled during that call. The guard remains a narrow port or callback; the reusable
+store must not import the host application's job subsystem.
 
 The generation/token is a **fence**: a late old owner cannot overwrite newer progress, even if its
 provider response arrives successfully. Lease exclusion protects local writes, not third-party
@@ -466,6 +483,13 @@ Record whether dispatch was observed when the transport supports it; otherwise l
 unknown. An absolute business expiry, when present, also survives rescheduling and cannot be reset
 by another visitor or retry.
 
+Bind a durable external-call allowance to the exact operation inputs and policy across fresh PHP
+processes. A prompt/input fingerprint and manager-owned retry generation can identify repeat-safe
+generation work without copying prompts into logs or job metadata. An explicitly authorized retry
+may create another bounded allowance; preserve earlier receipts and shared provider cooldowns.
+Starting a new visit, runner, SDK instance, or job attempt cannot do so. Accepted batches with
+different inputs have distinct operation identities.
+
 A successful retry preserves every earlier failure/rejection/interruption receipt. Overall job
 completion and first-attempt success are different metrics. Successful HTTP transport is not
 semantic acceptance; inaccurate accepted AI content remains a functional failure under
@@ -523,6 +547,10 @@ proposed result, and finish cancellation. A successor may reuse independently co
 domain facts/checkpoints through explicit compatibility checks, but not unvalidated output from
 the cancelled call. Do not erase valid earlier history or charge cancellation as a confirmed failed
 HTTP request. Unknown external completion/usage remains unknown until reconciled.
+
+Keep obsolete/discarded work distinct from transport failures and invalid output in administration
+metrics. A successful response discarded after cancellation retains its transport outcome, timing,
+and known tokens; it must not increase transport cooldown penalties.
 
 Source erasure invalidates its jobs, outputs, artifacts, and derived copies according to retention
 policy; retain only the minimum non-content tombstone needed to reject an old worker restoring
