@@ -75,6 +75,8 @@ globally.
 [Job Management](../architecture/BACKGROUND_JOBS.md) composes these existing patterns: a State
 Machine for lifecycle, a Mediator (`JobRunner`) for bounded execution, Repositories for durable
 claims/checkpoints, and injected Strategy/Ports & Adapters for handlers, retry policy, and hosts.
+The execution Strategy uses native PHP threads when supported and sequential execution otherwise;
+business logic uses the same atomic latest-work and cancellation interface in either mode.
 Its named steps and execution context do not require a second pattern catalog or a base-class tree.
 
 **Semantic Device Model** is the rule for physical hardware. The wire contract carries _meaning_ —

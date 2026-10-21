@@ -23,6 +23,7 @@ Use these names consistently rather than introducing a parallel `TaskManager` wi
 | Checkpoint | An accepted result or cursor, with the exact inputs and contract that make it reusable |
 | JobAttempt | One claim of a job by a runner; it can execute a bounded number of steps |
 | StepAttempt | One execution of a step or its next batch; retries have separate receipts |
+| JobHandle | Checked reference returned to business logic for inspecting, tracking, or cancelling its job |
 | Trigger | An opportunity to ask the runner to process due work; it does not own that work |
 | Lease | Temporary ownership with an expiry and a token that guards writes |
 
@@ -56,8 +57,10 @@ Prefer these language-neutral names and narrow roles:
 
 | Component | Kind and responsibility |
 | --- | --- |
-| `JobManager` | Application service for enqueue, inspect, cancel, and authorized retry; delegates execution to the runner |
+| `JobManager` | Unified coordinator for enqueue/ensure-latest, lookup, cancel, and authorized retry; owns one execution session and delegates its scheduling loop to the runner |
 | `JobRunner` | Coordinates admission, recovery, claim, step execution, and checkpoint/attempt commit within one run budget |
+| `JobExecutor` | Execution port with `SequentialJobExecutor` and PHP's native `PhpThreadJobExecutor` adapters |
+| `JobManagerLock` | Nonblocking ownership port admitting one active manager execution session across all triggers |
 | `JobHandler` | Interface implemented by each job type; supplies its versioned definition and composed domain steps |
 | `JobStep` | Interface implemented by each executable step; receives checked input and execution context and returns a `StepResult` |
 | `JobDefinition` | Immutable value describing type, definition version, payload contract, ordered stable step keys, and step policies |
@@ -108,6 +111,35 @@ checked identities and data. The runner supplies each step's typed input/output 
 Use concrete or generic checked values as the language permits, not unbounded arrays crossing ports.
 These names describe roles, not permission to create an interface and implementation for every DTO.
 
+### PHP execution policy
+
+One active `JobManager` can execute several independent jobs through a bounded pool of native PHP
+threads. `JobRunner` is its internal scheduling loop, not a second independently active manager.
+The manager lock, maximum concurrent jobs, and each provider's request concurrency are separate
+limits. Steps within one job follow their declared order, and equivalent replacement jobs follow
+the cancellation rules below.
+
+Use `PhpThreadJobExecutor` when the active PHP runtime supports and has verified the
+[`parallel` extension](https://www.php.net/manual/en/parallel.setup.php), which requires a ZTS build.
+Otherwise use `SequentialJobExecutor` and execute one job at a time. Capability selection happens
+at composition/startup for the actual web/CLI runtime; report the effective mode and fallback reason.
+PHP thread support is an optional host capability, not a built-in guarantee or permission to change
+the host's PHP installation. An operator may set the native pool size to one.
+
+These are the two PHP execution modes. Do not add Fibers, coroutine/event-loop job execution,
+`curl_multi` job batching, process pools, or HTTP fan-out as substitute concurrency mechanisms.
+Ordinary blocking job code works in the sequential adapter and in separate native threads; no job
+author must insert cooperative scheduling yields. Cooperative **cancellation** checks are still
+required at safe points.
+
+Each native thread bootstraps its own injected dependencies, database connection, logger, and
+provider client. Pass checked identities/data rather than live PDO connections, transactions, or
+other unsafe objects across the [native thread boundary](https://www.php.net/manual/en/parallel-runtime.run.php).
+All workers share the admitted run deadline, durable scope/lease rules, and provider admission
+policy. The manager retains its lock until every admitted worker stops; spawning a thread does not
+extend the HTTP request lifetime. Startup failure can select sequential mode before any dispatch;
+an uncertain partially dispatched operation follows recovery rather than blind duplicate execution.
+
 ## 3. Durable records and state transitions
 
 Define the exact records once in the implementing project's contract module. The minimum durable
@@ -115,8 +147,8 @@ information is:
 
 | Record | Required information |
 | --- | --- |
-| Job | ID, trusted tenant/owner scope and subject, type, definition/payload version, deduplication key, desired input revision, state, priority/fairness metadata, due time, optional absolute expiry, counters, cancellation state, created/updated timestamps |
-| JobAttempt | ID, job and claimed input revision, trigger/run correlation, lease token/generation and expiry, start/end, outcome, safe reason, cumulative resource receipts |
+| Job | ID, trusted tenant/owner scope, producer/purpose and subject, type, definition/payload version, equivalence key, input mode, desired input revision, state, due time, optional absolute expiry, counters, cancellation reason/revision/timestamps, replacement links, created/updated timestamps |
+| JobAttempt | ID, job and claimed desired revision, actual captured source revision/manifest, trigger/run correlation, lease token/generation and expiry, start/end, outcome, safe reason, cumulative resource receipts |
 | StepAttempt | ID, job attempt, stable step key and batch identity, input fingerprint, logical operation identity, start/end, outcome, safe error category, correlated external-request IDs |
 | Checkpoint | Job/scope, step and batch key, schema/definition identity, exact input fingerprint and upstream checkpoint identities, output or protected durable reference, cursor/coverage, checkpoint revision, commit time |
 | JobEvent | The common envelope in [logging](#9-common-logging-and-accounting), linked to its job, attempt, step, and external requests where applicable |
@@ -136,6 +168,7 @@ The logical job states are:
 | --- | --- |
 | `pending` | Ready or scheduled for `notBefore`; admission may claim it when due |
 | `running` | Owned by one live lease; only that owner may commit execution progress |
+| `cancelling` | Cancellation persisted and publication forbidden; the old worker or external call has not yet been confirmed stopped |
 | `completed` | Required steps and final publication committed for the desired input revision |
 | `blocked` | Needs changed configuration, authority, capacity, input, or review; no automatic hot loop |
 | `failed` | Automatic failure/resource allowance exhausted; preserved for inspection and authorized retry |
@@ -143,8 +176,8 @@ The logical job states are:
 
 Transient failure normally returns a job to `pending` with a future due time and a failed attempt.
 Yielding because no time/permit is available is a deferral, not a failed provider request. Internal
-SQL state names may differ if their mapping preserves these meanings. A completed job receiving new
-inputs becomes pending for that target; earlier success/failure receipts remain historical facts.
+SQL state names may differ if their mapping preserves these meanings. New work after a terminal
+job creates a new job identity and preserves the previous outcome, receipts, and replacement links.
 
 Attempt outcomes distinguish `started`, `completed`, `failed`, `rejected`, `interrupted`, `yielded`,
 `obsolete`, and `cancelled`. An interrupted call can additionally have an unknown external outcome.
@@ -152,14 +185,59 @@ A completed step attempt is not proof that the whole job completed. Only the run
 transition can declare completion; a handler log message cannot do so.
 
 Persist jobs before dispatch. Source changes and desired work must commit together, or use a durable
-outbox/reconciliation protocol that proves no change can be lost between those writes. Deduplication
-uses a trusted logical identity such as scope + job type + subject, with event identity added for
-jobs whose outcomes are not replaceable. Do not let a retry create a fresh logical effect identity.
+outbox/reconciliation protocol that proves no change can be lost between those writes. Invalidate
+old output synchronously with a source change; a delayed outbox delivery must not allow an old
+source revision to publish. Do not let a retry create a fresh logical effect identity.
 Bound payloads, backlog, retained receipts, and scans; apply tenant limits and an explicit rejection
 or coalescing policy instead of dropping required work silently.
 Resolve current domain authority at execution and publication, not only enqueue time. A recorded
 initiator is audit context, not permanent authorization after access is revoked. Explicit system
 maintenance jobs use their declared service authority and subject scope under the same policy model.
+
+### Latest inputs and equivalent jobs
+
+**Golden rule for latest-state jobs: store what to process, and load the latest authorized database
+state when execution actually starts.** Queue subject references, purpose, and checked options;
+do not freeze messages, dynamic properties, or document metadata into a delayed job payload.
+Capture one consistent source snapshot and its exact revision/manifest when the worker begins,
+including on resumed executions. Keep that snapshot stable for the attempt and validate it again
+at checkpoint/publication. Reloading live fields independently during processing can mix revisions.
+Previously saved progress is reused only under its compatibility rules.
+Persist the actual captured revision before the first effect. If fresh data is newer than the
+queued desired watermark, adopt it under the same ownership/generation checks; an already persisted
+cancellation wins. Dispatch references to free executor slots rather than preloading stale source
+bodies into a second hidden thread queue.
+
+Declare a trusted equivalence key, normally tenant/owner scope + job type + subject + purpose +
+strategy. Exclude mutable source revisions: a new message changes the target, not which summary
+is being requested. Jobs for FactDB and rolling summaries have different keys. Nonreplaceable
+event-delivery jobs explicitly declare event-snapshot input and include the immutable event identity;
+their event semantics must not be lost through latest-state coalescing.
+
+Business logic receives a `JobHandle` and can use `JobManager` to find an equivalent current job or
+read its state/history within authorized scope. To request current output, call one atomic operation
+such as `ensureLatest(key, desiredRevision)`. It returns the existing or new handle and whether work
+was reused or replaced. A separate application-level “find, then insert” sequence is not race-safe.
+
+| Equivalent work found | Atomic decision |
+| --- | --- |
+| No current job | Create one pending latest-state job |
+| Pending/queued job, including a resumable or delayed retry | Keep its identity; advance the desired revision and re-evaluate any input-dependent delay; it loads fresh data on start |
+| Running job already targeting the same or newer desired revision | Return its handle; duplicate/stale requests do not cancel useful work |
+| Running job made obsolete by newer inputs | Persist cancellation, reject further old-result publication, and create one pending successor with replacement links |
+| Old job cancelling | Create one successor if absent, otherwise advance/reuse the queued successor; repeated changes create no additional queued copies |
+| Only completed/cancelled/failed/blocked jobs | Reuse a verified current completed output as a no-op; otherwise create a new request when input/policy permits, preserving terminal history |
+
+Enforce this decision with a per-key transaction/lock, uniqueness constraints, and source/job revision
+checks. Source writers and dispatchers use the same ordering so a simultaneous claim and message
+edit cannot lose replacement work. Stale/equal desired revisions never regress a newer request.
+At most one queued successor exists for a logical key. It starts only after equivalent older local
+execution has stopped or crash recovery confirms ownership is gone; unrelated jobs can use other
+native thread slots. Required provider cooldowns, spending ceilings, and exhausted retry allowances
+survive coalescing and replacement. Changing input is not a way to reset shared resource policy.
+An unchanged `ensureLatest` call cannot bypass a blocked/exhausted outcome; fixing its cause or an
+authorized retry is required. Optional absolute expiry likewise creates an explicit cancellation
+decision rather than silently reviving obsolete work.
 
 ## 4. Designing resumable steps
 
@@ -201,11 +279,33 @@ An invalid AI output does not advance coverage or count as a successfully proces
 
 ## 5. Claims, leases, and checkpoint acceptance
 
+### One active manager
+
+All triggers compete for one nonblocking `JobManagerLock` per application/backing-store scope.
+Busy requests return immediately; they never queue waiting for that lock. A process-local singleton
+or an “is running” read followed by a write cannot enforce this across PHP requests. On a verified
+single-host PHP filesystem, a dedicated process-held
+[`flock(LOCK_EX | LOCK_NB)`](https://www.php.net/manual/en/function.flock.php) is one adapter option.
+Keep its handle private to the manager and stable across deployments; do not replace/unlink its
+lock file while owned. Other host adapters must prove equivalent cross-instance exclusion.
+This lock guards execution sessions only. Business calls that enqueue, inspect, or cancel work use
+their short scoped transactions without acquiring it, so an active manager cannot block updates
+or cancellation requests from the rest of the application.
+
+The manager holds this execution lock through worker shutdown/join. A time-based lease expiring is
+not proof that the old manager or native thread stopped. Recovery cannot start overlapping local
+execution merely because that timestamp passed. If exclusion cannot be established under the host's
+failure model, keep execution blocked and report it privately. Job-level leases/fences below remain
+necessary for attempt recovery, cancellation, and stale writes; they do not replace manager exclusion.
+
+### Per-job ownership
+
 Claim due work in a short atomic transaction or equivalent database operation. Capture the desired
 input revision, create an attempt, and issue a unique lease token plus an increasing ownership
 generation. Every checkpoint, domain publication, renewal, and completion must reject the wrong
-owner, an expired lease, cancellation, erased scope, or incompatible input revision. A queue-only
-token check is insufficient if an old process can still write domain results directly.
+owner, an expired lease, cancellation/replacement generation, erased scope, or incompatible input
+revision. A queue-only token check is insufficient if an old process can still write domain results
+directly.
 
 The generation/token is a **fence**: a late old owner cannot overwrite newer progress, even if its
 provider response arrives successfully. Lease exclusion protects local writes, not third-party
@@ -229,8 +329,9 @@ write after ownership has expired.
 
 ## 6. Run budgets and unreliable hosts
 
-One runner invocation executes a bounded number of **steps/batches**, not an unbounded number of
-whole jobs. Before each one, reserve its complete worst-case queue wait, connection, provider call,
+One manager invocation lets its runner execute due jobs and their bounded **steps/batches** while
+the request budget permits; it need not stop after one job or one step. Before each dispatch,
+reserve its complete worst-case queue wait, connection, provider call,
 permitted retry/backoff, validation, persistence, and response margin. All execution uses the same
 remaining run deadline; entering a step or retry cannot reset it. Startup discovery has its own
 reported allowance inside the host's total request budget.
@@ -256,11 +357,14 @@ provider SDK's live request queue: the latter does not preserve the job payload 
 The runner remains independent of provider concurrency; [provider admission](AI_PROVIDER_OPERATIONS.md#admission-and-resource-bounds)
 controls actual calls across workers, accounts, and job types within its declared quota scope.
 
-Start conservatively with one active runner and one step/batch per traffic invocation. Make these
-limits configurable and increase them only with evidence. Declare host-specific time bounds rather
-than copying a generous CLI timeout into shared hosting. Concurrent deployments must agree on the
-same lease, quota, and pacing scope. Bound priority and tenant scheduling so one large repair or
-noisy tenant cannot starve other due work.
+Keep one active manager, and select sequential execution or a configured native thread limit under
+the PHP policy above. Use the available request window productively until no due work or no safely
+admissible step remains. Reserve time to settle workers and commit receipts/checkpoints; do not use
+fatal PHP timeout as the normal return path. Every worker's external-call timeout must fit the same
+remaining deadline. Declare host-specific time bounds rather than copying a generous CLI timeout
+into shared hosting. Bound memory, admitted steps, and scheduling scans even with many tiny jobs.
+All deployments share the same lock, quota, and pacing scope. Bound priority and tenant scheduling
+so one large repair or noisy tenant cannot starve other due work.
 
 ## 7. External calls, retries, and uncertain outcomes
 
@@ -310,8 +414,10 @@ Recovery is normal execution, not an emergency script. Each trigger invokes the 
 `JobRecovery`/`JobRunner` path. A persisted scan cursor lets large backlogs, expired leases, and
 missing derived jobs be reconciled over multiple invocations.
 
-When reclaiming expired ownership, atomically close only unfinished job and step attempts as
-interrupted, preserve completed step receipts, and make unfinished work due according to policy.
+After confirming old execution no longer owns its session, reclaim expired job ownership: atomically
+close only unfinished job/step attempts as interrupted and preserve completed step receipts. Return
+still-wanted work to pending; cancellation-requested, replaced, erased, or expired work stays
+non-executable and is finalized as cancelled with its reason. Preserve its already queued successor.
 Reconcile correlated provider-call records too:
 change abandoned “started” records to interrupted/unknown according to their accounting contract.
 Do not leave them appearing permanently active, and do not label unobserved provider completion a
@@ -326,11 +432,41 @@ publication or generation request. If a checkpoint's artifact is missing or corr
 checkpoint and downstream dependents and use the declared rebuild path; report the loss. Do not
 skip prerequisites or call incomplete derived state complete.
 
-Cancellation is persisted and checked before each effect and commit. It cannot undo an already
-accepted external effect, and a blocking provider call may finish before cancellation is observed.
-Show cancellation requested separately from confirmed stopped work when needed. Source erasure
-invalidates its jobs, outputs, artifacts, and derived copies according to retention policy; retain
-only the minimum non-content tombstone needed to reject an old worker restoring erased data.
+### Cancellation and replacement
+
+Every business use case that creates jobs must define when their result becomes obsolete, how it
+tracks them by `JobHandle`/equivalence key, and how it cancels or replaces them. Persist a cancellation
+reason (such as `superseded_input`, `expired`, `source_deleted`, or `manual`), its revision/time,
+initiator where applicable, and any successor link. This is ordinary lifecycle behavior, not merely
+an admin button or a transport retry failure. The atomic enqueue/replacement decision is defined in
+[latest inputs and equivalent jobs](#latest-inputs-and-equivalent-jobs).
+
+Persist cancellation and fence publication immediately. A queued job becomes cancelled without
+execution; a running job becomes `cancelling` until it acknowledges stopping or recovery confirms
+it stopped. Its checkpoint/publication guards reject further results from that old ownership even
+while its thread or network call remains physically active. Never transfer its token to a successor.
+
+Jobs check durable cancellation and source/replacement revisions before each step, before an
+external effect, after an external call, and inside the transaction accepting any output. Long local
+loops add bounded periodic checks. Sequential execution uses these same checks; cancellation can be
+requested by a separate web request even while the only job thread is blocked. Use bounded network
+timeouts and transport cancellation where supported. Native
+[`Future::cancel()`](https://www.php.net/manual/en/parallel-future.cancel.php) cannot interrupt an
+internal function already running; neither that API nor a thread kill is a correctness guarantee.
+Do not depend on forcibly killing a thread to roll back writes or refund an external request.
+
+When a cancelled call eventually returns, retain its usage/outcome receipt, discard its obsolete
+proposed result, and finish cancellation. A successor may reuse independently committed, still-valid
+domain facts/checkpoints through explicit compatibility checks, but not unvalidated output from
+the cancelled call. Do not erase valid earlier history or charge cancellation as a confirmed failed
+HTTP request. Unknown external completion/usage remains unknown until reconciled.
+
+Source erasure invalidates its jobs, outputs, artifacts, and derived copies according to retention
+policy; retain only the minimum non-content tombstone needed to reject an old worker restoring
+erased data. Cancellation cannot undo an already accepted external effect; event-delivery jobs
+need their own domain expiry/compensation policy rather than the replaceable-summary policy.
+
+### Definition changes and manual recovery
 
 Definition, payload, checkpoint schema, prompt, model, or algorithm changes require a declared
 compatibility decision. Version manifests identify relevant inputs per step, so a new display
@@ -379,9 +515,10 @@ sanitize unrecognized detail fields through the declared boundary policy. A PSR-
 must handle unexpected context safely without breaking its lenient logging contract; it does not
 turn arbitrary exception messages/objects into unredacted durable evidence.
 
-Lifecycle events include enqueue/coalesce, claim, step start, checkpoint saved, step complete,
-deferral, retry scheduled, rejection, interruption, blocked/exhausted, cancellation, stale-result
-rejection, publication, and completion. Persist authoritative lifecycle receipts with the state
+Lifecycle events include enqueue/coalesce, claim, fresh-input capture, step start, checkpoint saved,
+step complete, deferral, retry scheduled, rejection, interruption, blocked/exhausted, cancellation
+requested/acknowledged, replacement linked/reused, stale-result rejection, publication, and completion.
+Persist authoritative lifecycle receipts with the state
 transition, or via a transactional outbox with explicit pending delivery. Diagnostic sink failure
 must not repeat an already committed effect; an unavailable required lifecycle/accounting commit
 cannot be reported as a successful transition. The logger is not the source of job truth.
@@ -403,46 +540,71 @@ needed idempotency receipts, or uncertainty evidence before their recovery windo
 
 ## 10. Trigger adapters and PHP shared hosting
 
-CLI, a resident worker when available, authenticated cron HTTP, manual admin execution, and
-traffic-driven execution use the same durable lifecycle. Triggers do not create a second queue,
-retry policy, or execution contract. Persist enable/disable mode, interval, run budget, step/batch
-limit, concurrency, and retry/resource policies through authorized administration.
-Suitable host adapter names are `TrafficJobTrigger`, `CronJobController`, `RunJobsCommand`, and
-`QueueWorkerAdapter` where a queue framework is used. They validate their entry boundary and call
-the runner; they do not embed another execution/retry loop.
+CLI, a resident worker when available, cron HTTP, manual admin execution, and traffic-driven
+execution enter the same manager lifecycle. They do not create another queue, retry policy, or
+execution contract. Persist enable/disable mode, client wake interval, run budget, native job-thread
+limit, and retry/resource policies through authorized administration. Suitable adapter names are
+`JobWakeupController`, `TrafficJobTrigger`, `RunJobsCommand`, and a `QueueWorkerAdapter` when used.
+Each enters the same manager lock and scheduling loop.
 
-**Traffic mode:** a visit asks whether due work can run; it is not a reliable scheduler. Use a shared
-admission lease and due time so many visitors cannot launch competing runners. A separate same-origin
-CSRF-protected browser request may execute a bounded run while the visible page stays usable. That
-background HTTP request remains alive until it responds; it does not create an independent daemon.
-Browsers send at most one runner request at a time per page and obey the interval. Server-side
-admission remains authoritative across tabs and visitors, including disconnects and retries.
+### Public wake-up contract
 
-Release PHP session locks before slow work. On a supported FPM host,
+The wake-up URL is a deliberately public, fixed signal: “process eligible server-owned work if the
+manager is idle.” It accepts no job, subject, tenant, handler, provider, retry, force-run, or budget
+control. It neither creates business work nor acts using the visitor's account/cookie privileges.
+User login, role permissions, CSRF tokens tied to a session, and an application-level call-rate limit
+are not required for this narrow signal. Its authorization boundary follows the
+[public-entry contract](AUTHORIZATION.md#deliberately-public-entry-points); actual jobs still enforce
+their current domain authority, source revisions, quotas, and provider pacing.
+
+Acquire the manager lock without waiting, before recovery scans or expensive composition where
+practical. A busy wake-up performs a minimal check and immediately returns an empty `200 OK`.
+Do not allocate an attempt, wait for a worker slot, write an unbounded per-call diagnostic, or add
+an artificial runner cooldown for this no-op path. Request handling still has a small resource cost;
+manager exclusion guarantees no duplicate execution, not zero-cost HTTP traffic.
+
+If idle, the admitted manager uses the request window to run eligible jobs, dispatching native
+threads only under the execution policy above. It keeps the HTTP request open and sends no progress,
+heartbeat, HTML, JSON, job ID, statistics, or diagnostic body. When there is no eligible work, or
+insufficient time for another safe step and worker cleanup, return an empty `200 OK` with no-store
+headers. A normal return does not mean the backlog is empty or every job succeeded. Error handling
+keeps any unexpected error response empty and records details only in protected administration.
+
+Use nearly all the verified host allowance while preserving checkpoint/cleanup margin. PHP's
+[`max_execution_time`](https://www.php.net/manual/en/info.configuration.php#ini.max-execution-time)
+alone is not a portable wall-clock limit; account for the host's web-server/FPM limits as well.
+An unexpected hard timeout or disconnect is recoverable interruption, not the normal loop exit.
+Browser connection lifetime does not extend the server's execution allowance. Release session locks
+before work and prevent output from jobs, providers, and framework error pages reaching this URL.
+
+### Traffic, cron, and privileged controls
+
+A separate browser request can hold this window open while the visible page stays usable. Each
+page sends at most one wake-up at a time and can use a configurable polling interval; those client
+choices do not impose a server-side frequency limit on valid wake-ups. Due times and provider
+cooldowns still govern the work itself. HEAD must not execute work. Cached pages, closed/suspended
+browsers, killed PHP requests, and no-traffic periods provide no scheduling guarantee.
+
+A host cron service may call the same fixed public wake-up URL and receives the same empty response;
+it needs no secret merely for supplying that execution opportunity. A distinct cron/control route
+that changes scheduling, forces work, accepts controls, or exposes receipts is protected: authenticate
+its caller and authorize that capability. Prefer a rotatable secret header; URL-only hosting controls
+require hashed secret storage, constant-time comparison, private URL/access-log handling, no-store,
+and no redirect/referrer exposure. Browser-session management actions use normal authentication,
+authorization, CSRF, and origin defenses. The public signal cannot access those controls or logs.
+
+An optional ordinary-response FPM trigger may finish a page response through
 [`fastcgi_finish_request()`](https://www.php.net/manual/en/function.fastcgi-finish-request.php)
-can finish the response before PHP continues, but the process still executes under host policy.
-FPM's [request termination settings](https://www.php.net/manual/en/install.fpm.configuration.php)
-can apply to this continued execution. Configure and verify that host profile; do not assume a
-shutdown callback, `ignore_user_abort`, `set_time_limit`, or a flushed response guarantees survival.
-Without a supported early-finish path, use the separate runner request or an explicit cron/worker.
-No slow model work belongs inside ordinary page rendering or an unbounded shutdown callback.
+before entering the same manager lock. This does not change the separate wake-up URL's empty-response
+contract or guarantee continued runtime: the host's
+[FPM termination policy](https://www.php.net/manual/en/install.fpm.configuration.php) still applies.
+Keep the explicit wake-up request available without early-finish support. No slow model work belongs
+inside ordinary rendering or an unbounded shutdown callback. Long cooldowns remain persisted due
+times; release the request when no work can run rather than occupying it with long idle sleeps.
 
-Cached pages, closed/suspended browsers, killed PHP requests, and periods without visits give no
-execution guarantee. Reserve foreground capacity; a post-response job still consumes server
-resources. Do not keep HTTP workers occupied sleeping through long cooldowns or draining a backlog.
-
-**Cron mode:** authenticate the bounded endpoint using a random, rotatable secret stored as a hash
-and compared in constant time. Prefer an authorization header. If a limited host requires a secret
-in its URL, treat URLs and access logs as private, suppress redirects/referrers, use no-store
-responses, and document that operational exposure. Reject HEAD execution. Expose only content-free
-runner receipts. Browser-triggered runs require an authenticated principal and the normal
-authorization, CSRF, and origin checks. Their traffic signal may only ask for already-authorized due
-work; it cannot pick a job, subject, provider, handler, ownership scope, or arbitrary scheduling
-parameters.
-
-Cron is preferable for steady progress. Enabling it does not imply an external scheduler was
-registered. Disabled automatic execution preserves durable work and exposes its paused condition;
-manual/CLI execution follows the host's explicit policy and all the same safety/resource limits.
+Cron is preferable for steady opportunities. Enabling it does not register an external scheduler.
+Disabled automatic execution preserves durable work and exposes its paused condition in admin;
+manual/CLI execution follows explicit host policy and the same ownership/resource limits.
 
 ## 11. Shared administration
 
@@ -456,10 +618,16 @@ The common views show:
 - Backlog by state/type, due/oldest age, last successful run, next due work, and missing trigger activity.
 - Job target revision, completed/remaining steps or known work units, valid saved progress, active
   ownership/expiry, retry due time, and a plain explanation of the current blocked/failed reason.
+- Queued/running/cancelling jobs by producer, equivalence key, subject, and strategy, with handles,
+  the captured source revision, cancellation reason/request time/stop confirmation, and navigable
+  predecessor/successor links. New requests are visible immediately, before any worker starts them.
+- The single active manager, effective native-thread/sequential mode, configured/effective job slots,
+  occupied workers, fallback reason, current request deadline, and last checkpoint observation.
 - A stable ordered timeline of attempts, checkpoints, retries, interruptions, and publication.
 - Request success/failure/rejection counts and consumed known/unknown resources, including failures.
 - Filters for time range, job type, job/subject reference, state, severity, step, attempt, reason,
-  trigger, provider, model, and account reference where available.
+  producer, equivalence key, replacement chain, trigger, provider, model, and account reference where
+  available.
 - Authorized retry/cancel/rebuild controls, shared-host budgets/mode, and visible pending/exhausted work.
 
 Progress is based on committed steps/coverage, not estimated LLM token output or a guessed percentage.
@@ -493,6 +661,14 @@ If message 5 changes, earlier checkpoints may need invalidation under the
 [rolling strategy's recovery policy](ROLLING_SUMMARIES.md#historical-edits-and-recovery). That is
 necessary reprocessing after changed inputs, distinct from repeating valid work after a crash.
 
+For example, the business action requests a summary for document D at source revision 20 and
+receives handle J1. While J1 is queued, message 21 arrives: `ensureLatest` keeps J1, and its worker
+loads all current messages/fields when it starts. Once J1 is running against revision 21, an old
+message is edited to create revision 22: the same source transaction marks J1 cancelling and queues
+J2, linked as its replacement. A later message arrives before J2 starts: reuse J2 for revision 23.
+J1's late response is accounted for but cannot publish. After J1 stops, J2 captures revision 23 and
+reuses only compatible accepted progress; it does not reuse J1's cancelled response.
+
 A [FactDB](FACT_DB.md) job can compose `ExtractFactsStep`, `SelectSummaryStep`, and
 `PublishSummaryStep`, saving each accepted extraction batch before summary selection.
 If selection fails, reuse the current accepted facts. Both strategies can be independent registered
@@ -514,6 +690,8 @@ Required evidence includes:
 
 1. **Contract and lifecycle:** unknown handler/version rejection, checked payload/output/cursor,
    one-step and multi-step jobs, allowed transitions, disabled execution, and finite resource bounds.
+   Include atomic equivalent-job lookup/create, producer tracking, current completed-output no-op,
+   repeated enqueue, and explicit event-snapshot separation.
 2. **Durable progress:** valid prefix reuse, output-before-next-step ordering, batched continuation,
    projection-only retry, missing/corrupt artifact recovery, and exact source/contract invalidation.
 3. **Real interruption:** an isolated durable database and controlled fake external service; stop a
@@ -524,6 +702,11 @@ Required evidence includes:
 4. **Concurrency:** independent connections/processes competing for claims; expiry/reclaim and late
    old writes; cancellation, erasure, or new input while a call runs; an old heartbeat cannot renew
    newer ownership. Simulated exceptions alone do not prove process-death recovery.
+   Prove one active manager across trigger types, a nonwaiting busy path, and no overlap after a
+   lease expires while the old session still executes. On PHP, prove native thread slot bounds,
+   isolated worker dependencies, provider limits across threads, worker cleanup, and sequential
+   selection when thread support is absent. Exercise the real native adapter on a capable test
+   runtime before claiming threaded support; fake executors prove policy only.
 5. **Remote uncertainty:** provider idempotency/query reconciliation, repeat-safe duplicate generation
    accounting, irreversible-effect blocking, and abandoned “started” AI records closed as unknown.
 6. **Budgets and retry:** remaining request-time admission, queue wait/backoff counted, a step that
@@ -532,10 +715,18 @@ Required evidence includes:
 7. **Logging and admin:** automatic lifecycle events for every job type, diagnostics with trusted
    context, failed sink behavior, unique request usage totals, unknown/partial usage, interrupted
    attempts, indexed filters/pagination, scoped access, CSRF, safe rendering, and protected artifacts.
-8. **Triggers and deployment:** unauthenticated/unauthorized browser-trigger rejection, traffic
-   bursts/multiple tabs, no early-finish capability, connection abort, no-traffic pause, cron secret
-   rotation/HEAD rejection, previous-schema migration, definition upgrade, restart, source erasure,
-   and rollback/maintenance compatibility.
+8. **Triggers and deployment:** public wake-up without a login/session, exact no-control decoding,
+   empty bodies for busy/no-work/budget-end paths, no application call-rate gate, traffic bursts/tabs,
+   no early-finish capability, connection abort, no-traffic pause, and no HEAD execution. Protected
+   controls retain unauthenticated/unauthorized rejection, CSRF, and cron-secret rotation. Verify
+   previous-schema migration, definition upgrade, restart, source erasure, and deployment rollback.
+9. **Fresh inputs and supersession:** append/edit/metadata changes before queued work starts; a
+   consistent start-time snapshot; source-change versus claim races; running cancellation plus
+   one successor atomically; repeated changes reuse the queued successor; no successor dispatch
+   until equivalent old execution stops. Verify expiry, manual queued cancellation, cancellation
+   during native/blocking calls, bounded local cancellation checks, old result rejection at every
+   commit boundary, recovery never revives cancelled work, and retained compatible checkpoints,
+   replacement links, and known/unknown usage in both execution modes and the admin timeline.
 
 The process-death harness uses barriers or recorded signals to choose interruption points, not
 arbitrary sleep timings, production workers, paid providers, or the developer's normal database.

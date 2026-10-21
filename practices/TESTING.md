@@ -125,7 +125,10 @@ owns multi-turn scenarios, semantic assessment, latency/cost measurements, and r
   [candidate functional qualification](AI_EVALUATION.md#required-functional-acceptance-suite).
 - Durable job/step changes satisfy the [Job Management verification matrix](../architecture/BACKGROUND_JOBS.md#13-required-verification-and-adoption),
   including real process interruption and fresh-process recovery when lifecycle, leases, checkpoints,
-  publication, or external-effect handling changes. Provider timeouts alone do not cover this gate.
+  publication, or external-effect handling changes. Execution changes prove native PHP thread
+  behavior on a capable runtime and sequential fallback without it; input/lifecycle changes prove
+  fresh start-time loading, atomic equivalent-job reuse/replacement, cancellation races, and admin
+  visibility. Provider timeouts alone do not cover this gate.
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules

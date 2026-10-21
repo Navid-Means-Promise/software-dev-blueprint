@@ -62,6 +62,13 @@ process exit releases its active permit, and interrupted reservations remain cou
 policy/store for the intended quota scope; changing concurrency must not reset rolling counts,
 server cooldowns or failed-attempt history. Admission performs no hidden generation retry.
 
+Native PHP job threads use the same admission/quota scope; a thread-local client is not an extra
+provider permit. Cancelling a queued request releases its unsent ticket under the admission contract.
+If a superseded job's dispatched call finishes, retain its actual transport outcome and usage even
+though the job rejects its obsolete result. Do not relabel that successful HTTP request as a failed
+request or train adaptive server-health penalties from application cancellation. Job replacement
+and publication fencing follow [job management](BACKGROUND_JOBS.md#cancellation-and-replacement).
+
 Keep a configurable minimum gap even during successful traffic. When justified by measured failures,
 a bounded adaptive penalty may increase spacing after repeated transient transport/server failures
 and decay only after fresh healthy requests. Authentication/contract errors, rejected model content
