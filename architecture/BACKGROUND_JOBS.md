@@ -198,25 +198,34 @@ maintenance jobs use their declared service authority and subject scope under th
 
 ### Job metadata and creation
 
-**Job creation accepts a registered job type and `JobMetadata`; it has no business-input arguments,
+**Job creation accepts a registered job class and `JobMetadata`; it has no business-input arguments,
 `input`/`payload` field, source snapshot, or per-job generation-options bag.** Metadata is an
 extensible flat key-value list for target references and stable routing/correlation labels. Each
 job definition declares required/allowed keys, scalar types (string, safe integer, boolean, or null),
 key/value/total-size bounds, searchable fields, and which fields identify equivalent work. Fields
 are job-type-specific; the core does not hard-code `documentId` or legal-document properties.
 
-For example, a summary creation request can be:
+**Business callers pass the registered handler class, never a manually typed job-type string.**
+The registry automatically resolves that class to the stable type string in its `JobDefinition`;
+that definition is the single source for the type. Validate class/type uniqueness at startup and
+reject unregistered classes. Persist the stable type string, so renaming a PHP class while retaining
+its registered type does not change queued job identities. Do not derive persisted types from class
+basenames or accept client-supplied class names.
 
-```json
-{
-  "jobType": "case-summary.rolling",
-  "metadata": {"documentId": "LD-42"}
-}
+For example, with `RollingCaseSummaryJob` registered as `case-summary.rolling`:
+
+```php
+$handle = $jobManager->ensureLatest(
+    RollingCaseSummaryJob::class,
+    new JobMetadata(['documentId' => 'LD-42']),
+);
 ```
 
-This identifies the document to summarize. Its messages, edits, dynamic properties, document dates,
-participant details, and active generation configuration are loaded through authorized repositories
-when execution begins. Do not hide those inputs in metadata as long strings, encoded JSON, arrays,
+The manager obtains `case-summary.rolling` from the registration automatically; the caller supplies
+only the class reference and identifying metadata. This identifies the document to summarize.
+Its messages, edits, dynamic properties, document dates, participant details, and active generation
+configuration are loaded through authorized repositories when execution begins. Do not hide those
+inputs in metadata as long strings, encoded JSON, arrays,
 serialized objects, or document copies. Required job options that describe mutable business state
 belong to its canonical domain record/configuration, resolved by reference at execution time.
 
@@ -228,8 +237,9 @@ scheduling/resource policy, and source watermarks remain manager/host-owned fiel
 override them or grant access to the referenced document. A projected subject column or metadata
 index is derived from this canonical map, not another independently editable copy of the target.
 
-Business logic can query `JobManager` by job type, metadata predicates, and states; for example,
-find jobs whose `documentId` equals `LD-42` and whose state is pending, running, or cancelling.
+Business logic can query `JobManager` by registered job class, metadata predicates, and states; the
+same registry resolution supplies the stored type filter. For example, find jobs whose `documentId`
+equals `LD-42` and whose state is pending, running, or cancelling.
 Use checked filters over declared searchable fields, bounded indexed queries, and cursor pagination.
 Apply trusted tenant/owner scope inside the query. Preserve scalar types and distinguish a missing
 field from explicit null; metadata key order does not change equality. Reject unknown fields or
@@ -266,9 +276,10 @@ not which document's summary is requested. Nonreplaceable event-delivery definit
 
 Business logic receives a `JobHandle` and can use `JobManager` to find an equivalent current job or
 read its state/history within authorized scope. To request current output, call one atomic operation
-such as `ensureLatest(jobType, metadata)`. It validates the map, derives the equivalence key and
-desired source watermark through injected host/domain ports, and returns the existing or new handle
-and whether work was reused or replaced. Caller-supplied source bodies or revision overrides are
+such as `ensureLatest(jobClass, metadata)`. It resolves the registered class, validates the map,
+derives the equivalence key and desired source watermark through injected host/domain ports, and
+returns the existing or new handle and whether work was reused or replaced.
+Caller-supplied source bodies or revision overrides are
 not input arguments. A separate application-level “find, then insert” sequence is not race-safe.
 
 | Equivalent work found | Atomic decision |
@@ -744,6 +755,8 @@ Required evidence includes:
 
 1. **Contract and lifecycle:** unknown handler/version rejection, checked metadata/output/cursor,
    one-step and multi-step jobs, allowed transitions, disabled execution, and finite resource bounds.
+   Prove automatic class-to-type resolution, unregistered-class/duplicate-registration rejection,
+   and persisted type stability when a handler class is renamed without changing its registered type.
    Include atomic equivalent-job lookup/create, producer tracking, current completed-output no-op,
    repeated enqueue, and distinct event-ID lookup without queued input snapshots.
 2. **Durable progress:** valid prefix reuse, output-before-next-step ordering, batched continuation,
