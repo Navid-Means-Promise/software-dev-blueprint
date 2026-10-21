@@ -310,8 +310,9 @@ Recovery is normal execution, not an emergency script. Each trigger invokes the 
 `JobRecovery`/`JobRunner` path. A persisted scan cursor lets large backlogs, expired leases, and
 missing derived jobs be reconciled over multiple invocations.
 
-When reclaiming expired ownership, atomically close its job and step attempts as interrupted and
-make unfinished work due according to policy. Reconcile correlated provider-call records too:
+When reclaiming expired ownership, atomically close only unfinished job and step attempts as
+interrupted, preserve completed step receipts, and make unfinished work due according to policy.
+Reconcile correlated provider-call records too:
 change abandoned “started” records to interrupted/unknown according to their accounting contract.
 Do not leave them appearing permanently active, and do not label unobserved provider completion a
 confirmed failure or zero-cost request. Keep the interruption and any later reconciled receipt;
@@ -434,9 +435,10 @@ resources. Do not keep HTTP workers occupied sleeping through long cooldowns or 
 and compared in constant time. Prefer an authorization header. If a limited host requires a secret
 in its URL, treat URLs and access logs as private, suppress redirects/referrers, use no-store
 responses, and document that operational exposure. Reject HEAD execution. Expose only content-free
-runner receipts. Browser-session/manual controls additionally require authorization and CSRF/origin
-checks. A public traffic signal may only ask for already-authorized due work; it cannot pick a job,
-subject, provider, handler, ownership scope, or arbitrary scheduling parameters.
+runner receipts. Browser-triggered runs require an authenticated principal and the normal
+authorization, CSRF, and origin checks. Their traffic signal may only ask for already-authorized due
+work; it cannot pick a job, subject, provider, handler, ownership scope, or arbitrary scheduling
+parameters.
 
 Cron is preferable for steady progress. Enabling it does not imply an external scheduler was
 registered. Disabled automatic execution preserves durable work and exposes its paused condition;
@@ -517,7 +519,8 @@ Required evidence includes:
 3. **Real interruption:** an isolated durable database and controlled fake external service; stop a
    worker without cleanup before/during a call, after its response but before checkpoint, after
    checkpoint before the next step, and after publication before queue acknowledgement. Start a
-   fresh process and prove the expected resume point, preserved receipts, and no stale publication.
+   fresh process and prove the expected resume point, preservation of completed step outcomes and
+   interruption history, and no stale publication.
 4. **Concurrency:** independent connections/processes competing for claims; expiry/reclaim and late
    old writes; cancellation, erasure, or new input while a call runs; an old heartbeat cannot renew
    newer ownership. Simulated exceptions alone do not prove process-death recovery.
@@ -529,9 +532,10 @@ Required evidence includes:
 7. **Logging and admin:** automatic lifecycle events for every job type, diagnostics with trusted
    context, failed sink behavior, unique request usage totals, unknown/partial usage, interrupted
    attempts, indexed filters/pagination, scoped access, CSRF, safe rendering, and protected artifacts.
-8. **Triggers and deployment:** traffic bursts/multiple tabs, no early-finish capability, connection
-   abort, no-traffic pause, cron secret rotation/HEAD rejection, previous-schema migration, definition
-   upgrade, restart, source erasure, and rollback/maintenance compatibility.
+8. **Triggers and deployment:** unauthenticated/unauthorized browser-trigger rejection, traffic
+   bursts/multiple tabs, no early-finish capability, connection abort, no-traffic pause, cron secret
+   rotation/HEAD rejection, previous-schema migration, definition upgrade, restart, source erasure,
+   and rollback/maintenance compatibility.
 
 The process-death harness uses barriers or recorded signals to choose interruption points, not
 arbitrary sleep timings, production workers, paid providers, or the developer's normal database.
