@@ -7,6 +7,8 @@ Follow the [contract source rule](CONTRACTS.md), [authorization boundary](AUTHOR
 [AI qualification requirements](../practices/AI_EVALUATION.md).
 Hosts scheduling extraction and projections use [Job Management](BACKGROUND_JOBS.md) for resumable
 steps and common attempt/log administration; FactDB remains the owner of accepted knowledge.
+Apply its [latest-input and replacement policy](BACKGROUND_JOBS.md#latest-inputs-and-equivalent-jobs)
+to state-derived host jobs; cancelling an attempt does not erase independently accepted knowledge.
 
 ## Meaning and identity
 

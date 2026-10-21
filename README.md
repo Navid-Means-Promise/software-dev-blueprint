@@ -64,7 +64,8 @@ domain vocabulary and package scope.
 - [architecture/ROLLING_SUMMARIES.md](architecture/ROLLING_SUMMARIES.md) — optional maintained prose
   context, revision coverage, historical-edit recovery, and derived UI briefs
 - [architecture/BACKGROUND_JOBS.md](architecture/BACKGROUND_JOBS.md) — Job Management interfaces,
-  resumable steps, recovery, shared logs/admin, and bounded shared-host execution
+  resumable steps, native PHP threads/sequential execution, metadata-only creation/lookup,
+  fresh inputs/replacement, shared logs/admin, and bounded public wake-up execution
 
 **Components** — the concrete modules
 

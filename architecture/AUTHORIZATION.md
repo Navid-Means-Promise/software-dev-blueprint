@@ -65,7 +65,23 @@ afterward is not an authorization boundary. Every alternate representation of a 
 JSON endpoint, export, attachment, background job, and internal callback—uses the same policy.
 
 Clients may hide controls based on their last-known policy snapshot, but that is presentation only.
-The server re-evaluates authority for every request and never trusts a client-visible role or button.
+The server re-evaluates authority for every protected request and never trusts a client-visible role
+or button.
+
+## Deliberately public entry points
+
+Public use cases are explicitly registered and bounded; absence of a session does not silently make
+a protected action public. Their contract defines accepted input, permitted effect, response, and
+resource limits. They do not invent a fixed authenticated principal or borrow the visitor's cookie
+privileges. Protected data and management operations retain the decision contract above.
+
+A [job-manager wake-up signal](BACKGROUND_JOBS.md#public-wake-up-contract) can be public because it
+supplies an execution opportunity for already-authorized server-owned work. Its precise no-control,
+empty-response, exclusion, and budget rules are owned there. The manager executes actual jobs under
+their current domain/service authority; the anonymous signal confers no subject or tenant authority.
+Session-bound CSRF rules apply when a route uses session privileges; they do not require adding a
+login/session solely to host this public signal. Resource policy is proportionate to the actual
+contract; a per-caller rate limiter is not universally mandatory for a wake-up no-op path.
 
 ## Browser and API trust boundaries
 
@@ -138,8 +154,8 @@ For every protected use case, deterministic tests prove:
   and server-derived context.
 - RBAC grants coarse capability; ABAC and relationship predicates constrain it to the resource and
   context.
-- Deny by default, authorize every representation and data path, and never trust client authority
-  claims.
+- Deny protected use cases by default, authorize every protected representation/data path, explicitly
+  bound public contracts, and never trust client authority claims.
 - Dynamic policy changes are authenticated, atomic, audited where required, cache-safe, and protected
   against self-escalation and loss of the last administrator.
 - Migrations own policy schema; runtime repositories do not mutate or silently repair it.

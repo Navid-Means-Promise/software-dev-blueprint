@@ -84,11 +84,18 @@ model for RBAC, ABAC, relationship scope, dynamic-policy administration, and pol
 ## Durable background work
 
 PHP jobs use the [Job Management contract](../architecture/BACKGROUND_JOBS.md) for handler/step
-interfaces, saved results, ownership, retries, and common logging. Laravel queues or another queue
-library can supply an adapter; serializing a whole use case does not establish its resumability.
+interfaces, saved results, latest-input loading, equivalent-job replacement, and common logging.
+Creation accepts [identifying job metadata](../architecture/BACKGROUND_JOBS.md#job-metadata-and-creation)
+only; domain input records and mutable configuration are loaded when the job executes. Business
+logic can find and track its jobs through scoped metadata filters and returned handles.
+Its [execution policy](../architecture/BACKGROUND_JOBS.md#php-execution-policy) selects native PHP
+threads when supported and sequential execution otherwise, with one active manager. Laravel queues
+or another queue library can supply transport, without replacing that execution policy or adding
+another active manager; serializing a whole use case does not establish its resumability.
 Use the [shared-host trigger guidance](../architecture/BACKGROUND_JOBS.md#10-trigger-adapters-and-php-shared-hosting)
 when no resident worker exists, and record the actual host request-time profile before enabling it.
-The same guide owns PSR-3 diagnostic integration, lifecycle-event persistence, and the required
+The same guide owns the public empty-response wake-up boundary, protected administration,
+PSR-3 diagnostic integration, lifecycle-event persistence, and the required
 [process-interruption verification](../architecture/BACKGROUND_JOBS.md#13-required-verification-and-adoption).
 
 ## Determinism and tests

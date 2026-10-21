@@ -148,15 +148,18 @@ The full budget and verification method are in [UI performance](../practices/UI_
 For any networked product that stores user data, identity and authority exist before the first
 externally usable slice. Feature scope may be reduced; the trust boundary may not.
 
-- Every request resolves an authenticated principal on the server. Authorization and owner/tenant
-  scope are enforced inside every read, search, ranking, and write path before data is returned or
-  changed. The decision model and dynamic-policy invariants live in
+- Every protected use case resolves an authenticated principal on the server. Deliberately public
+  entry points have an explicit bounded contract; they cannot borrow a visitor's privileges or
+  bypass protected data paths. Authorization and owner/tenant scope are enforced inside every
+  protected read, search, ranking, and write before data is returned or changed. The decision model,
+  public-entry boundary, and dynamic-policy invariants live in
   [authorization and policy decisions](../architecture/AUTHORIZATION.md).
 - Untrusted clients call bounded application use cases. They never choose ownership, server time,
   authorization scope, raw storage keys/queries, or whether a proposed effect is valid. The server
   validates the complete request and executes authoritative domain rules.
 - Canonical mutations define transaction, concurrency, retry/idempotency, and failure behavior.
-  Provider credentials stay server-side; public endpoints have resource/rate bounds; sensitive logs
+  Provider credentials stay server-side; public endpoints have explicit resource bounds and
+  request-frequency controls where the declared risk requires them; sensitive logs
   and durable data have explicit access, retention, and deletion policies.
 - **Safeguards are proportionate and capability-preserving.** Security, privacy, retention, and data
   minimization controls mitigate a named risk with the narrowest control that preserves the
