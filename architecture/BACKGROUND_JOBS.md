@@ -64,7 +64,7 @@ Prefer these language-neutral names and narrow roles:
 | `JobManagerLock` | Nonblocking ownership port admitting one active manager execution session across all triggers |
 | `JobHandler` | Interface implemented by each job type; supplies its versioned definition and composed domain steps |
 | `JobStep` | Interface implemented by each executable step; uses current attempt data/context and returns a `StepResult` |
-| `JobDefinition` | Immutable value describing type, definition version, metadata schema, searchable/equivalence fields, ordered stable step keys, and step policies |
+| `JobDefinition` | Immutable value describing type, definition version, metadata schema, searchable fields, ordered stable step keys, and step policies |
 | `JobExecutionContext` | Per-step capability object: trusted identity, job metadata, fresh attempt data, reusable checkpoint, upstream outputs, budget, cancellation check, and bound logger |
 | `StepResult` | Checked outcome: complete, continue with saved progress, defer/retry, block, or cancel; includes typed result/reference and safe reason |
 | `JobRepository` | Persistence port for atomic enqueue, claims, guarded checkpoint commits, attempt transitions, cancellation, and bounded recovery scans |
@@ -202,7 +202,7 @@ maintenance jobs use their declared service authority and subject scope under th
 `input`/`payload` field, source snapshot, or per-job generation-options bag.** Metadata is an
 extensible flat key-value list for target references and stable routing/correlation labels. Each
 job definition declares required/allowed keys, scalar types (string, safe integer, boolean, or null),
-key/value/total-size bounds, searchable fields, and searchable identity fields. Fields
+key/value/total-size bounds and searchable fields. Complete canonical metadata determines equivalence. Fields
 are job-type-specific; the core does not hard-code `documentId` or legal-document properties.
 
 **Business callers pass the registered handler class, never a manually typed job-type string.**
