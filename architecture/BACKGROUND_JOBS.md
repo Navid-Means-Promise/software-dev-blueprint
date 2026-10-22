@@ -215,7 +215,7 @@ basenames or accept client-supplied class names.
 For example, with `RollingCaseSummaryJob` registered as `case-summary.rolling`:
 
 ```php
-$result = $jobManager->refreshJob(
+$handle = $jobManager->createJob(
     RollingCaseSummaryJob::class,
     new JobMetadata(['documentId' => 'LD-42']),
 );
