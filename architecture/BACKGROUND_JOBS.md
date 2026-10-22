@@ -215,7 +215,7 @@ basenames or accept client-supplied class names.
 For example, with `RollingCaseSummaryJob` registered as `case-summary.rolling`:
 
 ```php
-$result = $jobManager->refresh(
+$result = $jobManager->refreshJob(
     RollingCaseSummaryJob::class,
     new JobMetadata(['documentId' => 'LD-42']),
 );
@@ -269,7 +269,7 @@ do not decide which business jobs to cancel, reuse or create. Imports and mainte
 the same application service. A bounded domain repair scan can detect missing/incompatible output
 without turning the generic manager into a data-change detector.
 
-`refresh(jobClass, metadata)` is an explicit instruction from business logic that this work is needed
+`refreshJob(jobClass, metadata)` is an explicit instruction from business logic that this work is needed
 again. Resolve the registered type and trusted scope, then atomically search exact canonical metadata
 (scalar types matter; key order does not). Only active jobs count; terminal rows remain history.
 The method does not ask a handler for a source revision or compare source timestamps.
@@ -280,25 +280,27 @@ The method does not ask a handler for a source revision or compare source timest
 | Running or cancelling work with no queued successor | Request cooperative cancellation if needed and create one pending replacement at the tail of the queue | `Replaced = 2` |
 | No active job (terminal history may exist) | Create one pending job at the tail of the queue | `Created = 1` |
 
-Return a checked `JobRefreshResult` containing the named `JobRefreshOutcome` (with those numeric
-values) and the canonical `JobHandle`. This keeps the result readable and gives callers the ID they
-need for tracking. Repeated refresh calls while a successor is queued return that same handle;
-they cannot create more queued copies or repeatedly cancel the successor. Definition-version
-changes may block incompatible work; they must not bypass this lifecycle contract.
+`refreshJob()` returns only an integer: `0`, `1`, or `2` as defined above. It does not return a
+job handle or an object containing the code. Business logic decides when to call it from relevant
+business changes, before any return value exists; a handle does not make that decision. If a caller
+needs job details later, use the separate scoped metadata search to obtain `JobHandle` values for
+inspection, cancellation or retry. Repeated calls while a successor is queued return `0` and keep
+that same queued job. Definition-version changes may block incompatible work; they must not bypass
+this lifecycle contract.
 
 For example, an edit action saves a message, then calls the feature's scheduling routine:
 
 ```php
-$result = $jobManager->refresh(
+$result = $jobManager->refreshJob(
     RollingCaseSummaryJob::class,
     new JobMetadata(['documentId' => 'LD-42']),
 );
-// $result->outcome is Unchanged, Created, or Replaced; $result->job identifies queued work.
+// $result is the integer 0, 1, or 2.
 ```
 
 Provide a separate non-invalidating `enqueue(jobClass, metadata)` for initial scheduling/repair.
 It returns equivalent active work without cancelling it. Repeated discovery/visitor wake-ups must
-not call `refresh` on every active job, restart healthy work, revive manual cancellation, or reset
+not call `refreshJob` on every active job, restart healthy work, revive manual cancellation, or reset
 exhausted failure allowances. Business logic checks whether output is already current before asking
 for repair. An explicit relevant mutation may request fresh work; historical failures stay visible
 and shared provider cooldowns, spending ceilings and resource admission remain enforced.
@@ -775,10 +777,10 @@ If message 5 changes, earlier checkpoints may need invalidation under the
 [rolling strategy's recovery policy](ROLLING_SUMMARIES.md#historical-edits-and-recovery). That is
 necessary reprocessing after changed inputs, distinct from repeating valid work after a crash.
 
-For example, a business action requests a summary for document D and receives handle J1. While J1
-is queued, a message arrives: the action calls `refresh`, which returns J1 unchanged. Its worker
+For example, a business action requests a summary for document D; metadata search can identify it as J1. While J1
+is queued, a message arrives: the action calls `refreshJob`, which returns 0 and keeps J1. Its worker
 loads current messages/fields on start. While J1 is running, an old message is edited: the edit
-transaction calls `refresh`, marks J1 cancelling and queues J2. Another edit before J2 starts reuses
+transaction calls `refreshJob`, marks J1 cancelling and queues J2. Another edit before J2 starts reuses
 J2. The manager compares no source revisions. J1's late response is accounted for but cannot publish.
 After J1 stops, J2 loads fresh data and reuses only domain-verified compatible accepted progress.
 
