@@ -887,6 +887,38 @@ Required evidence includes:
     query execution. Verify both state-derived jobs and event-ID jobs load their canonical records
     when execution starts, and incompatible legacy input payloads cannot run without migration.
 
+### Cancellation acceptance for concrete job types
+
+Run the cancellation matrix against each registered business job and its real repositories, not
+only an example handler. Define explicit checkpoints: queued cancellation; before the first effect;
+during a blocked external request; after its response; between accepted phases; before a domain
+transaction; rollback after provisional domain writes; after domain commit but before the queue
+receipt; and completion versus cancellation. Include repeated cancellation, replacement with changed
+source data, and fresh-process recovery. Use observable barriers rather than timing guesses. SQLite
+serializes writers: a committed cancellation must fence later writes, while an already committed
+result may remain valid history. Do not simulate a concurrently committed cancellation inside a
+transaction that would roll it back with the result.
+
+For every matrix row, retain an acceptance record showing the barrier reached, predecessor and
+successor states, source changes deliberately made by the test, and relevant database checks. Check
+SQLite integrity and foreign keys, unchanged protected source columns, domain references and
+coverage, checkpoint/attempt ownership, absence of unfinished receipts after stop, rejected stale
+writes, and unique effect/request accounting. Check accepted artifacts individually rather than
+relying only on row counts. Then run the successor to completion and verify current publication,
+latest-input coverage, reuse of compatible committed progress, and absence of duplicated effects.
+An audit must distinguish valid retained history from current output and have negative controls
+that prove it detects the corruption it claims to detect.
+
+Provide a provider selector for these integration tests: a local HTTP mock service for repeatable
+barrier/fault cases and an explicitly authorized live adapter for actual transport and usage
+receipts. Run the mock matrix first. Keep both modes on isolated synthetic databases; share the
+real adapter's normal request gate and finite allowances, and never silently substitute mock or
+cached responses in live mode. Retain failures, retries, unavailable cases, model identity, and
+usage, without credentials or private business data. Live cancellation results do not replace
+deterministic crash/concurrency tests or semantic model qualification. Say cancellation acceptance
+passed only for the declared matrix and configuration; no finite suite proves every possible race
+or the factual accuracy of every future AI response.
+
 The process-death harness uses barriers or recorded signals to choose interruption points, not
 arbitrary sleep timings, production workers, paid providers, or the developer's normal database.
 Run it in the project's isolated toolchain. If the platform cannot run a required process test,
