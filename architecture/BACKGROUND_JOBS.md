@@ -230,8 +230,8 @@ serialized objects, or document copies. Required job options that describe mutab
 belong to its canonical domain record/configuration, resolved by reference at execution time.
 
 Creation metadata is immutable for that job identity. Changing the target creates distinct work;
-coalescing preserves the stored identity map. Reusing a job
-returns its canonical stored metadata/handle; a new caller's correlation can be recorded against
+coalescing preserves the stored identity map. Metadata lookup
+returns canonical stored metadata/handles; a new caller's correlation can be recorded against
 that handle without silently rewriting creation metadata. Scope, authority, leases, status, clocks,
 scheduling/resource policy remain manager/host-owned fields; metadata cannot
 override them or grant access to the referenced document. A projected subject column or metadata
