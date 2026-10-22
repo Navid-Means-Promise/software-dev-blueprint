@@ -591,6 +591,13 @@ domain facts/checkpoints through explicit compatibility checks, but not unvalida
 the cancelled call. Do not erase valid earlier history or charge cancellation as a confirmed failed
 HTTP request. Unknown external completion/usage remains unknown until reconciled.
 
+Recovery also rebuilds interrupted operation totals from durable individual call receipts. A worker
+can stop after a successful call or domain commit but before saving its operation totals. Preserve
+known token/cost values; if any contributing call has unknown usage, keep that total unknown rather
+than reporting a partial sum as complete or substituting zero. Missing interrupted-call duration is
+unknown, not a measured zero. Test all-known, all-unknown, mixed and repeated recovery, including a
+real business job stopped between domain commit and operation acknowledgement.
+
 Keep obsolete/discarded work distinct from transport failures and invalid output in administration
 metrics. A successful response discarded after cancellation retains its transport outcome, timing,
 and known tokens; it must not increase transport cooldown penalties.
