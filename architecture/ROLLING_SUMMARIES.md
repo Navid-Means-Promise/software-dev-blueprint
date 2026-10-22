@@ -74,7 +74,7 @@ with independent persisted state and source checkpoints. A common displayed summ
 projection of the selected strategy only. Switching queues catch-up for the target and must not
 let an in-flight nonselected strategy overwrite that display. Latest-input job loading, equivalent
 queued-work reuse, cancellation/replacement, saved execution steps, and common administration follow
-[Job Management](BACKGROUND_JOBS.md#latest-inputs-and-equivalent-jobs).
+[Job Management](BACKGROUND_JOBS.md#fresh-inputs-and-explicit-refresh).
 
 A source's processing timestamp or revision tells the system **what changed**, not which later
 messages reinterpret it. A rolling summary alone cannot reliably identify every relevant later
