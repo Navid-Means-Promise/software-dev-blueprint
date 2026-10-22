@@ -18,7 +18,7 @@ Use these names consistently rather than introducing a parallel `TaskManager` wi
 
 | Term | Meaning |
 | --- | --- |
-| Job | One durably requested outcome for an authorized subject and a desired input revision |
+| Job | One durably requested outcome for an authorized subject, identified by its registered class and metadata |
 | JobStep | One named part of that job with a saved result; a large step can advance in bounded batches |
 | Checkpoint | An accepted result or cursor, with the exact inputs and contract that make it reusable |
 | JobAttempt | One claim of a job by a runner; it can execute a bounded number of steps |
@@ -58,7 +58,7 @@ Prefer these language-neutral names and narrow roles:
 
 | Component | Kind and responsibility |
 | --- | --- |
-| `JobManager` | Unified coordinator for enqueue/ensure-latest, lookup, cancel, and authorized retry; owns one execution session and delegates its scheduling loop to the runner |
+| `JobManager` | Unified coordinator for enqueue/refresh, metadata lookup, cancel, and authorized retry; owns one execution session and delegates its scheduling loop to the runner |
 | `JobRunner` | Coordinates admission, recovery, claim, step execution, and checkpoint/attempt commit within one run budget |
 | `JobExecutor` | Execution port with `SequentialJobExecutor` and PHP's native `PhpThreadJobExecutor` adapters |
 | `JobManagerLock` | Nonblocking ownership port admitting one active manager execution session across all triggers |
@@ -149,8 +149,8 @@ information is:
 
 | Record | Required information |
 | --- | --- |
-| Job | ID, trusted tenant/owner scope and producer, type, definition/metadata-schema version, metadata, equivalence key, desired source revision, state, priority/fairness data, due time, optional absolute expiry, counters, cancellation reason/revision/timestamps, replacement links, created/updated timestamps |
-| JobAttempt | ID, job and claimed desired revision, actual captured source revision/manifest, trigger/run correlation, lease token/generation and expiry, start/end, outcome, safe reason, cumulative resource receipts |
+| Job | ID, trusted tenant/owner scope and producer, type, definition/metadata-schema version, metadata, equivalence key, state, priority/fairness data, due time, optional absolute expiry, counters, cancellation reason/revision/timestamps, replacement links, created/updated timestamps |
+| JobAttempt | ID, job, optional domain-owned captured-source receipt, trigger/run correlation, lease token/generation and expiry, start/end, outcome, safe reason, cumulative resource receipts |
 | StepAttempt | ID, job attempt, stable step key and batch identity, input fingerprint, logical operation identity, start/end, outcome, safe error category, correlated external-request IDs |
 | Checkpoint | Job/scope, step and batch key, schema/definition identity, exact input fingerprint and upstream checkpoint identities, output or protected durable reference, cursor/coverage, checkpoint revision, commit time |
 | JobEvent | The common envelope in [logging](#9-common-logging-and-accounting), linked to its job, attempt, step, and external requests where applicable |
@@ -171,7 +171,7 @@ The logical job states are:
 | `pending` | Ready or scheduled for `notBefore`; admission may claim it when due |
 | `running` | Owned by one live lease; only that owner may commit execution progress |
 | `cancelling` | Cancellation persisted and publication forbidden; the old worker or external call has not yet been confirmed stopped |
-| `completed` | Required steps and final publication committed for the desired input revision |
+| `completed` | Required steps and final publication committed under the job's domain validation rules |
 | `blocked` | Needs changed configuration, authority, capacity, input, or review; no automatic hot loop |
 | `failed` | Automatic failure/resource allowance exhausted; preserved for inspection and authorized retry |
 | `cancelled` | No further execution authorized for this request; retained external-effect uncertainty remains visible |
@@ -202,7 +202,7 @@ maintenance jobs use their declared service authority and subject scope under th
 `input`/`payload` field, source snapshot, or per-job generation-options bag.** Metadata is an
 extensible flat key-value list for target references and stable routing/correlation labels. Each
 job definition declares required/allowed keys, scalar types (string, safe integer, boolean, or null),
-key/value/total-size bounds, searchable fields, and which fields identify equivalent work. Fields
+key/value/total-size bounds, searchable fields, and searchable identity fields. Fields
 are job-type-specific; the core does not hard-code `documentId` or legal-document properties.
 
 **Business callers pass the registered handler class, never a manually typed job-type string.**
@@ -215,7 +215,7 @@ basenames or accept client-supplied class names.
 For example, with `RollingCaseSummaryJob` registered as `case-summary.rolling`:
 
 ```php
-$handle = $jobManager->ensureLatest(
+$result = $jobManager->refresh(
     RollingCaseSummaryJob::class,
     new JobMetadata(['documentId' => 'LD-42']),
 );
@@ -230,10 +230,10 @@ serialized objects, or document copies. Required job options that describe mutab
 belong to its canonical domain record/configuration, resolved by reference at execution time.
 
 Creation metadata is immutable for that job identity. Changing the target creates distinct work;
-coalescing advances manager-owned source revisions, not the stored identity map. Reusing a job
+coalescing preserves the stored identity map. Reusing a job
 returns its canonical stored metadata/handle; a new caller's correlation can be recorded against
 that handle without silently rewriting creation metadata. Scope, authority, leases, status, clocks,
-scheduling/resource policy, and source watermarks remain manager/host-owned fields; metadata cannot
+scheduling/resource policy remain manager/host-owned fields; metadata cannot
 override them or grant access to the referenced document. A projected subject column or metadata
 index is derived from this canonical map, not another independently editable copy of the target.
 
@@ -253,54 +253,70 @@ database record and current delivery/cancellation state on start. Immutable even
 the historical event's meaning without an event-snapshot payload exception or substituting the
 latest aggregate state for a different event.
 
-### Latest inputs and equivalent jobs
+### Fresh inputs and explicit refresh
 
-**Golden rule: queue identifying metadata, and load the current authorized database data when
-execution actually starts.** Job metadata such as `documentId` identifies the source; document
-metadata such as creation date and assigned participants is business data to load at that time.
-Capture one consistent source snapshot and its exact revision/manifest when the worker begins,
-including on resumed executions. Keep that snapshot stable for the attempt and validate it again
-at checkpoint/publication. Reloading live fields independently during processing can mix revisions.
-Previously saved progress is reused only under its compatibility rules.
-Persist the actual captured revision before the first effect. If fresh data is newer than the
-queued desired watermark, adopt it under the same ownership/generation checks; an already persisted
-cancellation wins. Dispatch references to free executor slots rather than preloading stale source
-bodies into a second hidden thread queue.
+**Golden rule: queue identifying metadata, and load current authorized database data when execution
+actually starts.** Business logic decides which changes affect its jobs. The generic manager does
+not inspect messages, understand model/table dependencies, maintain source revisions, or decide
+whether domain data has become obsolete. Do not require a revision column on every model/table.
 
-Derive the equivalence key from trusted scope + job type + the definition's declared identity
-metadata fields, independent of metadata key ordering. For a summary this can be the scoped job
-type plus `documentId`; FactDB and rolling summaries have different job types. Exclude mutable
-source revisions and nonidentity correlation tags: a new message changes the requested revision,
-not which document's summary is requested. Nonreplaceable event-delivery definitions include
-`eventId` in their identity fields, so distinct events cannot coalesce or replace one another.
+A small application service for the affected feature owns scheduling: for example, a
+`CaseSummaryJobs` service is called by message creation/edit/deletion, document-detail changes, and
+relevant participant changes. Controllers delegate to application actions. Save the mutation and
+request its job refresh in one database transaction; if stores differ, use a transactional outbox.
+A failure rolls both back. Database constraints enforce uniqueness and ownership; database triggers
+do not decide which business jobs to cancel, reuse or create. Imports and maintenance writers use
+the same application service. A bounded domain repair scan can detect missing/incompatible output
+without turning the generic manager into a data-change detector.
 
-Business logic receives a `JobHandle` and can use `JobManager` to find an equivalent current job or
-read its state/history within authorized scope. To request current output, call one atomic operation
-such as `ensureLatest(jobClass, metadata)`. It resolves the registered class, validates the map,
-derives the equivalence key and desired source watermark through injected host/domain ports, and
-returns the existing or new handle and whether work was reused or replaced.
-Caller-supplied source bodies or revision overrides are
-not input arguments. A separate application-level “find, then insert” sequence is not race-safe.
+`refresh(jobClass, metadata)` is an explicit instruction from business logic that this work is needed
+again. Resolve the registered type and trusted scope, then atomically search exact canonical metadata
+(scalar types matter; key order does not). Only active jobs count; terminal rows remain history.
+The method does not ask a handler for a source revision or compare source timestamps.
 
-| Equivalent work found | Atomic decision |
-| --- | --- |
-| No current job | Create one pending latest-state job |
-| Pending/queued job, including a resumable or delayed retry | Keep its identity; advance the desired revision and re-evaluate any input-dependent delay; it loads fresh data on start |
-| Running job already targeting the same or newer desired revision | Return its handle; duplicate/stale requests do not cancel useful work |
-| Running job made obsolete by newer inputs | Persist cancellation, reject further old-result publication, and create one pending successor with replacement links |
-| Old job cancelling | Create one successor if absent, otherwise advance/reuse the queued successor; repeated changes create no additional queued copies |
-| Only completed/cancelled/failed/blocked jobs | Reuse a verified current completed output as a no-op; otherwise create a new request when input/policy permits, preserving terminal history |
+| Equivalent active work | Atomic refresh decision | Outcome |
+| --- | --- | --- |
+| A queued job, including a queued successor or delayed retry | Preserve its ID, metadata and due/cooldown time; it loads fresh data when it starts | `Unchanged = 0` |
+| Running or cancelling work with no queued successor | Request cooperative cancellation if needed and create one pending replacement at the tail of the queue | `Replaced = 2` |
+| No active job (terminal history may exist) | Create one pending job at the tail of the queue | `Created = 1` |
 
-Enforce this decision with a per-key transaction/lock, uniqueness constraints, and source/job revision
-checks. Source writers and dispatchers use the same ordering so a simultaneous claim and message
-edit cannot lose replacement work. Stale/equal desired revisions never regress a newer request.
-At most one queued successor exists for a logical key. It starts only after equivalent older local
-execution has stopped or crash recovery confirms ownership is gone; unrelated jobs can use other
-native thread slots. Required provider cooldowns, spending ceilings, and exhausted retry allowances
-survive coalescing and replacement. Changing input is not a way to reset shared resource policy.
-An unchanged `ensureLatest` call cannot bypass a blocked/exhausted outcome; fixing its cause or an
-authorized retry is required. Optional absolute expiry likewise creates an explicit cancellation
-decision rather than silently reviving obsolete work.
+Return a checked `JobRefreshResult` containing the named `JobRefreshOutcome` (with those numeric
+values) and the canonical `JobHandle`. This keeps the result readable and gives callers the ID they
+need for tracking. Repeated refresh calls while a successor is queued return that same handle;
+they cannot create more queued copies or repeatedly cancel the successor. Definition-version
+changes may block incompatible work; they must not bypass this lifecycle contract.
+
+For example, an edit action saves a message, then calls the feature's scheduling routine:
+
+```php
+$result = $jobManager->refresh(
+    RollingCaseSummaryJob::class,
+    new JobMetadata(['documentId' => 'LD-42']),
+);
+// $result->outcome is Unchanged, Created, or Replaced; $result->job identifies queued work.
+```
+
+Provide a separate non-invalidating `enqueue(jobClass, metadata)` for initial scheduling/repair.
+It returns equivalent active work without cancelling it. Repeated discovery/visitor wake-ups must
+not call `refresh` on every active job, restart healthy work, revive manual cancellation, or reset
+exhausted failure allowances. Business logic checks whether output is already current before asking
+for repair. An explicit relevant mutation may request fresh work; historical failures stay visible
+and shared provider cooldowns, spending ceilings and resource admission remain enforced.
+
+Use a short per-key transaction/lock and a uniqueness constraint for race-safe lookup/cancel/insert.
+A standalone “find, then insert” sequence is insufficient. At most one queued successor exists for
+the same trusted scope + registered type + complete canonical metadata. It starts only after older
+equivalent local execution has stopped or recovery proves it stopped. Business mutations and claims
+serialize through the same store so either queued work starts with the committed new data, or an
+already claimed attempt is cancelled and replaced. Generic lease tokens and ownership generations
+fence writes after cancellation; they are execution identity, not domain source versions.
+
+The job itself loads a consistent source snapshot at execution, and owns compatibility checks for
+saved progress and publication. An optional domain fingerprint can combine document metadata,
+message identities/edits and configuration; a last timestamp alone can miss deletes or equal-time
+edits. Such a fingerprint belongs to that feature, not a required generic JobManager protocol.
+Never preload creation-time source bodies or hide them in metadata. Do not mix independently loaded
+old/new fields within an attempt. Reuse compatible accepted work according to the job's own rules.
 
 ## 4. Designing resumable steps
 
@@ -372,19 +388,15 @@ may have started, settle that worker under the same lock before allowing replace
 
 ### Per-job ownership
 
-Claim due work in a short atomic transaction or equivalent database operation. Capture the desired
-input revision, create an attempt, and issue a unique lease token plus an increasing ownership
-generation. Every checkpoint, domain publication, renewal, and completion must reject the wrong
-owner, an expired lease, cancellation/replacement generation, erased scope, or incompatible input
-revision. A queue-only token check is insufficient if an old process can still write domain results
+Claim due work in a short atomic transaction or equivalent database operation. Create an attempt
+and issue a unique lease token plus an increasing ownership generation. Every checkpoint, domain publication, renewal, and completion must reject the wrong
+owner, an expired lease, cancellation/replacement generation, or erased scope. Domain repositories additionally reject incompatible captured source data. A queue-only token check is insufficient if an old process can still write domain results
 directly.
 
-Resolve the current target, source revision, and enqueue authority inside the transaction that
-coalesces or replaces work, or prove an equivalent conditional-write protocol. A fresh lookup before
-opening that transaction alone leaves an ownership/revision race. When source writers also enqueue
-through database triggers, they and the application API use one maintained transition contract.
-A checked command view with one transaction-owned enqueue trigger can serve both; it is a host
-adapter detail, not a second application-facing job API.
+Resolve trusted target scope and enqueue authority inside the transaction that reuses or replaces
+work, or prove an equivalent conditional-write protocol. The manager's decision depends only on
+registered identity and lifecycle state. Feature application services own source-change notification;
+no second enqueue state machine is hidden in database source-change triggers.
 
 Domain stores that commit independently of the job repository need an injected commit guard inside
 their own transaction. Check the active attempt, cancellation, scope, and source revision at that
@@ -399,10 +411,9 @@ short. No HTTP call, sleep, queue wait, or expensive computation runs while hold
 Close or exhaust persistence cursors before such work as well. An unfinished SQLite read cursor
 can retain a lock even without an explicit application transaction and stall other native workers.
 
-Make claim, checkpoint acceptance, and recovery race-safe across real connections/processes. Enqueue
-of a newer desired revision while an attempt runs must survive that attempt's completion. Old work
-may be retained as historical output, but cannot mark the new target complete. Checkpoint reuse
-against the new target requires the explicit compatibility checks from the preceding section.
+Make claim, checkpoint acceptance, and recovery race-safe across real connections/processes. A refresh while an attempt runs must survive that attempt's completion. Old work may be retained
+as historical output, but cannot complete its replacement. Checkpoint reuse against current domain
+data requires the compatibility checks from the preceding section.
 
 Set lease duration from the admitted step/run budget plus bounded commit/recovery margin. Optional
 heartbeats renew only live ownership and cannot extend the enclosing hard request deadline. Do not
@@ -534,14 +545,14 @@ tracks them by `JobHandle`/equivalence key, and how it cancels or replaces them.
 reason (such as `superseded_input`, `expired`, `source_deleted`, or `manual`), its revision/time,
 initiator where applicable, and any successor link. This is ordinary lifecycle behavior, not merely
 an admin button or a transport retry failure. The atomic enqueue/replacement decision is defined in
-[latest inputs and equivalent jobs](#latest-inputs-and-equivalent-jobs).
+[fresh inputs and explicit refresh](#fresh-inputs-and-explicit-refresh).
 
 Persist cancellation and fence publication immediately. A queued job becomes cancelled without
 execution; a running job becomes `cancelling` until it acknowledges stopping or recovery confirms
 it stopped. Its checkpoint/publication guards reject further results from that old ownership even
 while its thread or network call remains physically active. Never transfer its token to a successor.
 
-Jobs check durable cancellation and source/replacement revisions before each step, before an
+Jobs check durable cancellation and execution ownership before each step, before an
 external effect, after an external call, and inside the transaction accepting any output. Long local
 loops add bounded periodic checks. Sequential execution uses these same checks; cancellation can be
 requested by a separate web request even while the only job thread is blocked. Use bounded network
@@ -764,13 +775,12 @@ If message 5 changes, earlier checkpoints may need invalidation under the
 [rolling strategy's recovery policy](ROLLING_SUMMARIES.md#historical-edits-and-recovery). That is
 necessary reprocessing after changed inputs, distinct from repeating valid work after a crash.
 
-For example, the business action requests a summary for document D at source revision 20 and
-receives handle J1. While J1 is queued, message 21 arrives: `ensureLatest` keeps J1, and its worker
-loads all current messages/fields when it starts. Once J1 is running against revision 21, an old
-message is edited to create revision 22: the same source transaction marks J1 cancelling and queues
-J2, linked as its replacement. A later message arrives before J2 starts: reuse J2 for revision 23.
-J1's late response is accounted for but cannot publish. After J1 stops, J2 captures revision 23 and
-reuses only compatible accepted progress; it does not reuse J1's cancelled response.
+For example, a business action requests a summary for document D and receives handle J1. While J1
+is queued, a message arrives: the action calls `refresh`, which returns J1 unchanged. Its worker
+loads current messages/fields on start. While J1 is running, an old message is edited: the edit
+transaction calls `refresh`, marks J1 cancelling and queues J2. Another edit before J2 starts reuses
+J2. The manager compares no source revisions. J1's late response is accounted for but cannot publish.
+After J1 stops, J2 loads fresh data and reuses only domain-verified compatible accepted progress.
 
 A [FactDB](FACT_DB.md) job can compose `ExtractFactsStep`, `SelectSummaryStep`, and
 `PublishSummaryStep`, saving each accepted extraction batch before summary selection.
@@ -817,22 +827,28 @@ Required evidence includes:
 6. **Budgets and retry:** remaining request-time admission, queue wait/backoff counted, a step that
    never fits shown blocked, bounded discovery and fair scheduling, cumulative allowances across
    visits, cooldown preservation, and no nested retry multiplication.
-7. **Logging and admin:** automatic lifecycle events for every job type, diagnostics with trusted
+7. **Cancellation (mandatory for every job type):** test cancellation before the first effect,
+   during an external call, after its response, between phases, and immediately before domain commit.
+   Include repeated cancellation, cancellation concurrent with completion/refresh, successor reuse,
+   stale worker return, partial committed progress, and interrupted cancellation recovery. Assert
+   no partial/corrupt publication, no duplicate irreversible effects, accurate usage receipts and
+   no replacement overlap. A new job type is incomplete without its applicable normal/edge tests.
+8. **Logging and admin:** automatic lifecycle events for every job type, diagnostics with trusted
    context, failed sink behavior, unique request usage totals, unknown/partial usage, interrupted
    attempts, indexed filters/pagination, scoped access, CSRF, safe rendering, and protected artifacts.
-8. **Triggers and deployment:** public wake-up without a login/session, exact no-control decoding,
+9. **Triggers and deployment:** public wake-up without a login/session, exact no-control decoding,
    empty bodies for busy/no-work/budget-end paths, no application call-rate gate, traffic bursts/tabs,
    no early-finish capability, connection abort, no-traffic pause, and no HEAD execution. Protected
    controls retain unauthenticated/unauthorized rejection, CSRF, and cron-secret rotation. Verify
    previous-schema migration, definition upgrade, restart, source erasure, and deployment rollback.
-9. **Fresh inputs and supersession:** append/edit/metadata changes before queued work starts; a
+10. **Fresh inputs and supersession:** append/edit/metadata changes before queued work starts; a
    consistent start-time snapshot; source-change versus claim races; running cancellation plus
    one successor atomically; repeated changes reuse the queued successor; no successor dispatch
    until equivalent old execution stops. Verify expiry, manual queued cancellation, cancellation
    during native/blocking calls, bounded local cancellation checks, old result rejection at every
    commit boundary, recovery never revives cancelled work, and retained compatible checkpoints,
    replacement links, and known/unknown usage in both execution modes and the admin timeline.
-10. **Metadata-only creation and lookup:** reject business-input arguments and representative
+11. **Metadata-only creation and lookup:** reject business-input arguments and representative
     nested/encoded source bodies that violate declared metadata schemas; reject wrong scalar types,
     unknown/reserved fields, and size overflow.
     Prove required-reference validation, immutable metadata on reuse, key-order-independent identity,
