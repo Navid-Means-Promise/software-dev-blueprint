@@ -58,7 +58,7 @@ Prefer these language-neutral names and narrow roles:
 
 | Component | Kind and responsibility |
 | --- | --- |
-| `JobManager` | Unified coordinator for enqueue/refresh, metadata lookup, cancel, and authorized retry; owns one execution session and delegates its scheduling loop to the runner |
+| `JobManager` | Unified coordinator for createJob/refreshJob, findJobs lookup, cancel, and authorized retry; owns one execution session and delegates its scheduling loop to the runner |
 | `JobRunner` | Coordinates admission, recovery, claim, step execution, and checkpoint/attempt commit within one run budget |
 | `JobExecutor` | Execution port with `SequentialJobExecutor` and PHP's native `PhpThreadJobExecutor` adapters |
 | `JobManagerLock` | Nonblocking ownership port admitting one active manager execution session across all triggers |
@@ -237,14 +237,25 @@ scheduling/resource policy remain manager/host-owned fields; metadata cannot
 override them or grant access to the referenced document. A projected subject column or metadata
 index is derived from this canonical map, not another independently editable copy of the target.
 
-Business logic can query `JobManager` by registered job class, metadata predicates, and states; the
-same registry resolution supplies the stored type filter. For example, find jobs whose `documentId`
-equals `LD-42` and whose state is pending, running, or cancelling.
-Use checked filters over declared searchable fields, bounded indexed queries, and cursor pagination.
-Apply trusted tenant/owner scope inside the query. Preserve scalar types and distinguish a missing
-field from explicit null; metadata key order does not change equality. Reject unknown fields or
-raw SQL/JSON-path expressions instead of accepting arbitrary query strings. A metadata lookup aids
-tracking; the atomic enqueue/coalescing operation still owns race-safe equivalence decisions.
+`createJob(jobClass, metadata)` always creates a new pending job with a distinct job ID, even when
+other jobs have exactly the same registered class and complete metadata. These are separate requests.
+The generic creation layer and database must not impose class/metadata uniqueness, return an older
+job instead, or infer that intentional duplicates are redundant. Definition registration and job-ID
+uniqueness still apply. Independent duplicate jobs can use separate worker slots; only explicit
+replacement/dependency links impose waiting on another job.
+
+`findJobs(jobClass, scope, metadataFilter, states, cursor, limit)` returns a list of `JobHandle`
+values. Supplied metadata pairs are exact typed AND predicates; omitted fields act as wildcards.
+For a job with four fields, supplying just `documentId=LD-42` finds it regardless of its other three
+values. Supplying two fields matches both; an empty map matches all jobs of that class within the
+authorized scope and page. Missing filter fields are not treated as null or empty strings. Explicit
+null matches a stored null, not a missing field. Omission-based wildcard search does not introduce
+`*`/regular expressions or substring matching of supplied values.
+
+Use checked filters over declared searchable fields, bounded indexed queries and stable cursor
+pagination. Preserve duplicates and terminal history in results; no unique-result assumption is
+valid. Apply trusted owner/tenant scope before returning data. Reject unknown fields, wrong scalar
+types and raw SQL/JSON-path expressions. Metadata key order does not affect exact equality.
 
 This restriction concerns **creation-time inputs**, not accepted step outputs or checkpoints.
 Runtime attempt data and saved validated progress remain necessary and follow freshness checks.
@@ -264,7 +275,7 @@ A small application service for the affected feature owns scheduling: for exampl
 `CaseSummaryJobs` service is called by message creation/edit/deletion, document-detail changes, and
 relevant participant changes. Controllers delegate to application actions. Save the mutation and
 request its job refresh in one database transaction; if stores differ, use a transactional outbox.
-A failure rolls both back. Database constraints enforce uniqueness and ownership; database triggers
+A failure rolls both back. Database constraints enforce job-ID uniqueness and execution ownership; database triggers
 do not decide which business jobs to cancel, reuse or create. Imports and maintenance writers use
 the same application service. A bounded domain repair scan can detect missing/incompatible output
 without turning the generic manager into a data-change detector.
@@ -276,8 +287,8 @@ The method does not ask a handler for a source revision or compare source timest
 
 | Equivalent active work | Atomic refresh decision | Outcome |
 | --- | --- | --- |
-| A queued job, including a queued successor or delayed retry | Preserve its ID, metadata and due/cooldown time; it loads fresh data when it starts | `Unchanged = 0` |
-| Running or cancelling work with no queued successor | Request cooperative cancellation if needed and create one pending replacement at the tail of the queue | `Replaced = 2` |
+| One or more queued jobs, including a queued successor or delayed retry | Preserve those jobs, metadata and due/cooldown times; each loads fresh data on start | `Unchanged = 0` |
+| Running or cancelling work with no queued successor | Request cooperative cancellation of matching running work and create one pending replacement at the tail of the queue | `Replaced = 2` |
 | No active job (terminal history may exist) | Create one pending job at the tail of the queue | `Created = 1` |
 
 `refreshJob()` returns only an integer: `0`, `1`, or `2` as defined above. It does not return a
@@ -298,20 +309,31 @@ $result = $jobManager->refreshJob(
 // $result is the integer 0, 1, or 2.
 ```
 
-Provide a separate non-invalidating `enqueue(jobClass, metadata)` for initial scheduling/repair.
-It returns equivalent active work without cancelling it. Repeated discovery/visitor wake-ups must
-not call `refreshJob` on every active job, restart healthy work, revive manual cancellation, or reset
-exhausted failure allowances. Business logic checks whether output is already current before asking
-for repair. An explicit relevant mutation may request fresh work; historical failures stay visible
-and shared provider cooldowns, spending ceilings and resource admission remain enforced.
+Duplicate avoidance is a **refresh policy**, not a restriction on generic creation. A refresh uses
+complete exact metadata, whereas `findJobs()` deliberately supports partial metadata filters.
+If intentional duplicates already exist, a refresh preserves all queued requests and returns `0`
+when at least one is queued. It does not silently delete/merge independently created jobs. If none
+is queued, it requests cancellation of all matching running work and creates one successor, returning
+`2`. Link that successor to every cancelling predecessor so it cannot start while any still runs.
+No matching active work produces one new job and returns `1`. Repeated/concurrent refresh calls
+must not themselves multiply successors.
 
-Use a short per-key transaction/lock and a uniqueness constraint for race-safe lookup/cancel/insert.
-A standalone “find, then insert” sequence is insufficient. At most one queued successor exists for
-the same trusted scope + registered type + complete canonical metadata. It starts only after older
-equivalent local execution has stopped or recovery proves it stopped. Business mutations and claims
-serialize through the same store so either queued work starts with the committed new data, or an
-already claimed attempt is cancelled and replaced. Generic lease tokens and ownership generations
-fence writes after cancellation; they are execution identity, not domain source versions.
+Use a short per-key transaction/lock for the refresh lookup/cancel/insert decision; do not add a
+unique class/metadata constraint that also affects `createJob()`. A standalone “find, then insert”
+sequence is insufficient for refresh. Scope equivalence by trusted owner + registered type + complete
+canonical metadata. Independent requests created explicitly are not mutually exclusive merely
+because their metadata matches. Retry is by job ID and cannot be refused solely because a distinct
+matching job exists; replacement guards still prevent overlap between superseded work and its
+successor. Every job retains independent ownership, attempts, checkpoints and history.
+
+Periodic repair is feature-owned policy. In one short transaction, the summary feature checks its
+accepted output and matching jobs. If useful active work or a failed/blocked/manually cancelled
+request already exists, leave it alone; otherwise call `refreshJob()`. Do not repeatedly call
+`createJob()` during discovery or refresh every running job on each visitor wake-up. Changed inputs
+can request new work explicitly. Preserve shared provider cooldowns, spending ceilings, finite
+retry allowances and resource admission rather than using duplicate creation as an automatic retry
+loop. Generic lease tokens and ownership generations fence writes after cancellation; they are
+execution identity, not domain source versions.
 
 The job itself loads a consistent source snapshot at execution, and owns compatibility checks for
 saved progress and publication. An optional domain fingerprint can combine document metadata,
@@ -850,7 +872,13 @@ Required evidence includes:
    during native/blocking calls, bounded local cancellation checks, old result rejection at every
    commit boundary, recovery never revives cancelled work, and retained compatible checkpoints,
    replacement links, and known/unknown usage in both execution modes and the admin timeline.
-11. **Metadata-only creation and lookup:** reject business-input arguments and representative
+11. **Duplicate creation and partial metadata lookup:** prove distinct IDs, receipts and attempts for
+    identical class/metadata requests, including independent execution and retry. Prove refresh
+    reuses queued duplicates without deleting them, cancels multiple running matches when needed,
+    links one successor to all predecessors and remains race-safe across real connections/processes.
+    Test four-field metadata with one/two/zero supplied filters, AND matching, duplicates, scalar
+    types, explicit null versus missing fields, status filters, pages and scope isolation.
+12. **Metadata-only boundaries:** reject business-input arguments and representative
     nested/encoded source bodies that violate declared metadata schemas; reject wrong scalar types,
     unknown/reserved fields, and size overflow.
     Prove required-reference validation, immutable metadata on reuse, key-order-independent identity,
