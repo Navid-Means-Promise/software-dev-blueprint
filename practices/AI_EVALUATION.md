@@ -118,6 +118,14 @@ rubric. Record judge model/configuration, latency, usage, and cost separately fr
 An unavailable or malformed judge result leaves evaluation incomplete; it does not become a pass or
 evidence of candidate failure.
 
+For summaries and other compressed outputs, declare which source meanings each accepted stage must
+retain and which omissions the product's compression policy permits. Check material questions,
+conditions, uncertainty, negation, attribution and proposed/completed status explicitly. A response
+that invents nothing can still fail by omitting required meaning. For example, accurately reporting
+that files were supplied does not preserve the separate question of whether they were reviewed.
+Report boundary safety and semantic completeness separately; passing a narrower rubric does
+not establish coverage it never assessed.
+
 Retain the original candidate reply, state assertions, rubric version, and judgment so disputed
 judgments can be reviewed or rescored without regenerating the answer. A rubric correction is a new
 evaluation of the preserved evidence; report both the original and corrected result and why it
@@ -128,8 +136,9 @@ changed. A model judge does not replace deterministic authorization or mutation 
 Unit-test scenario assertions, judge decoders, aggregation, and checkpoint validation with fixed
 passing and failing fixtures. Prove that a required write cannot pass as a conversational no-op,
 wrong-target/partial writes cannot satisfy an expected effect, read-only cases reject mutations,
-and missing/duplicate cases or judge failures cannot inflate a score. Include quoted rubric
-injection and keyword-only replies when reviewing judge behavior. Review representative judgments
+and missing/duplicate cases or judge failures cannot inflate a score. Include factually accurate
+replies that omit a required question, condition or uncertainty, alongside quoted rubric injection
+and keyword-only replies when reviewing judge behavior. Review representative judgments
 against their rubrics before relying on automatic scores; a strict JSON decoder alone proves no
 semantic judging accuracy.
 

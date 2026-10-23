@@ -124,9 +124,17 @@ truth. Conservative rejection is visible work needing repair, never an accepted 
 
 Canonical metadata also needs faithful attribution. An assigned participant is not necessarily the
 person who created, registered or approved an item; a creation timestamp does not identify that
-actor. Do not invent performed actions from those associations. Preserve supplied proper names as
-literal identities, rather than interchangeable descriptions. Exact brief copying can propagate an
-unsupported assertion already present in detailed memory, so review accepted intermediate prose.
+actor. Do not invent performed actions from those associations. Exact brief copying can propagate
+an unsupported assertion already present in detailed memory, so review accepted intermediate prose.
+
+Render canonical identity fields that must remain literal in code, using protected context outside
+the conversation prose the model edits. Persist a versioned envelope that binds both parts to the
+same source/context revision and generation contract. Edit plans and brief selection operate on the
+narrative; code composes the protected context with each detailed or brief output and checks the
+combined length. Include this context in request budgets wherever supplied to the model. Send the
+metadata needed to interpret the conversation, retaining distinct author identities when role labels
+alone are insufficient. A changed canonical association invalidates its old context without transferring
+historical authorship to the new participant.
 
 Align prompts and value guards on historical retention. A guard that requires every value from a
 batch can reject a faithful current-state summary that keeps only an explicit later correction.
@@ -159,6 +167,9 @@ Use deterministic source/model/clock doubles to prove scope isolation, complete 
 new-message versus old-edit handling, metadata invalidation, withdrawal, CAS rejection, idempotency,
 restart recovery, bounded retries, all-attempt usage reporting, and atomic publication. Include
 failure between detailed-memory commit and brief publication, and erasure during in-flight work.
+For protected context, prove literal identity rendering, rejection of narrative edits targeting
+protected fields, combined length enforcement and invalidation after context/envelope version changes.
+Verify preservation of distinct historical authors through the real host composition.
 
 Live acceptance covers long append sequences, repeated compression drift, corrections of earlier
 claims, old edits preceding later corrections, conflicting speakers, exact values, uncertainty,

@@ -62,6 +62,13 @@ process exit releases its active permit, and interrupted reservations remain cou
 policy/store for the intended quota scope; changing concurrency must not reset rolling counts,
 server cooldowns or failed-attempt history. Admission performs no hidden generation retry.
 
+Check short-lived credential expiry against current UTC near transport dispatch. Queue delay or
+process suspension can age credentials and prepared authorization headers after a successful
+startup check; revalidate their freshness before use. Refresh through the provider's supported,
+bounded authentication flow under the same admitted deadline and shared request accounting.
+Credential refresh is separate from inference transport retry and cannot reset its allowance;
+authentication rejections retain the failure classification above.
+
 Native PHP job threads use the same admission/quota scope; a thread-local client is not an extra
 provider permit. Cancelling a queued request releases its unsent ticket under the admission contract.
 If a superseded job's dispatched call finishes, retain its actual transport outcome and usage even
@@ -166,6 +173,9 @@ Correlate content-free stage durations/counts under a trusted turn ID:
 queue wait, context preparation, model/provider work, retrieval, validation, usage persistence,
 canonical transaction, and reply persistence. Define overlapping/parallel stages so their sum is not
 misrepresented as end-to-end latency. Ordinary logs exclude message, prompt, memory, and plan text.
+Keep UTC timestamps distinct from monotonic elapsed durations. Record observed clock discontinuities
+or suspension gaps without treating the wall-clock difference as measured provider latency or proof
+of a failure's cause.
 
 When protected raw diagnostics are enabled, retain the exact instructions and complete provider
 response body—including additive routing metadata—under the application's separately protected
@@ -189,6 +199,11 @@ adopted, prove isolated slow samples, sustained breaches, concurrent probe exclu
 recovery, irrelevant-error exclusion, and last-model availability. Prove unknown accounting cannot
 be reported as free usage or exact savings. Admission tests prove rate/concurrency/queue bounds,
 whole-prompt/output reservation, caller/server deadline alignment, and that internal diagnostic
-failures cannot trigger model repair/fallback or duplicate effects. Live-provider evidence follows
+failures cannot trigger model repair/fallback or duplicate effects.
+
+For expiring credentials, use recording transports and independently advanced UTC/monotonic clocks
+to cover expiry while queued, long-run expiry, suspension/clock jumps, bounded refresh success and
+authentication rejection. Prove shared request/deadline accounting survives refresh and authentication
+rejections cannot trigger inference retry/fallback. Live-provider evidence follows
 [AI evaluation](../practices/AI_EVALUATION.md) and the normal
 [pre-merge verification policy](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
