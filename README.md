@@ -103,6 +103,8 @@ domain vocabulary and package scope.
 
 - [security/SESSION_MANAGEMENT.md](security/SESSION_MANAGEMENT.md) — server-enforced lifetime,
   rotation, principal freshness, and backing-store isolation
+- [security/HOSTED_BROWSER_ACCESS.md](security/HOSTED_BROWSER_ACCESS.md) — optional owner-authorized
+  agent sign-in without interactive OTP, credential revocation, and hosted UI verification
 - [security/UNTRUSTED_FILE_HANDLING.md](security/UNTRUSTED_FILE_HANDLING.md) — upload validation,
   private storage, authorized retrieval, and failure consistency
 - [security/README.md](security/README.md) — isolated image/repository audits, vulnerability policy,

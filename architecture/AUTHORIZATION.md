@@ -91,6 +91,11 @@ fetch/XHR mutations, assignment actions, deletes, uploads, and alternate action 
 the primary user form. Server-enforced idle/absolute expiry, identifier rotation, store isolation,
 and invalidation follow [session management](../security/SESSION_MANAGEMENT.md).
 
+Owner-authorized browser automation may use the optional
+[hosted browser credential](../security/HOSTED_BROWSER_ACCESS.md) as an explicit login method.
+That document owns its credential exchange and operational verification; the policy decision
+contract here applies to the resulting session.
+
 Token/API flows authenticate explicitly and apply their CORS, origin, replay, and rate/resource
 limits at the API boundary. Both flows use an exact decoder: malformed JSON, unexpected fields,
 wrong scalar/array types, oversized values, and unknown identifiers are rejected before an action

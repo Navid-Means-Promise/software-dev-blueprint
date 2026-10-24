@@ -154,6 +154,10 @@ Automated deployment tools must run a post-deployment healthcheck:
 4. **Resilient timeout:** Use a bounded, realistic timeout (at least 15 seconds) to accommodate
    potential cold starts or CDN cache warmups without generating false-failure alarms.
 
+Projects using owner-authorized browser automation additionally follow
+[hosted access adoption](../security/HOSTED_BROWSER_ACCESS.md#verification-and-adoption) for
+authenticated UI verification on the hosting runtime.
+
 ## Rules
 
 - HTML entry documents use `Cache-Control: no-cache, must-revalidate`; they are never cached

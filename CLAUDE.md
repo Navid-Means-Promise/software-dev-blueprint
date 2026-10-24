@@ -26,6 +26,8 @@ Do not restate those rules here.
   [workspace context controls](practices/AI_AGENT_CONTEXT.md)
 - Runtime and supply-chain security: [sessions](security/SESSION_MANAGEMENT.md),
   [untrusted files](security/UNTRUSTED_FILE_HANDLING.md), and [scanning](security/README.md)
+- Owner-authorized agent sign-in and UI checks on deployed applications:
+  [hosted browser access](security/HOSTED_BROWSER_ACCESS.md)
 - Project conformance: [cross-project sync](reuse/CROSS_PROJECT_SYNC.md)
 - New-project sequence: [new project guide](NEW_PROJECT_GUIDE.md)
 

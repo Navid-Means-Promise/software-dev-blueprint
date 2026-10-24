@@ -115,6 +115,8 @@ exists.
 10. **Delivery and caching.** Configure web server `Cache-Control` policies, verify deterministic asset
    cache-busting tokens in HTML templates, record deployment revisions, and run automated post-deploy
    healthchecks ([deployment and HTTP caching](practices/DEPLOYMENT_AND_CACHING.md)).
+   If the owner requests agent access to the hosted UI, add the optional
+   [hosted browser login and verification flow](security/HOSTED_BROWSER_ACCESS.md).
 
 ## The vertical slice as the milestone
 

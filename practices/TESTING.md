@@ -92,6 +92,9 @@ idempotent, and a failed update does not publish a healthy revision marker. Dest
 use an isolated database, require every confirmation gate, open and verify the pre-reset backup, and
 prove the ordinary deployment path never erases unexpected records.
 
+Projects enabling credential-based hosted browser automation also satisfy the
+[hosted access verification matrix](../security/HOSTED_BROWSER_ACCESS.md#verification-and-adoption).
+
 ## Live provider smoke checks
 
 A test that spends money, contacts a real person, mutates a third-party account, or produces another

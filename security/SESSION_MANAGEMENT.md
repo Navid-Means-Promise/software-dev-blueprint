@@ -29,6 +29,9 @@ request. Products that support global logout, credential recovery, or high-risk 
 increment or revoke the relevant session revision so already-issued sessions cannot retain obsolete
 authority.
 
+For credential-derived automation sessions, the additional binding and revocation contract is in
+[hosted browser access](HOSTED_BROWSER_ACCESS.md#credential-and-revocation).
+
 ## Cookie and backing-store isolation
 
 The cookie protections, CSRF checks, and origin checks are defined by the

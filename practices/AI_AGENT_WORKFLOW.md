@@ -97,6 +97,12 @@ Agent setup also includes [workspace context controls](AI_AGENT_CONTEXT.md), whi
 exclusions, file-access boundaries, and indexing/upload verification for the project's supported
 development agents, including [Antigravity's `.antigravityignore` setup](AI_AGENT_CONTEXT.md#google-antigravity).
 
+## Hosted browser access
+
+When the owner requests agent access to a deployed application's UI, use the optional
+[hosted browser access](../security/HOSTED_BROWSER_ACCESS.md) contract. It owns credential-based
+sign-in without interactive OTP, secret handling, operational scope, cleanup, and hosted evidence.
+
 ## The answer-summary rule
 
 An agent's _answers_ are governed too: any answer carrying findings, comparisons, trade-offs, or a
