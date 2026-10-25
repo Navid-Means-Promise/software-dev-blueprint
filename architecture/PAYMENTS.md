@@ -75,7 +75,9 @@ Redact callback query secrets from access/error logs, emit no-store/no-referrer 
 to a clean authenticated result/history URL without capability or card data. Ordinary payment forms
 need a referrer policy compatible with their origin checks: `no-referrer` can make a browser form POST
 send `Origin: null`. Verify actual browser form navigation, including local HTTP compositions, rather
-than relying only on request-client posts with an injected CSRF token. Do not collect card
+than relying only on request-client posts with an injected CSRF token. Verify the final headers on the
+actual host, including callback errors and redirects: web-server or reverse-proxy defaults can override
+application security headers. Do not collect card
 credentials on the merchant application. Protocol-required card evidence is transient or separately
 protected, minimized and bounded; it never becomes ordinary transaction history.
 
