@@ -159,6 +159,12 @@ Record the deployed revision, one durable attempt, approved HTTPS checkout/PSP o
 card fields. Entering card data, requesting a banking OTP or submitting a payment is a separate scope.
 A passing card-entry check does not qualify authorization, verification, crediting or settlement.
 
+When a provider restricts network country or source IP, qualify the browser's actual egress through
+an authorized isolated network namespace and recorded uplink. Preserve and compare the workstation's
+default routes before/after; never change its global gateway or proxy configuration for the check.
+Distinguish hosted adapter/API egress from the browser's checkout egress, and refuse an unqualified
+network before creating a payment.
+
 Pre-activation checks may use a dedicated manager-authorized bounded admission while ordinary payments
 are paused. Fix the payer to the authenticated operator and cap the amount server-side; require normal
 CSRF/origin and explicit intent, preserve the regular intent/history/accounting path and creation limits,
