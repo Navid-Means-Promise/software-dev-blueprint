@@ -77,7 +77,10 @@ need a referrer policy compatible with their origin checks: `no-referrer` can ma
 send `Origin: null`. Verify actual browser form navigation, including local HTTP compositions, rather
 than relying only on request-client posts with an injected CSRF token. Verify the final headers on the
 actual host, including callback errors and redirects: web-server or reverse-proxy defaults can override
-application security headers. Do not collect card
+application security headers. If checkout validates the merchant referrer, allow only the merchant
+origin on its approved HTTPS redirect (for example `strict-origin`); keep callback capabilities under
+`no-referrer`. Test that policy through the original browser form/redirect chain, without replacing
+it with a fresh navigation or an injected Referer header. Do not collect card
 credentials on the merchant application. Protocol-required card evidence is transient or separately
 protected, minimized and bounded; it never becomes ordinary transaction history.
 
@@ -191,3 +194,4 @@ constants and product policy there rather than making one vendor's restrictions 
 - [OWASP transaction authorization](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html)
 
 - [MDN Origin header and form-post referrer policies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Origin)
+- [W3C referrer policies and redirect processing](https://www.w3.org/TR/referrer-policy/)
