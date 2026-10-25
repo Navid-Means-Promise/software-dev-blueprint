@@ -156,7 +156,8 @@ are paused. Fix the payer to the authenticated operator and cap the amount serve
 CSRF/origin and explicit intent, preserve the regular intent/history/accounting path and creation limits,
 and prove that unprivileged/ordinary requests still cannot bypass the pause. Do not temporarily open
 payments to all users to run a private readiness check. Preserve the acceptance setting and wallet
-balance, stop before card entry/submission, retain sanitized evidence and log out on success or failure.
+balance, stop before entering card data or submitting payment, retain sanitized evidence and log out on
+success or failure.
 
 Projects adopt this optional subsystem only when payments are in scope. Their local contract records
 provider/API version or documentation access date, exact currency/unit mapping, fee and receipt semantics,
