@@ -134,6 +134,8 @@ PSR-3 diagnostic integration, lifecycle-event persistence, and the required
   server headers (`.htaccess` or web server configuration) to serve HTML as `no-cache, must-revalidate` and
   static assets with controlled revalidation. See [deployment and HTTP caching](../practices/DEPLOYMENT_AND_CACHING.md).
 
+Payment-enabled products additionally adopt [payments and wallets](../architecture/PAYMENTS.md).
+
 ## Rules
 
 - PHP applications follow the blueprint's dependency direction through thin controllers and

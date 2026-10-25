@@ -133,6 +133,7 @@ owns multi-turn scenarios, semantic assessment, latency/cost measurements, and r
   metadata-only creation/scoped lookup, fresh start-time loading, atomic equivalent-job
   reuse/replacement, cancellation races, and admin visibility. Provider timeouts alone do not cover
   this gate.
+- Payment/provider/wallet changes satisfy the [payment verification matrix](../architecture/PAYMENTS.md#required-verification-and-adoption), including separate-process accounting races and ambiguous-outcome recovery.
 - New rules arrive **with** their deterministic tests; a rule without a test is unfinished.
 
 ## Rules

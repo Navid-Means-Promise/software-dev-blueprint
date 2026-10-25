@@ -143,3 +143,5 @@ Every step uses the
 Apply it when the task branch is ready to merge, including a separately delivered phase. Area
 documents define the applicable requirements and verification methods; this guide does not create a
 phase-specific copy of that checklist.
+
+For payment-enabled products, adopt the optional [payments and wallets subsystem](architecture/PAYMENTS.md#required-verification-and-adoption) before exposing the first payable flow.

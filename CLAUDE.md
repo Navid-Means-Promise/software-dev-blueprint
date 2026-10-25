@@ -18,6 +18,7 @@ Do not restate those rules here.
 - Maintained prose context as an alternative: [rolling summaries](architecture/ROLLING_SUMMARIES.md)
 - Durable steps, recovery, shared logs/admin, and shared-host triggers:
   [job management](architecture/BACKGROUND_JOBS.md)
+- Payment providers, confirmation recovery and wallet accounting: [payments](architecture/PAYMENTS.md)
 - Immutable propositions and source evidence: [FactDB](architecture/FACT_DB.md)
 - Client, server, firmware, and monorepo structure: [components](components/MONOREPO.md)
 - Testing, rendered UI integrity, i18n, assets, performance, isolated toolchains, and workflow:

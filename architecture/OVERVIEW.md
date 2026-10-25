@@ -92,6 +92,7 @@ diagram contradictory; a compile-time violation remains an architecture bug even
 - Maintained prose context and derived briefs: [rolling summaries](ROLLING_SUMMARIES.md)
 - Durable jobs, step recovery, shared logs/admin, and shared-host triggers:
   [job management](BACKGROUND_JOBS.md)
+- Payment providers, payer history and wallet accounting: [payments](PAYMENTS.md)
 - Immutable sourced knowledge and historical-source edits: [FactDB](FACT_DB.md)
 - Provider routing, resilience, caching, accounting, and diagnostics:
   [AI provider operations](AI_PROVIDER_OPERATIONS.md)
