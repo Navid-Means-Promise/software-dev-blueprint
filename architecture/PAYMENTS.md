@@ -158,6 +158,9 @@ Recording/fake transports prove contracts without contacting a live gateway. Liv
 named, explicitly authorized, target/amount bounded and governed by
 [live provider checks](../practices/TESTING.md#live-provider-smoke-checks). Report absent live evidence
 as unverified; passing deterministic tests does not qualify production credentials or merchant settings.
+Browser checkout fixtures must keep every redirected endpoint under test control; a route interceptor
+does not necessarily cover an entire redirect chain. Fixture-only certificates or endpoint resolution
+must never weaken TLS validation or alter routing in live checks.
 
 A checkout-only live check runs through the actual host's authenticated application and provider adapter,
 not a local provider call presented as hosted evidence. When a configured hosted-access credential exists,
