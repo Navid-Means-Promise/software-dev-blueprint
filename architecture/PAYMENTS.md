@@ -169,6 +169,8 @@ an authorized isolated network namespace and recorded uplink. Preserve and compa
 default routes before/after; never change its global gateway or proxy configuration for the check.
 Distinguish hosted adapter/API egress from the browser's checkout egress, and refuse an unqualified
 network before creating a payment.
+Provider source-IP authorization must use the actual outbound address and address family. A website's
+DNS record or hosting panel's inbound IP is not proof of its source address after NAT or proxying.
 
 Pre-activation checks may use a dedicated manager-authorized bounded admission while ordinary payments
 are paused. Fix the payer to the authenticated operator and cap the amount server-side; require normal
