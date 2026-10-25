@@ -72,7 +72,10 @@ configuration and administrative controls keep normal authentication and CSRF/or
 works without a current browser session; displaying history and receipts remains authenticated and
 owner scoped. Select the provider's return method deliberately with browser SameSite behavior in mind.
 Redact callback query secrets from access/error logs, emit no-store/no-referrer responses, and redirect
-to a clean authenticated result/history URL without capability or card data. Do not collect card
+to a clean authenticated result/history URL without capability or card data. Ordinary payment forms
+need a referrer policy compatible with their origin checks: `no-referrer` can make a browser form POST
+send `Origin: null`. Verify actual browser form navigation, including local HTTP compositions, rather
+than relying only on request-client posts with an injected CSRF token. Do not collect card
 credentials on the merchant application. Protocol-required card evidence is transient or separately
 protected, minimized and bounded; it never becomes ordinary transaction history.
 
@@ -149,3 +152,5 @@ constants and product policy there rather than making one vendor's restrictions 
 
 - [OWASP payment gateway integration](https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Payment_Gateway_Integration_Cheat_Sheet.html)
 - [OWASP transaction authorization](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html)
+
+- [MDN Origin header and form-post referrer policies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Origin)
