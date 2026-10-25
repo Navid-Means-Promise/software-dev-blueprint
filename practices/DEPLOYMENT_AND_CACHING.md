@@ -16,9 +16,13 @@ A release that can make application code and persistence temporarily incompatibl
    `Retry-After` value.
 2. Publish the release while the lock blocks normal dynamic requests. Static maintenance assets, if
    any, remain independent of the changing application bundle.
-3. Apply versioned migrations and deployment-managed records through the deployment control plane,
+3. Before changing an existing schema, create a consistent private database snapshot and verify that
+   it opens and passes the database integrity check. Preserve it outside the public root, make the
+   recovery identity available to the deployer, and abort migration if the backup fails. A current
+   schema does not require another migration backup on an idempotent update.
+4. Apply versioned migrations and deployment-managed records through the deployment control plane,
    then verify the required migration version and integrity constraints.
-4. Record the live revision, release the lock, and run exact public healthchecks. If verification
+5. Record the live revision, release the lock, and run exact public healthchecks. If verification
    fails, restore the lock and fail the deployment; do not declare a degraded release successful.
 
 A failed or interrupted release leaves the lock active when compatibility is uncertain. A documented

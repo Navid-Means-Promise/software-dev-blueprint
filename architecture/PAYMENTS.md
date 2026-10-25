@@ -143,6 +143,21 @@ named, explicitly authorized, target/amount bounded and governed by
 [live provider checks](../practices/TESTING.md#live-provider-smoke-checks). Report absent live evidence
 as unverified; passing deterministic tests does not qualify production credentials or merchant settings.
 
+A checkout-only live check runs through the actual host's authenticated application and provider adapter,
+not a local provider call presented as hosted evidence. When a configured hosted-access credential exists,
+use its [normal session exchange](../security/HOSTED_BROWSER_ACCESS.md). Keep the raw login credential on
+that one exact-origin request; never forward it to checkout, the bank, ordinary pages or browser traces.
+Record the deployed revision, one durable attempt, approved HTTPS checkout/PSP origin and visible blank
+card fields. Entering card data, requesting a banking OTP or submitting a payment is a separate scope.
+A passing card-entry check does not qualify authorization, verification, crediting or settlement.
+
+Pre-activation checks may use a dedicated manager-authorized bounded admission while ordinary payments
+are paused. Fix the payer to the authenticated operator and cap the amount server-side; require normal
+CSRF/origin and explicit intent, preserve the regular intent/history/accounting path and creation limits,
+and prove that unprivileged/ordinary requests still cannot bypass the pause. Do not temporarily open
+payments to all users to run a private readiness check. Preserve the acceptance setting and wallet
+balance, stop before card entry/submission, retain sanitized evidence and log out on success or failure.
+
 Projects adopt this optional subsystem only when payments are in scope. Their local contract records
 provider/API version or documentation access date, exact currency/unit mapping, fee and receipt semantics,
 registered callback, configuration, schema, limits, recovery and operational exclusions. Keep vendor
