@@ -112,6 +112,12 @@ Recovery uses the same settlement and accounting path as the callback, never a s
 shortcut. Retain financial records independently of mutable profile data; define account deletion,
 restricted access, backup/restore and retention policy for the product's jurisdiction and obligations.
 
+Preserve bounded, closed operational diagnostics for uncertain initiation, such as transport errno,
+HTTP status, numeric provider status or failed receipt validation. Keep technical details behind payment
+administration and provide ordinary payers a useful localized message. Never persist raw exception text,
+provider bodies, credentials, checkout/callback URLs or card evidence as an error diagnostic. A network
+failure code does not establish that the provider performed no remote effect.
+
 Document provider confirmation deadlines, reversal/expiry behavior, missing-callback behavior,
 reconciliation triggers, bounded attempt/time budgets, stale claims, lost initiation responses and
 required support escalation. If inquiry cannot recover a pending attempt's verification inputs, say so;
