@@ -120,6 +120,11 @@ administration and provide ordinary payers a useful localized message. Never per
 provider bodies, credentials, checkout/callback URLs or card evidence as an error diagnostic. A network
 failure code does not establish that the provider performed no remote effect.
 
+Explicit operator troubleshooting may inspect a bounded, redacted provider problem message separately
+from the durable receipt. Decode only the needed fields inside the adapter, remove credentials and
+financial/personal evidence, and restrict the result to the authorized operator. Do not return that
+context on ordinary payer requests or retain a raw provider body to make later debugging easier.
+
 Document provider confirmation deadlines, reversal/expiry behavior, missing-callback behavior,
 reconciliation triggers, bounded attempt/time budgets, stale claims, lost initiation responses and
 required support escalation. If inquiry cannot recover a pending attempt's verification inputs, say so;
