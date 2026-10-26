@@ -24,6 +24,9 @@ existing ones. Do not expose secrets in configuration screens, browser bundles, 
 
 Represent canonical money as checked integer minor units plus an explicit currency. Normalize accepted
 localized input before validation; conversions between display and provider units are explicit and exact.
+Declare the product entry/display unit separately from the provider unit. Use the product unit
+consistently for inputs, balances, limits, fees and history; apply checked conversion at the declared
+server/provider boundary and convert receipts back for display rather than asking payers to convert.
 Do not use binary floating-point arithmetic for balances, prices, fees or authorization decisions.
 An adapter may decode a vendor's integral JSON floating-point field only after finite/range/integrality
 checks; this does not permit floating-point domain arithmetic.
