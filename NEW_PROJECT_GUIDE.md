@@ -73,6 +73,9 @@ exists.
    component-wiring option, render store state, and delegate user intent; all text comes from the
    catalog and shared [typography](practices/TYPOGRAPHY.md) roles. Obey the
    [UI performance](practices/UI_PERFORMANCE.md) budget from the first animated surface.
+   Establish product design references and [visual completion criteria](practices/RENDERED_UI_INTEGRITY.md#visual-completion-and-product-continuity)
+   before adding routes; apply [localized numbers](practices/I18N.md#display-numbers-in-the-active-locale)
+   and [form editing/validation](practices/I18N.md#localized-input-and-validation) from the first form.
 
 4. **The server.** Use Fastify in `@app/server`, importing TypeScript-only shared contracts, or use
    the [PHP/Laravel adaptation](components/PHP_LARAVEL.md), conforming to a normative cross-language

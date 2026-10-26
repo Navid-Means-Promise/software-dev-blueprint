@@ -29,6 +29,9 @@ User-facing text comes from the typed [i18n](../practices/I18N.md) catalog — n
 Components consume shared semantic [typography](../practices/TYPOGRAPHY.md) tokens rather than
 choosing families independently.
 
+Form controls follow [localized editing and contextual validation](../practices/I18N.md#localized-input-and-validation);
+numeric labels and values follow [localized numeric presentation](../practices/I18N.md#display-numbers-in-the-active-locale).
+
 ### Component wiring is a project decision
 
 The blueprint does not prescribe how a project distributes the store subscription and service
@@ -136,8 +139,9 @@ perpetual animation, an adaptive and pausable lifecycle for a GPU canvas, and a 
 the capability is absent. Cosmetic animation stays inside its renderer and never drives store updates
 or component re-renders.
 
-Every materially different route, principal, data, and interaction composition obeys the contrast,
-occlusion, clipping, focus reachability, token hygiene, and startup-critical visually-hidden rules in
+Every materially different route, principal, data, and interaction composition obeys the visual
+completion, product continuity, contrast, occlusion, clipping, focus reachability, token hygiene,
+and startup-critical visually-hidden rules in
 [rendered UI integrity](../practices/RENDERED_UI_INTEGRITY.md). A default guest screenshot is not
 evidence that privileged, populated, expanded, or error states remain usable.
 
