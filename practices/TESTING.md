@@ -61,6 +61,10 @@ digit/format representation, proves canonical values reach the boundary, and ass
 input produces a catalog message in the active locale rather than browser-native text in another
 language.
 
+Localized forms also satisfy the [editing and contextual validation contract](I18N.md#localized-input-and-validation).
+Cover the valid completion path alongside client rejection and authoritative server rejection;
+server-rendered forms additionally exercise their supported behavior without JavaScript.
+
 Structured data panels also pass [structured data verification](STRUCTURED_DATA_PRESENTATION.md#verification).
 The audit must reach the populated composition and assert that representative fields actually render.
 

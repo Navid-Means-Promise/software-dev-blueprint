@@ -22,6 +22,8 @@ Do not restate those rules here.
 - Client, server, firmware, and monorepo structure: [components](components/MONOREPO.md)
 - Testing, rendered UI integrity, i18n, assets, performance, isolated toolchains, and workflow:
   [practices](practices/TESTING.md)
+- Product visual completion and navigation consistency: [visual integrity](practices/RENDERED_UI_INTEGRITY.md#visual-completion-and-product-continuity);
+  localized numbers, input editing and contextual form errors: [i18n](practices/I18N.md)
 - Development-agent discovery, file-access boundaries, and indexing/upload verification:
   [workspace context controls](practices/AI_AGENT_CONTEXT.md)
 - Runtime and supply-chain security: [sessions](security/SESSION_MANAGEMENT.md),
