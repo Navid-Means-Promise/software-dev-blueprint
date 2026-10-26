@@ -110,6 +110,11 @@ Every web deployment must configure an explicit three-tier caching policy:
 | **Content-hashed static assets** (`bundle.[hash].js`, `style.[hash].css`) | `public, max-age=31536000, immutable` | Filename changes whenever content changes; old files stay cached safely. |
 | **Unhashed static assets** (`/assets/css/app.css`, `/assets/js/main.js`) | `public, max-age=3600, must-revalidate` | Query-string cache-busting token (`?v=<hash>`) invalidates browser cache on release. |
 
+Sensitive authenticated documents and capability-bearing callback/control responses use `no-store`
+when required by their security contract, including [payment history and callbacks](../architecture/PAYMENTS.md#callbacks-and-browser-sessions).
+This is an explicit exception to the general HTML revalidation tier; static asset versioning remains
+unchanged.
+
 Never permit a web server (e.g. LiteSpeed, Nginx, Apache, Caddy) to emit multi-day or multi-week
 unconditional `max-age` values on unhashed assets without explicit revalidation. Never allow HTML
 documents to be cached without a revalidation check.

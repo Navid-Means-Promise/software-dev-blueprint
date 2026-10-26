@@ -22,14 +22,13 @@ existing ones. Do not expose secrets in configuration screens, browser bundles, 
 
 ## Money and intent
 
-Represent canonical money as checked integer minor units plus an explicit currency. Normalize accepted
-localized input before validation; conversions between display and provider units are explicit and exact.
-Declare the product entry/display unit separately from the provider unit. Use the product unit
-consistently for inputs, balances, limits, fees and history; apply checked conversion at the declared
-server/provider boundary and convert receipts back for display rather than asking payers to convert.
+Represent canonical money as checked integer minor units plus an explicit currency. Product amounts
+and forms follow the shared [numeric presentation](../practices/I18N.md#display-numbers-in-the-active-locale)
+and [input/validation](../practices/I18N.md#localized-input-and-validation) contracts. Declare the
+product/provider unit mapping and perform checked, exact conversion at the server/provider boundary.
 Do not use binary floating-point arithmetic for balances, prices, fees or authorization decisions.
 An adapter may decode a vendor's integral JSON floating-point field only after finite/range/integrality
-checks; this does not permit floating-point domain arithmetic.
+and exact-representation checks; this does not permit floating-point domain arithmetic.
 
 The server establishes owner/tenant, purpose, amount, currency, provider and account before initiating
 payment. Package/order amounts come from server-owned price snapshots. A wallet top-up may accept a
@@ -87,6 +86,11 @@ it with a fresh navigation or an injected Referer header. Do not collect card
 credentials on the merchant application. Protocol-required card evidence is transient or separately
 protected, minimized and bounded; it never becomes ordinary transaction history.
 
+Keep delivery freshness and checkout expiry distinct. When the protocol supplies delivery/event IDs,
+deduplicate them durably. Process validated late or out-of-order notifications under the provider's
+authentication/freshness rules and reconcile the current authoritative outcome; stale events cannot
+regress committed confirmation. Local checkout expiry alone proves neither failure nor a refund.
+
 ## Local commit and accounting
 
 Keep network calls outside database transactions. Admit verification using bounded concurrency control
@@ -120,16 +124,20 @@ Recovery uses the same settlement and accounting path as the callback, never a s
 shortcut. Retain financial records independently of mutable profile data; define account deletion,
 restricted access, backup/restore and retention policy for the product's jurisdiction and obligations.
 
-Preserve bounded, closed operational diagnostics for uncertain initiation, such as transport errno,
-HTTP status, numeric provider status or failed receipt validation. Keep technical details behind payment
-administration and provide ordinary payers a useful localized message. Never persist raw exception text,
-provider bodies, credentials, checkout/callback URLs or card evidence as an error diagnostic. A network
+Preserve a bounded, closed operational diagnostic projection for uncertain initiation, such as
+transport errno, HTTP status, numeric provider status or failed receipt validation. Keep technical details behind payment
+administration and provide ordinary payers a useful localized message. That projection excludes raw
+exception text, provider bodies, credentials, checkout/callback URLs and card evidence. A network
 failure code does not establish that the provider performed no remote effect.
 
 Explicit operator troubleshooting may inspect a bounded, redacted provider problem message separately
 from the durable receipt. Decode only the needed fields inside the adapter, remove credentials and
 financial/personal evidence, and restrict the result to the authorized operator. Do not return that
-context on ordinary payer requests or retain a raw provider body to make later debugging easier.
+context on ordinary payer requests. If the safe projection cannot answer a documented operational
+question, follow the [proportionate diagnostic safeguards](../principles/DEVELOPMENT_PRINCIPLES.md#7-trust-boundaries-are-not-mvp-compromises):
+retain only necessary, permitted evidence in a separately protected, bounded artifact with access audit
+and explicit retention/deletion. Credentials and prohibited authentication data never enter retained
+artifacts; a raw provider body is not ordinary history or a substitute for validated payment evidence.
 
 Document provider confirmation deadlines, reversal/expiry behavior, missing-callback behavior,
 reconciliation triggers, bounded attempt/time budgets, stale claims, lost initiation responses and
@@ -150,12 +158,15 @@ coverage includes:
 - unauthenticated/inactive/forged-owner rejection, cross-owner isolation, admin permission, revocation,
   CSRF/origin defenses and callback capability/order/reference tampering;
 - identical/conflicting retries, repeated/concurrent callbacks, stale claims, real separate-process races,
-  database rollback, restart recovery and remote-success/local-failure reconciliation;
+  late/out-of-order notifications, database rollback, restart recovery and remote-success/local-failure
+  reconciliation;
 - provider/default/account changes, missing credentials, creation/retry limits and exhaustion recovery;
 - immutable balanced postings, exactly one local grant, preserved history, migration/idempotency,
   foreign-key integrity and restoration of prior records;
 - populated and empty wallet/history/admin pages, uncertain/failure/success states, localized inputs and
-  catalog errors, all supported locales/directions, mobile containment and accessible controls.
+  catalog errors, all supported locales/directions, mobile containment and accessible controls;
+- operator diagnostic authorization, redaction and separation from ordinary history, plus access and
+  retention controls for any separately enabled sensitive diagnostic artifact.
 
 Recording/fake transports prove contracts without contacting a live gateway. Live checks are separately
 named, explicitly authorized, target/amount bounded and governed by
@@ -173,11 +184,12 @@ Record the deployed revision, one durable attempt, approved HTTPS checkout/PSP o
 card fields. Entering card data, requesting a banking OTP or submitting a payment is a separate scope.
 A passing card-entry check does not qualify authorization, verification, crediting or settlement.
 
-When a provider restricts network country or source IP, qualify the browser's actual egress through
-an authorized isolated network namespace and recorded uplink. Preserve and compare the workstation's
-default routes before/after; never change its global gateway or proxy configuration for the check.
-Distinguish hosted adapter/API egress from the browser's checkout egress, and refuse an unqualified
-network before creating a payment.
+Qualify each restricted network path separately. When checkout testing needs a non-default
+country/source route, qualify the browser's actual egress through an authorized isolated network
+namespace and recorded uplink. Preserve and compare the workstation's default routes before/after;
+never change its global gateway or proxy configuration for the check. Distinguish hosted adapter/API
+egress from the browser's checkout egress, and refuse an unqualified required path before creating
+a payment.
 Provider source-IP authorization must use the actual outbound address and address family. A website's
 DNS record or hosting panel's inbound IP is not proof of its source address after NAT or proxying.
 
@@ -198,6 +210,5 @@ constants and product policy there rather than making one vendor's restrictions 
 
 - [OWASP payment gateway integration](https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Payment_Gateway_Integration_Cheat_Sheet.html)
 - [OWASP transaction authorization](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html)
-
 - [MDN Origin header and form-post referrer policies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Origin)
 - [W3C referrer policies and redirect processing](https://www.w3.org/TR/referrer-policy/)
