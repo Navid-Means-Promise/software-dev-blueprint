@@ -120,6 +120,9 @@ owns multi-turn scenarios, semantic assessment, latency/cost measurements, and r
   reuse follow the [pre-merge verification policy](../principles/WORKING_AGREEMENT.md#pre-merge-verification).
 - Shared UI changes additionally pass the browser acceptance flow in every locale; Android
   shell/bridge/adapter changes also pass the relevant Android host tests.
+- New or materially changed UI includes the [visual completion review](RENDERED_UI_INTEGRITY.md#visual-completion-and-product-continuity)
+  and [localized numeric presentation](I18N.md#display-numbers-in-the-active-locale) checks. Functional,
+  contrast and overflow success alone do not establish a finished product surface.
 - Firmware or container changes pass the host-safe workflow's clean all-target build and guardrail
   tests. See [containerized toolchains](CONTAINERIZED_TOOLCHAINS.md).
 - Application development-runner or network configuration changes pass

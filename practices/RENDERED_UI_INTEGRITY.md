@@ -6,6 +6,29 @@ complements [mobile responsiveness](MOBILE_RESPONSIVENESS.md), [UI performance](
 and semantic accessibility checks; an automated visual audit alone is not a claim of WCAG
 conformance.
 
+## Visual completion and product continuity
+
+A newly added surface is finished product UI. Identify the existing product's visual references and
+reuse its semantic typography, palette, spacing, shapes, elevation, icon language and interaction
+states. Establish a deliberate hierarchy between the main value, primary action, supporting context
+and dense records; generic component defaults alone are not evidence of visual completion. Extend
+the existing system coherently instead of inventing a separate theme for each subsystem.
+
+Navigation additions match their peers' icon placement, sizing, alignment and states. Use purposeful
+code-native graphics or surface treatments where they support that hierarchy, with accessible names
+and decorative semantics as appropriate. Quality does not require an icon on every box, a dark theme,
+or perpetual motion: an intentional minimal design is valid, and any effect obeys the performance and
+reduced-motion contract. Project design references, rather than universal ornament counts, define the
+intended treatment.
+
+Before release, inspect font-ready desktop and narrow-mobile screenshots of the real composition,
+including populated/empty/error states and changed navigation overlays. Review visual hierarchy,
+localized numeric typography, icon consistency, semantic wrapping and density against the declared
+references. Retain the reviewed evidence and concrete findings. Automated contrast, geometry or
+screenshot-existence checks cannot establish aesthetic quality on their own; passing them does not
+replace this visual review. Gate objective invariants alongside the review so missing icons, default
+surfaces or unlocalized amounts cannot silently regress.
+
 ## Audit states, not only routes
 
 A route that passes in its default guest state can still fail when a menu opens, a privileged tab is
