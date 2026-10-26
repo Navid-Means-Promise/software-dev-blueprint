@@ -14,12 +14,17 @@ states. Establish a deliberate hierarchy between the main value, primary action,
 and dense records; generic component defaults alone are not evidence of visual completion. Extend
 the existing system coherently instead of inventing a separate theme for each subsystem.
 
-Navigation additions match their peers' icon placement, sizing, alignment and states. Use purposeful
-code-native graphics or surface treatments where they support that hierarchy, with accessible names
+Navigation additions match their peers' icon placement, sizing, alignment, semantic color and states.
+Use purposeful code-native graphics or surface treatments where they support that hierarchy, with accessible names
 and decorative semantics as appropriate. Quality does not require an icon on every box, a dark theme,
 or perpetual motion: an intentional minimal design is valid, and any effect obeys the performance and
 reduced-motion contract. Project design references, rather than universal ornament counts, define the
 intended treatment.
+
+Each visible label and action has a concrete user purpose. Remove vague ownership or trust claims
+that add no useful information. Repeat a primary action only when its placement serves a distinct
+navigation need; an adjacent, already-visible form does not justify an extra shortcut. Review the
+whole composition at each breakpoint before adding supporting badges or calls to action.
 
 Before release, inspect font-ready desktop and narrow-mobile screenshots of the real composition,
 including populated/empty/error states and changed navigation overlays. Review visual hierarchy,
