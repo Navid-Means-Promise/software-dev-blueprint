@@ -1,4 +1,4 @@
-# dev-stack-blueprint
+# software-dev-blueprint
 
 The reusable blueprint for our application stack — architecture, patterns, development principles, and
 reusable concepts — captured as documentation so a new project can be built from it.

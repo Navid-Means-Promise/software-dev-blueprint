@@ -12,7 +12,7 @@ the blueprint_ — not directly with its siblings.
 
 ```text
                         ┌───────────────────────────┐
-                        │      dev-stack-blueprint   │   ← canonical source
+                        │   software-dev-blueprint  │   ← canonical source
                         │  rules · architecture ·    │
                         │  patterns · reusable ideas │
                         └───▲───────▲───────▲────────┘
