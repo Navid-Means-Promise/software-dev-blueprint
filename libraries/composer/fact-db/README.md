@@ -133,8 +133,8 @@ erasure. Never log source/proposition content through generic exception handlers
 ## Verification
 
 The portable contract tests use only this package, PDO SQLite, injected time/IDs, and reviewed
-fixtures. The parent repository runs them through its `unit` gate. An installed standalone package
-can run `composer test` through its host's containerized pre-merge runner. No test contacts a model.
+fixtures. Run `./bin/test` from this package at the pre-merge gate; it verifies a mirrored Composer
+install in an isolated container before running the contracts. No test contacts a model.
 
 The host connects this contract to its background worker, provider accounting, source
 synchronization and summary projections. Model qualification and scheduling remain host-owned.

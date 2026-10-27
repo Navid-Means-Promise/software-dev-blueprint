@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+package="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+consumer="$(mktemp -d)"
+trap 'rm -rf -- "${consumer}"' EXIT
+
+cat > "${consumer}/composer.json" <<'JSON'
+{
+  "name": "software-dev-blueprint/fact-db-contract-consumer",
+  "require": {"software-dev-blueprint/fact-db": "0.1.x-dev"},
+  "repositories": [
+    {"type": "path", "url": "/package", "options": {"symlink": false, "versions": {"software-dev-blueprint/fact-db": "0.1.x-dev"}}},
+    {"packagist.org": false}
+  ],
+  "config": {"allow-plugins": false}
+}
+JSON
+
+image=docker.io/library/composer:2.8.12
+podman run --rm --pull=never --network none --userns=keep-id \
+  -v "${package}:/package:ro" -v "${consumer}:/consumer:Z" -w /consumer \
+  "${image}" composer update --no-plugins --no-scripts --no-interaction
+podman run --rm --pull=never --network none --userns=keep-id \
+  -v "${consumer}:/consumer:ro" -w /consumer "${image}" php -r '
+require "vendor/autoload.php";
+require "vendor/software-dev-blueprint/fact-db/tests/ContractTest.php";
+$count = (new \FactDb\Tests\ContractTest())->run();
+echo "FactDB: {$count} contract cases passed.\n";
+'
