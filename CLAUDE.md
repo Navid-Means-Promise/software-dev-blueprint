@@ -1,7 +1,7 @@
 # Agent instructions
 
-This repository is the documentation-only specification for the application stack. It contains no
-runnable product code.
+This repository owns the application-stack specification and portable libraries under `libraries/`.
+It contains no runnable product application.
 
 Before changing this blueprint or using it to guide a project, read the normative
 [development principles](principles/DEVELOPMENT_PRINCIPLES.md) and
@@ -20,6 +20,7 @@ Do not restate those rules here.
   [job management](architecture/BACKGROUND_JOBS.md)
 - Payment providers, confirmation recovery and wallet accounting: [payments](architecture/PAYMENTS.md)
 - Immutable propositions and source evidence: [FactDB](architecture/FACT_DB.md)
+- Reusable package ownership and installation: [libraries](libraries/README.md)
 - Client, server, firmware, and monorepo structure: [components](components/MONOREPO.md)
 - Testing, rendered UI integrity, i18n, assets, performance, isolated toolchains, and workflow:
   [practices](practices/TESTING.md)

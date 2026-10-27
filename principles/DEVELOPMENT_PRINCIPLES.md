@@ -27,9 +27,9 @@ The house style, and the lens for every rule below. Say exactly what is true, an
   system-wide readability rule, not permission to maximize identifier length.
 - Applied to **docs and comments:** explain the _why_ the code cannot say itself. Never narrate what
   the code already states. A comment that repeats its line is deleted, not maintained.
-- Applied to **this repository:** describe intent and constraints in prose; drop into a code or
-  contract block only where the thing is genuinely tricky or non-obvious. A precise description lets
-  the implementing agent write more idiomatic code than a skeleton frozen here ever could.
+- Applied to **blueprint documentation:** describe intent and constraints in prose; drop into a code
+  or contract block only where the thing is genuinely tricky or non-obvious. Portable code that is
+  independently maintained and installed by projects belongs under [libraries](../libraries/README.md).
 
 Everything that follows is PRECISE YET CONCISE made specific.
 

@@ -9,6 +9,7 @@ Hosts scheduling extraction and projections use [Job Management](BACKGROUND_JOBS
 steps and common attempt/log administration; FactDB remains the owner of accepted knowledge.
 Apply its [latest-input and replacement policy](BACKGROUND_JOBS.md#fresh-inputs-and-explicit-refresh)
 to state-derived host jobs; cancelling an attempt does not erase independently accepted knowledge.
+The portable PHP implementation is the [FactDB Composer package](../libraries/composer/fact-db/README.md).
 
 ## Meaning and identity
 

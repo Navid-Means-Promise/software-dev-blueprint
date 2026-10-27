@@ -1,11 +1,11 @@
 # software-dev-blueprint
 
-The reusable blueprint for our application stack — architecture, patterns, development principles, and
-reusable concepts — captured as documentation so a new project can be built from it.
+The reusable blueprint for our application stack: architecture, patterns, development principles,
+and portable libraries for projects built on the stack.
 
-**This repository is documentation only.** It contains prose and local documentation assets: no
-application packages, runtime dependencies, or runnable product code. It is the _specification_ a
-human or an AI agent reads before scaffolding a real project on the stack.
+The documentation is the _specification_ a human or an AI agent reads before scaffolding a project.
+Reusable implementations live in [`libraries/`](libraries/README.md); this repository contains no
+runnable product application.
 
 ## The stack in one paragraph
 
@@ -116,6 +116,8 @@ domain vocabulary and package scope.
 **Reuse** — building more projects on the stack
 
 - [reuse/CROSS_PROJECT_SYNC.md](reuse/CROSS_PROJECT_SYNC.md) — the blueprint-as-hub sync mechanism (conform + propose upstream)
+- [libraries/README.md](libraries/README.md) — portable package ownership and installation
+- [libraries/composer/fact-db/README.md](libraries/composer/fact-db/README.md) — FactDB PHP package
 
 **Reference**
 
@@ -124,7 +126,6 @@ domain vocabulary and package scope.
 
 ## A note on this repository's own style
 
-These docs practice what they preach: prose-first and PRECISE YET CONCISE. Code appears only where a
-contract or mechanism is genuinely tricky (an exact wire shape, the DI factory-behind-a-token, the
-branch-guard hook). Everything else is described precisely and left to the implementing agent, which
-will write more idiomatic code from a clear description than from a skeleton frozen here.
+These docs practice what they preach: prose-first and PRECISE YET CONCISE. Documentation uses code
+examples only where a contract or mechanism is genuinely tricky. Portable implementation and its
+tests live in `libraries/`; product-specific code stays in the implementing project.

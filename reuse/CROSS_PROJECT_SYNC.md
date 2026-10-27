@@ -7,14 +7,14 @@ stack" into "every project keeps the stack current, and the stack keeps every pr
 ## The model: a hub, not pairs
 
 **This blueprint repository is the canonical source** of the stack's rules, architecture, patterns,
-and reusable concepts. Every project **conforms to the blueprint** and exchanges improvements _with
+and [portable libraries](../libraries/README.md). Every project **conforms to the blueprint** and exchanges improvements _with
 the blueprint_ — not directly with its siblings.
 
 ```text
                         ┌───────────────────────────┐
                         │   software-dev-blueprint  │   ← canonical source
                         │  rules · architecture ·    │
-                        │  patterns · reusable ideas │
+                        │  patterns · libraries       │
                         └───▲───────▲───────▲────────┘
              conform +      │       │       │      conform +
              propose  ──────┘       │       └──────  propose

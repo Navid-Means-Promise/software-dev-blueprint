@@ -1,0 +1,19 @@
+{
+  "name": "software-dev-blueprint/fact-db",
+  "description": "Immutable propositions, versioned evidence, and scoped knowledge reconciliation",
+  "type": "library",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3 || ^8.4",
+    "ext-json": "*",
+    "ext-pdo": "*"
+  },
+  "autoload": {
+    "psr-4": {"FactDb\\": "src/"}
+  },
+  "autoload-dev": {
+    "psr-4": {"FactDb\\Tests\\": "tests/"}
+  },
+  "scripts": {"test": "@php tests/run.php"},
+  "suggest": {"ext-pdo_sqlite": "Required for the bundled SQLite adapter"}
+}
