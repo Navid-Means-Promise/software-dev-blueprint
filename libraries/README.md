@@ -1,6 +1,7 @@
 # Reusable libraries
 
-This directory owns portable implementation packages shared across projects. Group a package by its
+This directory owns portable implementations of blueprint-wide contracts. Product-specific
+libraries remain with the products that define and release them. Group a blueprint package by its
 package manager (`composer/`, `npm/`, and so on), then by package name. Keep each package's manifest,
 source, migrations or other runtime assets, tests, and usage guide together. Products own their
 composition, credentials, deployment, and domain-specific adapters; they install a package instead
