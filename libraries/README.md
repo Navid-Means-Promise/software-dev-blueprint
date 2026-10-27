@@ -15,7 +15,8 @@ Until a package registry or release repository is configured, sibling projects i
 from a Composer `path` repository such as `../software-dev-blueprint/libraries/composer/fact-db`.
 Use a mirrored install (`symlink: false`), commit the consumer's lockfile, and deploy the installed
 `vendor/` package. The path is a local build input; production does not need the blueprint checkout.
-Update the lock and installed package together when the library changes. The repository owning the
-package source runs its contract tests; consuming projects test their integration.
+A Composer path reference is not an immutable source release: record the blueprint revision used by
+the consumer and refresh the lock and installed package together when the library changes. The
+repository owning the package source runs its contract tests; consuming projects test their integration.
 
 Add `npm/` when the first package is independently reusable beyond a product's own workspaces.
